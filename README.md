@@ -43,7 +43,7 @@ Full instructions, including the live order-book recorder: [DOCKER.md](DOCKER.md
 ## Setup
 
 ```bash
-git clone https://github.com/xuantung9999-create/Market-Making-AS.git && cd Market-Making-AS
+git clone https://github.com/xuantung9999-create/Market-Making-ASv2.git && cd Market-Making-ASv2
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
