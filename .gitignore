@@ -17,6 +17,7 @@ dashboard_public/
 
 # runtime logs from the live recorder / testnet (machine-specific, regenerated)
 results/live_*.log
+dashboard/live/status.js
 
 # local secrets
 .env
