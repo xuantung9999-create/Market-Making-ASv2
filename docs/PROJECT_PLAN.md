@@ -1,7 +1,7 @@
 # Project plan
 
-The live 2-week plan is the Claude doc "Avellaneda-Stoikov Market Maker — 2-Week Build Plan":
-https://claude.ai/artifact/DK581Z2FRKzhoRrh4j1uM3
+The original 2-week plan (Days 1-12), followed by the v2 build guide (`docs/BUILD_GUIDE.md`) and the
+v2.1 research spec (`docs/SPEC_V2_1.md`).
 
 Progress
 - [x] D1 Wed 11 Nov — derivation notes (notes/derivation.md), repo setup

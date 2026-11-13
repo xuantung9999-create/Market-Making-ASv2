@@ -1,6 +1,7 @@
 # v2.1 research spec: book-state Markov layer and hedge study
 
-**Status (13 Nov 2026): design only. Nothing in this file is implemented yet.**
+**Status (14 Nov 2026): code for Tasks 12-17 is built and tested; no pass rule has been evaluated yet,
+because each needs several weeks of recorded order-book data. Task 18 is built only if Task 17 says go.**
 It continues `docs/BUILD_GUIDE.md` (Tasks 0-11, all built) with Tasks 12-18.
 
 > **For the model doing the work (Sonnet / Opus):** read sections 1-2, then only the task you were

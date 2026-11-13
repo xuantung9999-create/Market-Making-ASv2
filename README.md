@@ -1,6 +1,6 @@
 # Crypto Market Making: from Avellaneda-Stoikov to a queue-aware, self-calibrating quoter
 
-A market-making research project on Binance spot, built from the Avellaneda & Stoikov (2008) paper up to an event-driven, queue-aware simulator with an online calibration agent, a paper trader, a testnet execution layer and an interactive dashboard. 329 tests.
+A market-making research project on Binance spot, built from the Avellaneda & Stoikov (2008) paper up to an event-driven, queue-aware simulator with an online calibration agent, a paper trader, a testnet execution layer and an interactive dashboard. 331 tests.
 
 **The result is negative, and that is the finding.** A candidate edge on tick-constrained micro caps (+16 bp per dollar traded on one day) was put through a pre-registered test: 60 days, three coins, a queue model, 300 ms latency and base-tier fees. It did not survive.
 
@@ -43,7 +43,7 @@ Full instructions, including the live order-book recorder: [DOCKER.md](DOCKER.md
 ## Setup
 
 ```bash
-git init as-market-maker && cd as-market-maker   # or unzip this folder
+git clone https://github.com/xuantung9999-create/Market-Making-AS.git && cd Market-Making-AS
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
