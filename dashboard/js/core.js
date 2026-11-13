@@ -6,7 +6,7 @@ const SITE = {
   testsPassed: 331,
   author: "Xuân Tùng",
   github: "https://github.com/xuantung9999-create/Market-Making-AS",
-  linkedin: "",    // e.g. "https://www.linkedin.com/in/your-name"
+  linkedin: "https://www.linkedin.com/in/tungtea-nguyen",
   dayOfPlan: 10,
   planDays: 14,
 };
