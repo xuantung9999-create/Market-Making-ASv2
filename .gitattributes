@@ -1,0 +1,9 @@
+# Keep Linux scripts with LF endings even when committed from Windows
+*.sh   text eol=lf
+Dockerfile text eol=lf
+*.yml  text eol=lf
+# Windows launchers keep CRLF
+*.bat  text eol=crlf
+# Binary data
+*.parquet binary
+*.png  binary

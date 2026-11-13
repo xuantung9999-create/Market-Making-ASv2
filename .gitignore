@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/*
+!data/.gitkeep
+.ipynb_checkpoints/
+
+# dashboard run bundles: only the index and pub-* runs are committed
+dashboard/runs/*
+!dashboard/runs/index.js
+!dashboard/runs/pub-*
+!dashboard/runs/wf-*
+!dashboard/runs/qb-*
+!dashboard/runs/demo.js
+dashboard_public/
+
+# runtime logs from the live recorder / testnet (machine-specific, regenerated)
+results/live_*.log
+
+# local secrets
+.env
+*.key
+*.zip

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avellaneda–Stoikov Market Maker</title>
+<meta name="description" content="Avellaneda–Stoikov market-making model built from scratch: interactive simulator, paper replication and real Binance BTCUSDT data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a trading-desk research terminal. Header with the headline result,
+   tab bar, then each view = summary tiles first, charts second. Single dark theme by choice. */
+:root {
+  --bg: #0a0f16;
+  --panel: #101823;
+  --panel-2: #142030;
+  --line: #22324a;
+  --grid: #18263a;
+  --text: #dbe6f2;
+  --muted: #7f93ab;
+  --accent: #38bdf8;   /* A-S (inventory) strategy */
+  --bench: #f5a524;    /* symmetric benchmark */
+  --bid: #34d399;      /* buy fills */
+  --ask: #f87171;      /* sell fills */
+  --good: #34d399;
+  --warn: #f5a524;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 10px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.55 var(--font-body); }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 600; }
+.mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+header { padding: 28px max(16px, 4vw) 0; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #0e1724, var(--bg)); }
+.head-row { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: flex-end; justify-content: space-between; }
+.eyebrow { font: 500 12px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(24px, 3.2vw, 34px); letter-spacing: -.01em; margin-top: 4px; }
+.lede { color: var(--muted); max-width: 70ch; margin: 8px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 12px var(--font-mono); padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--panel); white-space: nowrap; }
+.chip.ok { color: var(--good); border-color: #1d4d3d; }
+.chip b { color: var(--text); font-weight: 500; }
+.headline { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 22px 0 18px; }
+.hl { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+.hl .k { font-size: 12px; color: var(--muted); }
+.hl .v { font: 500 22px var(--font-mono); margin-top: 2px; }
+.hl .s { font-size: 12px; color: var(--muted); }
+
+nav.tabs { display: flex; gap: 4px; overflow-x: auto; }
+nav.tabs a { padding: 10px 14px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; font-weight: 500; }
+nav.tabs a:hover { color: var(--text); }
+nav.tabs a[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent); }
+
+main { padding: 20px max(16px, 4vw) 48px; }
+section.view { display: none; }
+section.view.active { display: block; }
+.view-intro { max-width: 78ch; color: var(--muted); margin: 0 0 16px; }
+.view-intro b { color: var(--text); font-weight: 500; }
+
+.with-controls { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .with-controls { grid-template-columns: 1fr; } }
+aside.controls { position: sticky; top: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 14px; }
+@media (max-width: 900px) { aside.controls { position: static; } }
+aside.controls h3 { font-size: 13px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.ctl label span.sym { font-family: var(--font-mono); color: var(--text); }
+.ctl label output { font-family: var(--font-mono); color: var(--accent); }
+.ctl small { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 2px; }
+input[type=range] { width: 100%; accent-color: var(--accent); margin: 6px 0 0; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+button { font: 500 13px var(--font-body); color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: #0c3a52; border-color: #1b6a8f; }
+select { font: 500 13px var(--font-body); color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .g2, .g3 { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 14px 8px; min-width: 0; }
+.card h2 { font-size: 15px; }
+.card .sub { color: var(--muted); font-size: 13px; margin: 2px 0 6px; }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.chart { width: 100%; height: 320px; }
+.chart.tall { height: 420px; }
+.chart.short { height: 260px; }
+
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+@media (max-width: 700px) { .kpis { grid-template-columns: 1fr; } }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: var(--r); padding: 12px 14px; }
+.kpi .name { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.kpi .name .pill { font: 500 11px var(--font-mono); padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); }
+.kpi dl { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 8px 0 0; }
+.kpi dt { font-size: 11px; color: var(--muted); }
+.kpi dd { margin: 0; font: 500 17px var(--font-mono); font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .kpi dl { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; }
+.tile .k { font-size: 12px; color: var(--muted); }
+.tile .v { font: 500 19px var(--font-mono); font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 12px; color: var(--muted); }
+
+.callout { border: 1px solid #1b4a66; background: #0c1d2b; border-radius: var(--r); padding: 12px 14px; margin: 0 0 16px; max-width: 100%; }
+.callout b { color: var(--accent); font-weight: 500; }
+.note { color: var(--muted); font-size: 13px; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+table.advice td, table.advice th { text-align: left; white-space: normal; font-family: var(--font-body); min-width: 140px; }
+table.advice td:first-child { color: var(--muted); }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--text); }
+.levers { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.lever { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+.lever h3 { font-size: 14px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.lever p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.tier { font: 500 11px var(--font-mono); padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); }
+td { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+tr.inv td:nth-child(2) { color: var(--accent); }
+tr.sym td:nth-child(2) { color: var(--bench); }
+
+.formula { font-family: var(--font-mono); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: nowrap; }
+.prose { max-width: 72ch; }
+.prose h2 { font-size: 18px; margin: 26px 0 8px; }
+.prose p, .prose li { color: #c3d1e0; }
+ol.roadmap { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+ol.roadmap li { display: grid; grid-template-columns: 54px 90px 1fr; gap: 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--grid); }
+.status { font: 500 11px var(--font-mono); padding: 2px 8px; border-radius: 999px; text-align: center; }
+.status.done { color: var(--good); background: #10301f; }
+.status.next { color: var(--warn); background: #33250a; }
+.status.todo { color: var(--muted); background: var(--panel-2); }
+.daybar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+footer { padding: 18px max(16px, 4vw) 32px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
+.legend-inline { display: inline-flex; gap: 6px; align-items: center; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; background: var(--c); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* ---------- Desk views (trading dashboard v2) ---------- */
+body.desk-mode .headline, body.desk-mode .lede { display: none; }
+.runbar { display: none; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 18px 0 12px; }
+body.desk-mode .runbar { display: flex; }
+body:not(.desk-mode) .demo-banner { display: none; }
+.runbar label { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+.runbar select { max-width: 360px; }
+.run-meta { font: 12px var(--font-mono); color: var(--muted); }
+.badge { font: 600 11px var(--font-mono); letter-spacing: .06em; padding: 3px 9px; border-radius: 6px; color: var(--c); border: 1px solid var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); white-space: nowrap; }
+.demo-banner { margin: 0 0 14px; padding: 8px 14px; border-radius: 8px; font: 600 13px var(--font-mono); letter-spacing: .04em; color: #fdf4ff; border: 1px solid #e879f9;
+  background: repeating-linear-gradient(135deg, #3b0a45 0 14px, #4a1257 14px 28px); }
+nav.tabs .nav-group { align-self: center; font: 600 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: #4f6580; padding: 0 6px 0 2px; white-space: nowrap; }
+nav.tabs .nav-group + a { padding-left: 8px; }
+nav.tabs .nav-sep { width: 1px; background: var(--line); margin: 8px 10px; flex: none; }
+.desk-msg { color: var(--muted); padding: 24px 0; }
+.is-empty { height: auto !important; min-height: 0; }
+.empty-line { color: #5d728b; font-size: 13px; margin: 10px 0 12px; }
+.pos { color: #22c55e; }
+.neg { color: #ef4444; }
+.tile .v.pos { color: #22c55e; } .tile .v.neg { color: #ef4444; }
+.edge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+.chart.small { height: 230px; }
+.pending { border: 1px dashed var(--line); border-radius: var(--r); padding: 18px; color: var(--muted); }
+.pending b { color: var(--text); font-weight: 500; }
+td.flag-on { color: var(--warn); }
+.spark { display: block; }
+table.gates td:nth-child(2) { white-space: normal; font-family: var(--font-body); }
+.mark { font: 600 11px var(--font-mono); padding: 2px 8px; border-radius: 999px; }
+.mark.pass { color: #22c55e; background: #0f2e1c; } .mark.fail { color: #ef4444; background: #341214; } .mark.na { color: var(--muted); background: var(--panel-2); }
+
+/* ---------- Redesign shell: one-line bar, 11 tabs, sub-tabs ---------- */
+header { padding: 0 max(16px, 4vw); background: #0c131d; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; min-height: 48px; }
+.brand { font: 600 15px var(--font-mono); letter-spacing: .06em; }
+.bar-run { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+.bar-run select { max-width: 280px; }
+.bar-verdict { margin: 0; flex: 1 1 320px; text-align: right; font: 500 13px var(--font-mono); color: var(--text); }
+body:not(.desk-mode) .bar-run, body:not(.desk-mode) .runbar, body:not(.desk-mode) #run-badge { display: none !important; }
+body.verdict-mode #bar-verdict { display: none !important; }
+@media (max-width: 600px) {
+  .bar-run, .runbar label { width: 100%; }
+  .bar-run select, .runbar select { flex: 1; min-width: 0; max-width: 100%; }
+  .runbar { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+}
+.runbar { margin: 4px 0 8px; }
+.range-btns { display: inline-flex; align-items: center; gap: 4px; }
+.range-btns button { background: var(--panel); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; font: 500 12px var(--font-body); cursor: pointer; }
+.range-btns button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.tab-wrap > .subtabs { display: none; }
+.tab-wrap.active > .subtabs { display: flex; gap: 0; margin: 0 0 16px; flex-wrap: wrap; }
+.subtabs a { padding: 6px 14px; border: 1px solid var(--line); color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 500; background: var(--panel); }
+.subtabs a:first-child { border-radius: 8px 0 0 8px; } .subtabs a:last-child { border-radius: 0 8px 8px 0; } .subtabs a + a { border-left: 0; }
+.subtabs a[aria-current="page"] { color: var(--accent); border-color: var(--accent); background: #0c2433; }
+.about-head { max-width: 78ch; margin-bottom: 14px; }
+.verdict-line { font-size: 17px; margin: 0 0 16px; max-width: 90ch; }
+.chart.forest { height: 460px; }
+.book-grid { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .book-grid { grid-template-columns: 1fr; } }
+.book-charts { display: grid; gap: 16px; min-width: 0; }
+.book-now dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 8px 0; font-size: 13px; }
+.book-now dt { color: var(--muted); } .book-now dd { margin: 0; font: 500 13px var(--font-mono); text-align: right; }
+.book-now .px { font: 500 22px var(--font-mono); }
+.imbbar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 8px 0; background: var(--panel-2); }
+.imbbar i { display: block; height: 100%; }
+.live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c, #7f93ab); margin-right: 4px; }
+.live-status { font: 500 14px var(--font-mono); margin: 0 0 14px; }
+.live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-bottom: 8px; }
+.live-grid.dim, .live-card.dim { opacity: .5; }
+.live-h { font-size: 15px; margin: 22px 0 10px; }
+.live-px { font: 500 22px var(--font-mono); margin: 4px 0 8px; }
+.age { font: 600 11px var(--font-mono); padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); }
+.verdict { padding: 12px 16px; border-radius: 10px; margin: 0 0 16px; border: 1px solid var(--line); background: var(--panel); max-width: 90ch; }
+.verdict.ok { border-color: #1d4d3d; color: var(--good); } .verdict.amber { border-color: #6b4a10; color: var(--warn); }
+.age.ok { color: #22c55e; background: #0f2e1c; } .age.amber { color: var(--warn); background: #33250a; } .age.red { color: #ef4444; background: #341214; }
+dl.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 6px 0 10px; font-size: 13px; }
+dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; font: 500 13px var(--font-mono); text-align: right; }
+table.mini { font-size: 12px; } table.mini td { padding: 2px 8px; border: 0; }
+.note.cap { margin: 4px 0 8px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">MM-AS</div>
+    <label class="bar-run">Run <select id="run-select"></select></label>
+    <span id="run-badge"></span>
+    <label class="bar-run">Symbol <select id="f-symbol"></select></label>
+    <p class="bar-verdict" id="bar-verdict" aria-live="polite"></p>
+  </div>
+  <div class="runbar" aria-label="Run options">
+    <span class="run-meta" id="run-meta"></span>
+    <label>Variant <select id="f-variant"></select></label>
+    <label>Compare with <select id="run-compare"></select></label>
+    <span id="compare-badge"></span>
+  </div>
+  <div class="demo-banner" id="demo-banner" hidden>DEMO DATA, NOT RESULTS · synthetic numbers for building and checking the page</div>
+  <nav class="tabs" aria-label="Sections">
+    <a href="#overview" data-view="overview">Verdict</a>
+    <a href="#live" data-view="live">Live</a>
+    <a href="#book" data-view="book">Market book</a>
+    <a href="#pnl" data-view="pnl">P&amp;L</a>
+    <a href="#execution" data-view="execution">Execution</a>
+    <a href="#risk" data-view="risk">Risk</a>
+    <a href="#model-health" data-view="model-health">Model</a>
+    <a href="#data" data-view="data">Data</a>
+    <a href="#simulator" data-view="simulator">Simulator</a>
+    <a href="#archive" data-view="archive">Research archive</a>
+    <a href="#about" data-view="about">About</a>
+  </nav>
+</header>
+
+<main>
+  <div class="tab-wrap" data-tab="overview">
+  <section class="view" id="view-overview">
+    <p class="desk-msg" id="desk-msg-overview" hidden></p>
+    <div id="desk-body-overview">
+      <p class="verdict-line" id="ov-headline" hidden></p>
+      <div class="tiles" id="ov-tiles"></div>
+      <div class="grid g2" style="margin-bottom:16px">
+        <div class="card"><h2>Net edge by coin and queue assumption</h2><p class="sub" id="ov-forest-sub"></p><div class="chart forest" id="ov-forest"></div></div>
+        <div class="card"><h2>Gate scoreboard</h2><p class="sub" id="ov-gates-sub"></p><div class="table-wrap" id="ov-gates"></div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px"><h2>Cumulative net P&amp;L</h2><p class="sub" id="ov-cum-sub"></p><div class="chart" id="ov-cum"></div></div>
+      <div class="card"><h2>Blotter</h2><p class="sub">One row per coin and scenario. Net and before-fees edge in bp per dollar traded; P&amp;L per 100 USD lot. Agent rows with no fills show dashes.</p><div class="table-wrap" id="ov-blotter"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="live">
+  <div class="subtabs" id="sub-live" role="tablist"></div>
+  <section class="view" id="view-live">
+    <p class="view-intro">Is the recorder alive, and what is each market doing right now? Read from the files the recorder and the traders write; needs the page served over http. Amber after 10 s, red after 60 s without an update.</p>
+    <p class="live-status" id="lv-status"></p>
+    <div id="lv-feed" class="live-grid"></div>
+    <h2 class="live-h">Testnet trader</h2><div class="live-grid" id="lv-testnet"></div>
+    <h2 class="live-h">Paper trader</h2><div class="live-grid" id="lv-paper"></div>
+  </section>
+  <section class="view" id="view-pcstatus">
+    <p class="view-intro">What the always-on PC is doing: the supervisor and its processes, the testnet traders (real orders, fake money) and the order-book recorder. Read from live/status.js, rewritten every minute by scripts/build_live.py.</p>
+    <p class="desk-msg" id="pcs-msg" hidden></p>
+    <div id="pcs-body">
+      <div class="tiles" id="live-tiles"></div>
+      <div class="card" style="margin-bottom:16px"><h2>Processes</h2><div class="table-wrap" id="live-procs"></div></div>
+      <div class="card" style="margin-bottom:16px"><h2>Testnet traders</h2><div class="table-wrap" id="live-tn-table"></div></div>
+      <div class="grid g2">
+        <div class="card"><h2>Testnet P&amp;L</h2><div class="chart" id="live-pnl"></div></div>
+        <div class="card"><h2>Position</h2><div class="chart" id="live-pos"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Order activity, last 24 h</h2><div class="chart short" id="live-activity"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Recent fills</h2><div class="table-wrap" id="live-fills"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Recent order events</h2><div class="table-wrap" id="live-events"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Recorder</h2><div class="table-wrap" id="live-rec"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="book">
+  <div class="subtabs" id="sub-book" role="tablist"></div>
+  <section class="view" id="view-book">
+    <p class="desk-msg" id="desk-msg-book" hidden></p>
+    <div id="desk-body-book">
+      <div class="daybar">
+        <label class="note">Coin <select id="bk-coin"></select></label>
+        <span class="btn-row" id="bk-range"></span>
+        <span class="run-meta" id="bk-meta"></span>
+      </div>
+      <p class="view-intro" id="bk-intro">What does the book look like, and does its imbalance say anything about the next move? Recorded top of book, spot, UTC.</p>
+      <div class="book-grid">
+        <div class="card book-now" id="bk-now"></div>
+        <div class="book-charts">
+          <div class="card"><h2>Best bid and ask, with trades</h2><p class="sub">Step lines; dot colour is the aggressor (blue buy, amber sell), dot area is size</p><div class="chart short" id="bk-price"></div></div>
+          <div class="card"><h2>Size at the best price</h2><p class="sub">Bid size up, ask size down (units of the coin); imbalance on the right axis</p><div class="chart short" id="bk-size"></div></div>
+          <div class="grid g2">
+            <div class="card"><h2>Next move by imbalance</h2><p class="sub" id="bk-imb-sub"></p><div class="chart short" id="bk-imb"></div></div>
+            <div class="card"><h2>Spread in ticks</h2><p class="sub">Share of recorded time</p><div class="chart short" id="bk-spread"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card"><h2>Depth ladder</h2><p class="sub" id="bk-ladder-sub">Cumulative resting size (USD) by distance from the mid, last 1 s snapshot, 10 levels per side</p><div class="chart short" id="bk-ladder"></div></div>
+        <div class="card"><h2>Resting size over time</h2><p class="sub">USD resting at each distance from the mid (bp), 10-minute averages, last 6 hours; brighter = more size</p><div class="chart short" id="bk-depth"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Profile of each coin</h2><p class="sub">Touch size is in units of the coin; queue is the touch size in median trades (the queue model assumes 20 until this is measured)</p><div class="table-wrap" id="bk-profile"></div></div>
+    </div>
+  </section>
+  <section class="view" id="view-market">
+    <p class="desk-msg" id="desk-msg-market" hidden></p>
+    <div id="desk-body-market">
+      <div class="card"><h2>Coin universe</h2><p class="sub">The screener: which coins are tick-constrained (the tick is a large share of the price, so the spread cannot be tighter). Click a heading to sort.</p><div class="table-wrap" id="un-table"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Trading volume per coin</h2><p class="sub">Log scale; tick-constrained coins in amber</p><div class="chart" id="un-vol"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="pnl">
+  <section class="view" id="view-pnl">
+    <p class="desk-msg" id="desk-msg-pnl" hidden></p>
+    <div id="desk-body-pnl">
+      <p class="view-intro">Where does the P&amp;L come from, and is it statistically real? Net P&amp;L is after maker fees. All times UTC.</p>
+      <div class="grid g2">
+        <div class="card"><h2>Attribution</h2><p class="sub">Spread captured at the fill, what inventory did, fees and net, in bp per dollar traded, coin by coin</p><div class="chart" id="pnl-wf"></div></div>
+        <div class="card"><h2>Daily net P&amp;L</h2><p class="sub">USD per day, one row per coin; white line is the 7-day mean</p><div class="chart" id="pnl-daily"></div></div>
+        <div class="card"><h2>Net edge by hour of day</h2><p class="sub">Mean net edge per fill (bp, 60 s markout minus fee)</p><div class="chart" id="pnl-heat-edge"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Statistics</h2><p class="sub">Computed in Python (mm/report.py). Only days with 20+ fills are counted; all days enter the total.</p><div class="table-wrap" id="pnl-stats"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Distribution of daily P&amp;L</h2><p class="sub">Counted days; dotted line at zero, solid line at the mean</p><div class="chart" id="pnl-hist"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="execution">
+  <section class="view" id="view-execution">
+    <p class="desk-msg" id="desk-msg-execution" hidden></p>
+    <div id="desk-body-execution">
+      <p class="view-intro">Are my fills good fills? A markout is how far the mid moved in your favour after a fill. If it falls below zero within seconds, the people trading with you knew where the price was going: adverse selection.</p>
+      <div class="grid g2">
+        <div class="card"><h2>Markouts by side</h2><p class="sub">bp before fees, ± 1 standard error, pooled over the selected coins by number of fills (pick one coin to see it alone); the dashed line is the fee a fill must clear</p><div class="chart" id="ex-side"></div></div>
+        <div class="card"><h2>Markouts by action</h2><p class="sub">JOIN = resting at the best price, BACK = one tick behind</p><div class="chart" id="ex-action"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Fill rate</h2><p class="sub">Fills per hour while an order was resting; the label is the share of the day with one resting (uptime)</p><div class="chart short" id="ex-rate"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Queue wait</h2><p class="sub">Seconds from an order going live to its fill</p><div class="chart" id="ex-wait"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Fill quality per coin</h2><p class="sub">Fill-weighted over the selected days</p><div class="table-wrap" id="ex-table"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="risk">
+  <section class="view" id="view-risk">
+    <p class="desk-msg" id="desk-msg-risk" hidden></p>
+    <div id="desk-body-risk">
+      <p class="view-intro">How much can I lose? Inventory against its ±10-lot cap, drawdowns, and what a sudden price gap would cost.</p>
+      <div class="tiles" id="rk-tiles"></div>
+      <div class="grid g2">
+        <div class="card"><h2>Inventory</h2><p class="sub">Lots held (5-minute points, last 3 days of the run); red dashes are the cap</p><div class="chart" id="rk-inv"></div></div>
+        <div class="card"><h2>Time at each inventory level</h2><p class="sub">Share of the whole run, from the full-resolution record</p><div class="chart" id="rk-invdist"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Drawdown</h2><p class="sub">Cumulative net P&amp;L and its fall from the running peak (USD)</p><div class="chart" id="rk-dd"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Stress</h2><p class="sub">Loss if the price gaps against a full position</p><div class="table-wrap" id="rk-stress"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="model-health">
+  <div class="subtabs" id="sub-model-health" role="tablist"></div>
+  <section class="view" id="view-model-health">
+    <p class="desk-msg" id="desk-msg-model-health" hidden></p>
+    <div id="desk-body-model-health">
+      <p class="view-intro">Is the model still right about itself? What the agent learned a fill is worth in each market state, whether its predictions come true, and which setting it ran.</p>
+      <div class="card"><h2>Edge table</h2><p class="sub">Learned net edge per fill (bp, after fee) by book imbalance (rows) and volatility (columns). * = fewer than 30 fills. Red means quoting there loses money. Colour scale fixed at ±20 bp.</p><div class="edge-grid" id="md-edge"></div></div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card"><h2>Predicted vs realised edge</h2><p class="sub">5 equal-size bins of predicted net edge; below the diagonal = too optimistic</p><div class="chart" id="md-calib"></div></div>
+        <div class="card"><h2>Live setting over time</h2><p class="sub" id="md-arms-sub">Which of the 12 menu entries the agent followed</p><div class="chart" id="md-arms"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Arm scores</h2><p class="sub">Latest decayed scores of the 12 settings</p><div class="table-wrap" id="md-scores"></div></div>
+    </div>
+  </section>
+  <section class="view" id="view-signals">
+    <p class="desk-msg" id="desk-msg-signals" hidden></p>
+    <div id="desk-body-signals">
+      <p class="view-intro">Do the model's inputs still predict? Net edge per fill by book imbalance and by volatility, pooled over the selected coins and weighted by fills.</p>
+      <div class="grid g2">
+        <div class="card"><h2>By book imbalance</h2><p class="sub">Net edge per fill (bp, after fee), ±1.96 se; hollow = fewer than 30 fills</p><div class="chart short" id="sg-imb"></div></div>
+        <div class="card"><h2>By volatility</h2><p class="sub">Net edge per fill (bp, after fee), ±1.96 se; hollow = fewer than 30 fills</p><div class="chart short" id="sg-vol"></div></div>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="data">
+  <div class="subtabs" id="sub-data" role="tablist"></div>
+  <section class="view" id="view-health">
+    <p class="desk-msg" id="desk-msg-health" hidden></p>
+    <div id="desk-body-health">
+      <p class="view-intro">Can I trust what I am looking at? How much of the book the recorder actually captured, how old each result is, and how many tests pass.</p>
+      <div class="tiles" id="dh-tiles"></div>
+      <div class="card"><h2>Recorder coverage</h2><p class="sub" id="dh-cov-sub">Hours of the day with a clean book, per coin (an hour counts only if it has no gap over 120 s)</p><div class="chart" id="dh-cov"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Tape validation</h2><p class="sub">Is the book inferred from trades close to the recorded one? Join touch run on both, same trades, gap hours removed</p><div id="dh-tape-verdict"></div><div class="table-wrap" id="dh-tape"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Bundles</h2><p class="sub">Every result file the page can load and how old it is</p><div class="table-wrap" id="dh-bundles"></div></div>
+    </div>
+  </section>
+  <section class="view" id="view-simlive">
+    <p class="desk-msg" id="desk-msg-simlive" hidden></p>
+    <div id="desk-body-simlive">
+      <p class="view-intro">Does the simulator match reality? The page's run is the simulation; choose a paper or testnet run in <b>Compare with</b> (top right). Only coin-days present in both are used.</p>
+      <div id="sl-verdict"></div>
+      <div class="card"><h2>Side by side</h2><p class="sub" id="sl-sub"></p><div class="table-wrap" id="sl-table"></div></div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card"><h2>Cumulative P&amp;L</h2><div class="chart" id="sl-pnl"></div></div>
+        <div class="card"><h2>Fills per day</h2><div class="chart" id="sl-fills"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Markout after a fill</h2><p class="sub">Mean 1 s to 5 min markout, weighted by fills; both lines should fall together if the simulator's adverse selection is realistic</p><div class="chart" id="sl-mk"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="simulator">
+  <div class="subtabs" id="sub-simulator" role="tablist"></div>
+  <section class="view" id="view-simulator">
+    <p class="view-intro">Simulated market from the paper: the mid price moves randomly and each quote fills with probability <span class="mono">A·e<sup>−kδ</sup>·dt</span>, where δ is its distance from the mid. The <b style="color:var(--accent)">A-S strategy</b> centres its quotes on an inventory-adjusted price; the <b style="color:var(--bench)">benchmark</b> uses the same spread centred on the mid. Both run on the same random numbers, so differences come from the strategy, not luck. Move a slider and every chart recomputes in your browser.</p>
+    <div class="with-controls">
+      <aside class="controls" aria-label="Model parameters">
+        <h3>Parameters</h3>
+        <div class="ctl"><label for="p-gamma"><span><span class="sym">γ</span> risk aversion</span><output id="o-gamma"></output></label>
+          <input type="range" id="p-gamma" min="-3" max="0" step="0.01"><small>Higher γ: stronger inventory skew, less risk, less profit.</small></div>
+        <div class="ctl"><label for="p-sigma"><span><span class="sym">σ</span> volatility</span><output id="o-sigma"></output></label>
+          <input type="range" id="p-sigma" min="0.5" max="6" step="0.1"><small>Price units per √time. Widens the spread and the skew.</small></div>
+        <div class="ctl"><label for="p-k"><span><span class="sym">k</span> fill decay</span><output id="o-k"></output></label>
+          <input type="range" id="p-k" min="0.3" max="5" step="0.05"><small>How fast fills drop as you quote further away.</small></div>
+        <div class="ctl"><label for="p-A"><span><span class="sym">A</span> order flow</span><output id="o-A"></output></label>
+          <input type="range" id="p-A" min="10" max="300" step="5"><small>Fills per unit time at the mid. Not in the spread formula.</small></div>
+        <div class="ctl"><label for="p-qmax"><span><span class="sym">q<sub>max</sub></span> inventory cap</span><output id="o-qmax"></output></label>
+          <input type="range" id="p-qmax" min="0" max="15" step="1"><small>Stop quoting the side that would grow |q| past this. 0 = off.</small></div>
+        <div class="ctl"><label for="p-paths"><span>Monte Carlo paths</span><output id="o-paths"></output></label>
+          <input type="range" id="p-paths" min="50" max="2000" step="50"></div>
+        <div class="ctl"><label for="p-seed"><span>Random seed</span><output id="o-seed"></output></label>
+          <input type="range" id="p-seed" min="0" max="99" step="1"></div>
+        <div class="btn-row">
+          <button id="btn-paper" class="primary" type="button">Paper settings</button>
+          <button id="btn-reroll" type="button">New random path</button>
+        </div>
+        <p class="note" style="margin:0">s<sub>0</sub> = 100, T = 1, dt = 0.005 (200 steps), one unit per fill.</p>
+      </aside>
+      <div>
+        <div class="kpis" id="sim-kpis"></div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-head">
+              <div><h2>One trading session, A-S strategy</h2>
+                <p class="sub">Mid price, the reservation price r, the quoted band, and every fill. Long inventory pushes r below the mid; short pushes it above.</p></div>
+              <button id="btn-replay" type="button">▶ Replay session</button>
+            </div>
+            <div class="chart tall" id="ch-path"></div>
+          </div>
+          <div class="grid g2">
+            <div class="card"><h2>Inventory on the same path</h2><p class="sub">The skew pulls A-S back toward zero; the benchmark drifts like a random walk.</p><div class="chart short" id="ch-inv"></div></div>
+            <div class="card"><h2>Terminal profit distribution</h2><p class="sub">Profit at T (cash + inventory × mid) across all paths.</p><div class="chart short" id="ch-hist"></div></div>
+          </div>
+          <div class="card"><h2>Profit paths</h2><p class="sub">40 sample paths per strategy (thin) and the average over all paths (bold). Similar slope, very different spread of outcomes.</p><div class="chart" id="ch-fan"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="view" id="view-model">
+    <p class="view-intro">The two formulas that drive every quote, drawn with the parameters from the Simulator tab. Change them there and these update too.</p>
+    <div class="grid g2" style="margin-bottom:16px">
+      <div class="formula">r = s − q · γ · σ² · (T − t) &nbsp; <span class="note">reservation price</span></div>
+      <div class="formula">δ<sup>a</sup> + δ<sup>b</sup> = γσ²(T − t) + (2/γ) · ln(1 + γ/k) &nbsp; <span class="note">total spread</span></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-head"><div><h2>Where the quotes sit for each inventory level</h2><p class="sub">Distance of bid, ask and r from the mid. Same band width for every q; only the centre moves.</p></div>
+          <div class="ctl" style="min-width:180px"><label for="p-t"><span>time t</span><output id="o-t"></output></label><input type="range" id="p-t" min="0" max="1" step="0.01" value="0"></div></div>
+        <div class="chart" id="ch-geom"></div>
+      </div>
+      <div class="card"><h2>What the spread is made of over the session</h2><p class="sub">Inventory-risk term γσ²(T−t) shrinks to zero at T; the order-flow term (2/γ)ln(1+γ/k) stays fixed.</p><div class="chart" id="ch-spread"></div></div>
+      <div class="card"><h2>Expected profit per quote vs distance from mid</h2><p class="sub">A risk-neutral quote at δ earns δ per fill and fills at rate A·e<sup>−kδ</sup>. The best δ is 1/k whatever A is, which is why A drops out of the spread.</p><div class="chart" id="ch-profit"></div></div>
+      <div class="card"><h2>Fill probability per step vs distance</h2><p class="sub">P(fill in dt) = A·e<sup>−kδ</sup>·dt, capped at 1. Markers show where the current t = 0 quotes sit for q = 0.</p><div class="chart" id="ch-fill"></div></div>
+    </div>
+  </section>
+  <section class="view" id="view-replication">
+    <p class="view-intro">Monte Carlo replication of section 4 of Avellaneda &amp; Stoikov (2008), computed in Python (<span class="mono">mm/simulator.py</span>), 1,000 paths per cell, both strategies on identical random numbers.</p>
+    <div class="callout" id="rep-callout"></div>
+    <div class="grid g2">
+      <div class="card"><h2>Profit volatility by risk aversion</h2><p class="sub">Standard deviation of terminal profit. A-S roughly halves it at every γ.</p><div class="chart short" id="ch-rep-std"></div></div>
+      <div class="card"><h2>Mean profit by risk aversion</h2><p class="sub">The price of that risk reduction, in average profit.</p><div class="chart short" id="ch-rep-mean"></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h2>Results table</h2><p class="sub">Same columns as the paper's tables.</p><div class="table-wrap"><table id="rep-table"></table></div></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h2>Stress scenarios</h2><p class="sub">Sharpe ratio (mean ÷ std of terminal profit) under changed market conditions.</p><div class="chart" id="ch-exp"></div></div>
+      <div class="card"><h2>Is a simple inventory cap enough?</h2><p class="sub">Benchmark with a hard cap at different levels vs A-S with no cap. No cap level reaches A-S.</p><div class="chart" id="ch-cap"></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h2>Why both strategies share random numbers</h2><p class="sub">Measured profit gap (benchmark − A-S) over 20 runs of 100 paths. Sharing random numbers makes the comparison less noisy.</p><div class="chart short" id="ch-crn"></div></div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="archive">
+  <div class="subtabs" id="sub-archive" role="tablist"></div>
+  <section class="view" id="view-real-data">
+    <p class="view-intro">Every aggregated trade on Binance spot for one coin and one UTC day, from Binance's public archive (checksum-verified). This is the market the strategy has to survive. Drag on any chart to zoom; double-click to reset.</p>
+    <div class="daybar" id="daybar"></div>
+    <div class="tiles" id="real-tiles"></div>
+    <div class="callout" id="real-callout"></div>
+    <div class="grid">
+      <div class="card"><h2>Price and activity</h2><p class="sub">1-minute mid with the minute's high–low range, and trades per minute.</p><div class="chart tall" id="ch-price"></div></div>
+      <div class="grid g2">
+        <div class="card"><h2>Volatility through the day</h2><p class="sub">σ in USDT per √second, the unit the model uses. Rolling 1 hour and 5 minutes vs the whole-day value.</p><div class="chart" id="ch-sigma"></div></div>
+        <div class="card"><h2>How fill probability decays with distance</h2><p class="sub">Implied fill intensity for a quote δ USDT from the mid (log scale) and the fitted λ(δ) = A·e<sup>−kδ</sup>.</p><div class="chart" id="ch-realfill"></div></div>
+      </div>
+      <div class="card"><h2>Order flow</h2><p class="sub">Cumulative buyer-initiated minus seller-initiated volume (BTC) against price. Persistent one-sided flow is what hurts a market maker.</p><div class="chart" id="ch-flow"></div></div>
+      <div class="card" id="live-card" hidden><h2>Live order book snapshot</h2><p class="sub" id="live-sub"></p><div class="chart short" id="ch-live"></div></div>
+    </div>
+  </section>
+  <section class="view" id="view-backtest">
+    <p class="view-intro">Event-driven backtest on the real trades (<span class="mono">mm/backtest.py</span>): 100 ms bars, requote every 500 ms, 50 ms latency, 0.001 BTC per fill, inventory cap ±10 lots. A quote fills only when a trade prints <b>strictly beyond</b> it (pessimistic) or, in the optimistic case, <b>at</b> it. A-S uses k = 0.15 fitted on 9 Nov, so 10 Nov is out of sample, with a horizon that resets every hour.</p>
+    <div class="daybar" id="bt-bar"></div>
+    <div class="callout" id="bt-callout"></div>
+    <div class="card"><h2>Results by strategy</h2><p class="sub">P&amp;L in USDT for one day. Net P&amp;L applies the maker fee selected above to every fill.</p><div class="table-wrap"><table id="bt-table"></table></div></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h2>P&amp;L through the day</h2><p class="sub">Before fees, marked to the mid every 5 minutes.</p><div class="chart" id="ch-bt-pnl"></div></div>
+      <div class="card"><h2>Where the P&amp;L came from</h2><p class="sub">Spread capture (earned at the fill) vs inventory P&amp;L (price moves while holding). Inventory losses dominate everywhere.</p><div class="chart" id="ch-bt-attr"></div></div>
+      <div class="card"><h2>Markouts: what a fill is worth after it happens</h2><p class="sub">Average of side × (mid h seconds later − fill price), in bp. Falling below zero is adverse selection.</p><div class="chart" id="ch-bt-mk"></div></div>
+      <div class="card"><h2>Time spent at each inventory level</h2><p class="sub">Share of minutes. A-S with higher γ stays near zero; fixed spreads pile up at the cap.</p><div class="chart" id="ch-bt-inv"></div></div>
+    </div>
+  </section>
+  <section class="view" id="view-universe">
+    <p class="view-intro">Twelve Binance spot coins, sorted into tiers by <b>measured</b> USD volume per day (large &gt; $500M, mid $50–500M, small $5–50M, micro &lt; $5M). Each coin is calibrated on 9 Nov (<span class="mono">mm/calibrate.py</span>) and backtested out of sample on 10 Nov with $100 per fill and a $1,000 inventory limit. Click a column header to sort.</p>
+    <div class="daybar" id="uni-bar"></div>
+    <div class="callout" id="uni-callout"></div>
+    <div class="card"><h2>Calibration and result by coin</h2><p class="sub">Calibration from day 1. Result columns: best strategy on day 2 under the selected fill rule and fee.</p><div class="table-wrap"><table id="uni-table"></table></div></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><div class="card-head"><div><h2>Does a wider spread pay?</h2><p class="sub">P&amp;L per dollar traded vs typical spread, for one strategy across all coins.</p></div><select id="uni-strat" aria-label="Strategy"></select></div><div class="chart" id="ch-uni-scatter"></div></div>
+      <div class="card"><h2>How far fills reach, by coin</h2><p class="sub">Fill intensity vs distance from the mid in bp (log scale). Click legend entries to show or hide coins.</p><div class="chart" id="ch-uni-fill"></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><div class="card-head"><div><h2>One coin in detail</h2><p class="sub">Day-2 P&amp;L of each strategy, and markouts of its fills against random entry times (the dashed line should sit near zero).</p></div><select id="uni-coin" aria-label="Coin"></select></div>
+      <div class="grid g2"><div class="chart" id="ch-uni-pnl"></div><div class="chart" id="ch-uni-mk"></div></div></div>
+    <div class="card" style="margin-top:16px"><h2>What changes from BTC to micro caps</h2>
+      <div class="table-wrap"><table class="advice">
+        <thead><tr><th scope="col">Topic</th><th scope="col">BTC (large)</th><th scope="col">Small cap</th><th scope="col">Micro cap</th></tr></thead>
+        <tbody>
+          <tr><td>Quote size</td><td>Base units</td><td>In USD, and as a % of daily volume</td><td>Tiny: $100 can be a visible share of an hour's volume</td></tr>
+          <tr><td>Inventory limit</td><td>Easy to exit</td><td>In USD and by time to liquidate</td><td>By time to liquidate (hours); assume you cannot exit fast</td></tr>
+          <tr><td>Hedging</td><td>Perpetual futures</td><td>Sometimes a thin perp</td><td>Usually none: higher γ, larger skew</td></tr>
+          <tr><td>Price grid</td><td>Sub-bp tick, smooth skew</td><td>1–6 bp tick, skew in steps</td><td>10–30 bp tick: skew by pulling a side or by size</td></tr>
+          <tr><td>What wins</td><td>Speed and fees</td><td>Spread vs adverse selection, flow signals</td><td>Queue priority at a tick-wide spread</td></tr>
+          <tr><td>Calibration</td><td>One day is enough</td><td>Several days; core vs tail fill curve</td><td>Too few trades for k; use tick and spread</td></tr>
+          <tr><td>Volatility</td><td>Smooth intraday regimes</td><td>Jumps and pumps</td><td>Regime changes: needs a kill switch</td></tr>
+          <tr><td>Operational</td><td>Stable listing</td><td>Delistings happen</td><td>Real delisting risk: 5 of 17 candidates were gone</td></tr>
+        </tbody></table></div>
+      <p class="note">Full write-up: <span class="mono">notes/day8_small_caps.md</span>.</p></div>
+  </section>
+  <section class="view" id="view-informed">
+    <p class="view-intro">Real fills lose 1.5–10 bp within a minute while random entries lose nothing: that gap is <b>adverse selection</b>, trading against people who know more. This tab tests defences <b>walk-forward</b>: for each of 4 test days, everything is calibrated on the 3 days before it, then the strategy trades a day it has never seen. 12 coins × 4 days = 48 out-of-sample coin-days.</p>
+    <div class="levers" id="levers"></div>
+    <div class="daybar" id="inf-bar"></div>
+    <div class="callout" id="inf-callout"></div>
+    <div class="card"><h2>Every strategy over 48 out-of-sample coin-days</h2><p class="sub">Totals across all coins. "Improves" counts coins where the strategy beats the Day-8 A-S calibration.</p><div class="table-wrap"><table id="inf-table"></table></div></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h2>P&amp;L per dollar traded, coin by coin</h2><p class="sub">bp of volume over the 4 test days. Green made money; hover for USD.</p><div class="chart tall" id="ch-inf-heat"></div></div>
+      <div class="card"><h2>Is there information in the flow?</h2><p class="sub">Model fitted on 3 days, scored on the next: correlation between the predicted and the actual next-10-second move, and how often the direction was right.</p><div class="chart tall" id="ch-inf-alpha"></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><div class="card-head"><div><h2>One coin across the 4 test days</h2><p class="sub">Cumulative P&amp;L before fees, days placed end to end (dotted lines mark midnight UTC).</p></div><select id="inf-coin" aria-label="Coin"></select></div><div class="chart" id="ch-inf-curve"></div></div>
+  </section>
+  <section class="view" id="view-tuning">
+    <p class="view-intro">Days 9–10. A <b>parameter sweep</b> over 48 out-of-sample coin-days (A-S vs the infinite-horizon <b>GLFT</b> model, inventory skew, kill-switch strength), tuning that only looks at past days, the cost of slow quotes, <b>cross-asset signals</b> from BTC spot and the BTC perpetual future, and what 50 minutes of the <b>live order book</b> showed.</p>
+    <div class="callout" id="tun-callout"></div>
+    <div class="grid g2">
+      <div class="card"><div class="card-head"><div><h2>Parameter sweep</h2><p class="sub">Total over 48 coin-days. Skew 1× = max(10 bp, 2 spreads) at full inventory.</p></div>
+        <div class="btn-row" id="tun-ctl"></div></div><div class="chart" id="ch-tun-heat"></div></div>
+      <div class="card"><h2>Tuning on the past only</h2><p class="sub">Test days 2–4. Each day uses the setting that did best on the earlier test days.</p><div class="chart" id="ch-tun-tune"></div></div>
+      <div class="card"><h2>Slow quotes get picked off</h2><p class="sub">Default setting, P&amp;L per dollar traded vs requote interval and latency. Your PC measured ~285 ms to Binance.</p><div class="chart" id="ch-tun-speed"></div></div>
+      <div class="card"><h2>Do BTC and the perpetual future lead?</h2><p class="sub">Out-of-sample correlation with the next 10 s move, own flow vs adding BTC spot and BTC perp flow.</p><div class="chart" id="ch-tun-lead"></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h2>Live order book (50 minutes of BTCUSDT from the recorder)</h2><p class="sub" id="tun-book-sub"></p>
+      <div class="tiles" id="tun-book-tiles" style="margin-top:8px"></div>
+      <div class="grid g2"><div class="chart" id="ch-tun-book-corr"></div><div class="chart" id="ch-tun-book-dec"></div></div></div>
+    <p class="note">Full write-up: <span class="mono">notes/day10_tuning_signals.md</span>.</p>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="about">
+  <section class="view" id="view-about">
+    <div class="about-head"><div class="eyebrow">Quant research project · crypto market making</div>
+      <h1>Avellaneda–Stoikov Market Maker</h1>
+      <p class="lede">The 2008 Avellaneda–Stoikov model built from scratch in Python: an optimal quoting rule for a market maker who earns the spread but must control inventory risk. Replicated on simulated markets, then calibrated and backtested on real Binance trade data for twelve coins, from BTC to micro caps.</p></div>
+    <div class="chips" id="chips"></div>
+    <div class="headline" id="headline"></div>
+    <div class="prose">
+      <h2 style="margin-top:0">What this is</h2>
+      <p>A market maker posts a bid and an ask and earns the gap between them. The risk is inventory: after a run of buys you hold a position that loses money if the price falls. Avellaneda and Stoikov (2008) derive the quotes that maximise a risk-averse market maker's utility. This project implements that model from first principles, checks it against the paper, then takes it to real crypto data, where most of the paper's assumptions break.</p>
+      <h2>Method</h2>
+      <ol>
+        <li><b>Derivation.</b> Reservation price and optimal spread from the CARA utility / HJB set-up (<span class="mono">notes/derivation.md</span>).</li>
+        <li><b>Quoting engine.</b> One pure function, <span class="mono">quote(s, q, t, params)</span>, shared by the simulator, backtester and paper trader. Tick rounding and inventory caps included.</li>
+        <li><b>Paper replication.</b> Vectorised Monte Carlo of the paper's market; inventory strategy vs symmetric benchmark on common random numbers.</li>
+        <li><b>Real data.</b> Binance aggTrades downloader with checksum verification; live websocket recorder for best bid/ask.</li>
+        <li><b>Backtest.</b> Event-driven engine on 100 ms bars with latency, conservative fills, fees and an exact P&amp;L attribution (spread capture + inventory P&amp;L − fees).</li>
+        <li><b>Calibration across the market.</b> Per-coin tick, spread, σ, A and k for 12 coins from BTC to micro caps; calibrate on one day, test out of sample on the next.</li>
+        <li><b>Informed traders.</b> Walk-forward test of a flow model (trade imbalance → next 10 s) and a kill switch; losses fall 60%. The one apparent edge, on tick-constrained micro caps, did not survive the queue model (step 9).</li>
+        <li><b>Tuning and signals.</b> GLFT vs A-S, a parameter sweep tuned only on past days, the BTC perpetual future as a leading signal, and a first look at the live order book.</li>
+        <li><b>Queue model (v2).</b> An event-driven engine that models queue position at the best price, 300 ms latency and a 10 bp maker fee; a screener for tick-constrained coins (COTI, SKL, ANKR); an edge table and a self-calibrating agent that quotes only where a fill's expected net edge is positive.</li>
+        <li><b>First honest test (60 days, 13 Sep – 11 Nov 2026).</b> Once queue position is modelled, joining the best price loses on all three tick-constrained coins: −17 to −22 bp per dollar traded, at most 5% positive days, t between −4.5 and −7.2. A fill earns ~13 bp of spread, pays 10 bp of fee, then the price moves against it. See Desk &gt; P&amp;L and Execution, run "Queue baseline".</li>
+        <li><b>Gate A (pre-registered): fail.</b> After a 7-day warm-up the self-calibrating agent learned that every market state loses money and stayed out on all 53 counted days per coin, at every queue assumption. Correctly refusing a losing strategy, but no tradable edge: paper trading is not started. See Desk &gt; Model, run "Agent walk-forward".</li>
+        <li><b>Next:</b> real order-book data (recording now) so the agent can use book imbalance, then a re-test; cheaper fills (maker rebates) and a wider coin screen are the other routes to an edge.</li>
+      </ol>
+      <h2>Roadmap</h2>
+      <ol class="roadmap" id="roadmap"></ol>
+      <h2>Known limitations so far</h2>
+      <ul>
+        <li>The simulated market has no adverse selection, fees, tick size or latency, so its Sharpe ratios are far higher than anything achievable live.</li>
+        <li>Historical data has trades but no spot order book. The v2 engine models queue position on a book inferred from trades, with an assumed queue size; the live recorder will measure the real one. On the inferred book both sides show the same size, so book imbalance carries no information until real book data exists.</li>
+        <li>BTCUSDT's spread is one tick (0.01 USDT), while the calibrated A-S half-spread is several USDT, so the model as written sits far behind the best prices and is only filled by sweeps.</li>
+        <li>First real-data result: every strategy, A-S included, loses about 1.5 bp per dollar traded to adverse selection before fees. The mid is a proxy built from trades until recorded order-book data replaces it.</li>
+      </ul>
+      <h2>Reference</h2>
+      <p>Avellaneda, M. &amp; Stoikov, S. (2008). High-frequency trading in a limit order book. <i>Quantitative Finance</i>, 8(3), 217–224.</p>
+      <p class="note" id="links"></p>
+    </div>
+  </section>
+  </div>
+</main>
+
+<footer>
+  <span id="foot-author"></span>
+  <span id="foot-built"></span>
+</footer>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="data.js"></script>
+<script src="runs/index.js"></script>
+<script src="js/core.js"></script>
+<script src="js/source.js"></script>
+<script src="js/views/research.js"></script>
+<script src="js/views/overview.js"></script>
+<script src="js/views/pnl.js"></script>
+<script src="js/views/execution.js"></script>
+<script src="js/views/risk.js"></script>
+<script src="js/views/model.js"></script>
+<script src="js/views/book.js"></script>
+<script src="js/live.js"></script>
+<script src="js/views/pcstatus.js"></script>
+<script src="js/compare.js"></script>
+<script src="js/views/data.js"></script>
+<script src="js/views/signals.js"></script>
+<script src="js/views/universe.js"></script>
+<script src="js/views/simlive.js"></script>
+<script src="js/views/desk_pending.js"></script>
+<script>boot();</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+downloading https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-04.zip
+saved 1,947,034 trades (24 MB zip) -> data\futures\BTCUSDT_2026-11-04_trades.parquet
+  start_utc                2026-11-04 00:00:00.015000+00:00
+  end_utc                  2026-11-04 23:59:59.999000+00:00
+  n_trades                 1947034
+  buy_share                0.4983143591740052
+  volume_base              250597.47999999998
+  price_min                75690.2
+  price_max                81188.0
+  price_last               80466.5
+  tick_size_guess          0.1
+  trades_per_sec           22.535119913911096
+  sigma_usdt_per_sqrt_s    6.204331605736214
+  daily_vol_pct            2.3115340636872848
+downloading https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-05.zip
+saved 2,095,268 trades (25 MB zip) -> data\futures\BTCUSDT_2026-11-05_trades.parquet
+  start_utc                2026-11-05 00:00:00.003000+00:00
+  end_utc                  2026-11-05 23:59:59.951000+00:00
+  n_trades                 2095268
+  buy_share                0.4960993056735463
+  volume_base              267547.773
+  price_min                75158.0
+  price_max                80888.0
+  price_last               76050.1
+  tick_size_guess          0.1
+  trades_per_sec           24.250801632426906
+  sigma_usdt_per_sqrt_s    6.809953728686712
+  daily_vol_pct            2.597343121062331
+downloading https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-06.zip
+saved 1,464,920 trades (18 MB zip) -> data\futures\BTCUSDT_2026-11-06_trades.parquet
+  start_utc                2026-11-06 00:00:00.001000+00:00
+  end_utc                  2026-11-06 23:59:59.907000+00:00
+  n_trades                 1464920
+  buy_share                0.5032049531715043
+  volume_base              151584.803
+  price_min                74810.8
+  price_max                76381.4
+  price_last               75810.1
+  tick_size_guess          0.1
+  trades_per_sec           16.955111039125434
+  sigma_usdt_per_sqrt_s    5.431071385456245
+  daily_vol_pct            2.10716695019243
+downloading https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-07.zip
+saved 284,672 trades (4 MB zip) -> data\futures\BTCUSDT_2026-11-07_trades.parquet
+  start_utc                2026-11-07 00:00:00.009000+00:00
+  end_utc                  2026-11-07 23:59:59.017000+00:00
+  n_trades                 284672
+  buy_share                0.507917884442446
+  volume_base              33477.541
+  price_min                75526.9
+  price_max                76210.4
+  price_last               75836.0
+  tick_size_guess          0.1
+  trades_per_sec           3.294852644604438
+  sigma_usdt_per_sqrt_s    1.3196063127207842
+  daily_vol_pct            0.5114130658588624
+downloading https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-08.zip
+saved 726,372 trades (9 MB zip) -> data\futures\BTCUSDT_2026-11-08_trades.parquet
+  start_utc                2026-11-08 00:00:00.004000+00:00
+  end_utc                  2026-11-08 23:59:59.889000+00:00
+  n_trades                 726372
+  buy_share                0.5070005451751994
+  volume_base              92137.88799999999
+  price_min                73333.0
+  price_max                76168.8
+  price_last               74823.5
+  tick_size_guess          0.1
+  trades_per_sec           8.407094523331832
+  sigma_usdt_per_sqrt_s    4.098997330722829
+  daily_vol_pct            1.615551295426446
+downloading https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-09.zip
+saved 1,551,055 trades (19 MB zip) -> data\futures\BTCUSDT_2026-11-09_trades.parquet
+  start_utc                2026-11-09 00:00:00.003000+00:00
+  end_utc                  2026-11-09 23:59:59.390000+00:00
+  n_trades                 1551055
+  buy_share                0.5068060126816909
+  volume_base              164395.358
+  price_min                73715.1
+  price_max                75575.0
+  price_last               75327.0
+  tick_size_guess          0.1
+  trades_per_sec           17.952152831825067
+  sigma_usdt_per_sqrt_s    5.398570330736558
+  daily_vol_pct            2.123946563711069
+downloading https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-10.zip
+saved 1,521,662 trades (18 MB zip) -> data\futures\BTCUSDT_2026-11-10_trades.parquet
+  start_utc                2026-11-10 00:00:00.007000+00:00
+  end_utc                  2026-11-10 23:59:59.871000+00:00
+  n_trades                 1521662
+  buy_share                0.497817517950767
+  volume_base              167583.17099999997
+  price_min                72691.0
+  price_max                75411.0
+  price_last               73762.9
+  tick_size_guess          0.1
+  trades_per_sec           17.6118564260703
+  sigma_usdt_per_sqrt_s    5.6666275439593345
+  daily_vol_pct            2.2554579125464578
+=== DONE === 

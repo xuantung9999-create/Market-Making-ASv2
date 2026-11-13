@@ -1,0 +1,70 @@
+=== Day 5 run 12-Nov-26  2:05:28.25 === 
+[python] 
+Python 3.13.5
+[creating .venv] 
+[pip install] 
+
+[notice] A new release of pip is available: 25.1.1 -> 26.3
+[notice] To update, run: C:\Users\Hi\Desktop\voranoi\Market-Making-AS\Market-Making-AS\.venv\Scripts\python.exe -m pip install --upgrade pip
+[pytest] 
+.......................................                                  [100%]
+39 passed in 5.83s
+[download] 
+downloading https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-09.zip
+saved 908,615 trades (13 MB zip) -> data\BTCUSDT_2026-11-09_trades.parquet
+  start_utc                2026-11-09 00:00:00.183637+00:00
+  end_utc                  2026-11-09 23:59:59.551814+00:00
+  n_trades                 908615
+  buy_share                0.5655618716398034
+  volume_base              15687.17026
+  price_min                73750.0
+  price_max                75599.22
+  price_last               75368.41
+  tick_size_guess          0.01
+  trades_per_sec           10.516454219185812
+  sigma_usdt_per_sqrt_s    4.564149692863282
+  daily_vol_pct            1.79512830603349
+downloading https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-11-10.zip
+saved 937,360 trades (14 MB zip) -> data\BTCUSDT_2026-11-10_trades.parquet
+  start_utc                2026-11-10 00:00:00.075986+00:00
+  end_utc                  2026-11-10 23:59:59.870234+00:00
+  n_trades                 937360
+  buy_share                0.5499061193138175
+  volume_base              16466.18383
+  price_min                72727.27
+  price_max                75442.01
+  price_last               73796.06
+  tick_size_guess          0.01
+  trades_per_sec           10.849099910000053
+  sigma_usdt_per_sqrt_s    5.252110404000686
+  daily_vol_pct            2.089885546420558
+[explore 2026-11-09] 
+  start_utc                2026-11-09 00:00:00.183637+00:00
+  end_utc                  2026-11-09 23:59:59.551814+00:00
+  n_trades                 908615
+  buy_share                0.5655618716398034
+  volume_base              15687.17026
+  price_min                73750.0
+  price_max                75599.22
+  price_last               75368.41
+  tick_size_guess          0.01
+  trades_per_sec           10.516454219185812
+  sigma_usdt_per_sqrt_s    4.564149692863282
+  daily_vol_pct            1.79512830603349
+saved results\day5_BTCUSDT_2026-11-09_overview.png
+[explore 2026-11-10] 
+  start_utc                2026-11-10 00:00:00.075986+00:00
+  end_utc                  2026-11-10 23:59:59.870234+00:00
+  n_trades                 937360
+  buy_share                0.5499061193138175
+  volume_base              16466.18383
+  price_min                72727.27
+  price_max                75442.01
+  price_last               73796.06
+  tick_size_guess          0.01
+  trades_per_sec           10.849099910000053
+  sigma_usdt_per_sqrt_s    5.252110404000686
+  daily_vol_pct            2.089885546420558
+saved results\day5_BTCUSDT_2026-11-10_overview.png
+[starting recorder in a new window] 
+=== DONE  2:09:10.36 === 

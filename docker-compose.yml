@@ -1,0 +1,44 @@
+# docker compose up dashboard           -> http://localhost:8000/dashboard/index.html
+# docker compose run --rm tests         -> run the test suite
+# docker compose up -d recorder         -> record live order books in the background
+# docker compose run --rm mm module scripts.plot_quotes   -> run any script
+# docker compose up testnet             -> testnet trader (needs .env with testnet keys)
+
+x-common: &common
+  build: .
+  image: mm-as:latest
+  volumes:
+    - ./data:/app/data
+    - ./results:/app/results
+    - ./config:/app/config
+
+services:
+  dashboard:
+    <<: *common
+    command: ["dashboard"]
+    ports:
+      - "8000:8000"
+
+  tests:
+    <<: *common
+    command: ["test"]
+    profiles: ["tools"]
+
+  recorder:
+    <<: *common
+    command: ["recorder"]
+    restart: unless-stopped
+    profiles: ["live"]
+
+  testnet:
+    <<: *common
+    command: ["module", "mm.testnet", "--symbols", "BTCUSDT", "--policy", "join"]
+    env_file:
+      - path: .env
+        required: false
+    stop_grace_period: 30s          # time to cancel open orders on stop
+    profiles: ["live"]
+
+  mm:
+    <<: *common
+    profiles: ["tools"]

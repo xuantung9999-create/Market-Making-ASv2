@@ -1,0 +1,599 @@
+=== download_history 12-Nov-26 18:37:12.89 === 
+[download] 
+12 symbols x 60 days (2026-09-13 .. 2026-11-11)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-19.zip
+saved 136,341 trades (2 MB zip) -> data\INJUSDT_2026-10-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-20.zip
+saved 128,639 trades (2 MB zip) -> data\INJUSDT_2026-10-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-21.zip
+saved 113,553 trades (2 MB zip) -> data\INJUSDT_2026-10-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-22.zip
+saved 108,143 trades (2 MB zip) -> data\INJUSDT_2026-10-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-23.zip
+saved 76,961 trades (1 MB zip) -> data\INJUSDT_2026-10-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-24.zip
+saved 48,926 trades (1 MB zip) -> data\INJUSDT_2026-10-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-25.zip
+saved 59,613 trades (1 MB zip) -> data\INJUSDT_2026-10-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-26.zip
+saved 77,424 trades (1 MB zip) -> data\INJUSDT_2026-10-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-27.zip
+saved 62,524 trades (1 MB zip) -> data\INJUSDT_2026-10-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-28.zip
+saved 79,751 trades (1 MB zip) -> data\INJUSDT_2026-10-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-29.zip
+saved 159,019 trades (2 MB zip) -> data\INJUSDT_2026-10-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-30.zip
+saved 84,056 trades (1 MB zip) -> data\INJUSDT_2026-10-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-10-31.zip
+saved 40,103 trades (1 MB zip) -> data\INJUSDT_2026-10-31_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-11-01.zip
+saved 26,632 trades (0 MB zip) -> data\INJUSDT_2026-11-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-11-02.zip
+saved 51,003 trades (1 MB zip) -> data\INJUSDT_2026-11-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-11-03.zip
+saved 43,626 trades (1 MB zip) -> data\INJUSDT_2026-11-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-11-11.zip
+saved 116,141 trades (2 MB zip) -> data\INJUSDT_2026-11-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-13.zip
+saved 29,809 trades (0 MB zip) -> data\IOTXUSDT_2026-09-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-14.zip
+saved 14,537 trades (0 MB zip) -> data\IOTXUSDT_2026-09-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-15.zip
+saved 3,762 trades (0 MB zip) -> data\IOTXUSDT_2026-09-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-16.zip
+saved 3,685 trades (0 MB zip) -> data\IOTXUSDT_2026-09-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-17.zip
+saved 2,339 trades (0 MB zip) -> data\IOTXUSDT_2026-09-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-18.zip
+saved 4,955 trades (0 MB zip) -> data\IOTXUSDT_2026-09-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-19.zip
+saved 7,511 trades (0 MB zip) -> data\IOTXUSDT_2026-09-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-20.zip
+saved 10,336 trades (0 MB zip) -> data\IOTXUSDT_2026-09-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-21.zip
+saved 11,577 trades (0 MB zip) -> data\IOTXUSDT_2026-09-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-22.zip
+saved 19,707 trades (0 MB zip) -> data\IOTXUSDT_2026-09-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-23.zip
+saved 13,605 trades (0 MB zip) -> data\IOTXUSDT_2026-09-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-24.zip
+saved 3,987 trades (0 MB zip) -> data\IOTXUSDT_2026-09-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-25.zip
+saved 3,649 trades (0 MB zip) -> data\IOTXUSDT_2026-09-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-26.zip
+saved 2,937 trades (0 MB zip) -> data\IOTXUSDT_2026-09-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-27.zip
+saved 4,365 trades (0 MB zip) -> data\IOTXUSDT_2026-09-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-28.zip
+saved 3,067 trades (0 MB zip) -> data\IOTXUSDT_2026-09-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-29.zip
+saved 2,493 trades (0 MB zip) -> data\IOTXUSDT_2026-09-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-09-30.zip
+saved 2,213 trades (0 MB zip) -> data\IOTXUSDT_2026-09-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-01.zip
+saved 2,055 trades (0 MB zip) -> data\IOTXUSDT_2026-10-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-02.zip
+saved 2,871 trades (0 MB zip) -> data\IOTXUSDT_2026-10-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-03.zip
+saved 1,662 trades (0 MB zip) -> data\IOTXUSDT_2026-10-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-04.zip
+saved 4,822 trades (0 MB zip) -> data\IOTXUSDT_2026-10-04_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-05.zip
+saved 2,236 trades (0 MB zip) -> data\IOTXUSDT_2026-10-05_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-06.zip
+saved 8,779 trades (0 MB zip) -> data\IOTXUSDT_2026-10-06_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-07.zip
+saved 6,365 trades (0 MB zip) -> data\IOTXUSDT_2026-10-07_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-08.zip
+saved 7,357 trades (0 MB zip) -> data\IOTXUSDT_2026-10-08_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-09.zip
+saved 3,357 trades (0 MB zip) -> data\IOTXUSDT_2026-10-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-10.zip
+saved 2,367 trades (0 MB zip) -> data\IOTXUSDT_2026-10-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-11.zip
+saved 1,374 trades (0 MB zip) -> data\IOTXUSDT_2026-10-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-12.zip
+saved 12,188 trades (0 MB zip) -> data\IOTXUSDT_2026-10-12_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-13.zip
+saved 5,663 trades (0 MB zip) -> data\IOTXUSDT_2026-10-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-14.zip
+saved 11,919 trades (0 MB zip) -> data\IOTXUSDT_2026-10-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-15.zip
+saved 10,365 trades (0 MB zip) -> data\IOTXUSDT_2026-10-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-16.zip
+saved 6,597 trades (0 MB zip) -> data\IOTXUSDT_2026-10-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-17.zip
+saved 4,189 trades (0 MB zip) -> data\IOTXUSDT_2026-10-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-18.zip
+saved 10,836 trades (0 MB zip) -> data\IOTXUSDT_2026-10-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-19.zip
+saved 5,514 trades (0 MB zip) -> data\IOTXUSDT_2026-10-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-20.zip
+saved 3,070 trades (0 MB zip) -> data\IOTXUSDT_2026-10-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-21.zip
+saved 13,370 trades (0 MB zip) -> data\IOTXUSDT_2026-10-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-22.zip
+saved 40,983 trades (1 MB zip) -> data\IOTXUSDT_2026-10-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-23.zip
+saved 6,390 trades (0 MB zip) -> data\IOTXUSDT_2026-10-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-24.zip
+saved 3,521 trades (0 MB zip) -> data\IOTXUSDT_2026-10-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-25.zip
+saved 2,534 trades (0 MB zip) -> data\IOTXUSDT_2026-10-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-26.zip
+saved 4,223 trades (0 MB zip) -> data\IOTXUSDT_2026-10-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-27.zip
+saved 3,306 trades (0 MB zip) -> data\IOTXUSDT_2026-10-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-28.zip
+saved 1,146 trades (0 MB zip) -> data\IOTXUSDT_2026-10-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-29.zip
+saved 6,099 trades (0 MB zip) -> data\IOTXUSDT_2026-10-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-30.zip
+saved 6,830 trades (0 MB zip) -> data\IOTXUSDT_2026-10-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-10-31.zip
+saved 1,949 trades (0 MB zip) -> data\IOTXUSDT_2026-10-31_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-11-01.zip
+saved 4,523 trades (0 MB zip) -> data\IOTXUSDT_2026-11-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-11-02.zip
+saved 2,072 trades (0 MB zip) -> data\IOTXUSDT_2026-11-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-11-03.zip
+saved 1,294 trades (0 MB zip) -> data\IOTXUSDT_2026-11-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-11-11.zip
+saved 2,022 trades (0 MB zip) -> data\IOTXUSDT_2026-11-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-13.zip
+saved 43,491 trades (1 MB zip) -> data\NEARUSDT_2026-09-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-14.zip
+saved 74,490 trades (1 MB zip) -> data\NEARUSDT_2026-09-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-15.zip
+saved 62,918 trades (1 MB zip) -> data\NEARUSDT_2026-09-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-16.zip
+saved 123,292 trades (2 MB zip) -> data\NEARUSDT_2026-09-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-17.zip
+saved 260,016 trades (4 MB zip) -> data\NEARUSDT_2026-09-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-18.zip
+saved 613,357 trades (10 MB zip) -> data\NEARUSDT_2026-09-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-19.zip
+saved 258,151 trades (4 MB zip) -> data\NEARUSDT_2026-09-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-20.zip
+saved 403,550 trades (7 MB zip) -> data\NEARUSDT_2026-09-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-21.zip
+saved 549,933 trades (9 MB zip) -> data\NEARUSDT_2026-09-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-22.zip
+saved 612,438 trades (10 MB zip) -> data\NEARUSDT_2026-09-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-23.zip
+saved 1,334,887 trades (20 MB zip) -> data\NEARUSDT_2026-09-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-24.zip
+saved 349,212 trades (6 MB zip) -> data\NEARUSDT_2026-09-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-25.zip
+saved 326,739 trades (5 MB zip) -> data\NEARUSDT_2026-09-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-26.zip
+saved 165,719 trades (3 MB zip) -> data\NEARUSDT_2026-09-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-27.zip
+saved 295,381 trades (5 MB zip) -> data\NEARUSDT_2026-09-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-28.zip
+saved 308,543 trades (5 MB zip) -> data\NEARUSDT_2026-09-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-29.zip
+saved 301,027 trades (5 MB zip) -> data\NEARUSDT_2026-09-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-09-30.zip
+saved 317,603 trades (5 MB zip) -> data\NEARUSDT_2026-09-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-01.zip
+saved 299,908 trades (5 MB zip) -> data\NEARUSDT_2026-10-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-02.zip
+saved 226,762 trades (4 MB zip) -> data\NEARUSDT_2026-10-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-03.zip
+saved 90,500 trades (1 MB zip) -> data\NEARUSDT_2026-10-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-04.zip
+saved 116,915 trades (2 MB zip) -> data\NEARUSDT_2026-10-04_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-05.zip
+saved 181,620 trades (3 MB zip) -> data\NEARUSDT_2026-10-05_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-06.zip
+saved 147,335 trades (2 MB zip) -> data\NEARUSDT_2026-10-06_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-07.zip
+saved 246,923 trades (4 MB zip) -> data\NEARUSDT_2026-10-07_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-08.zip
+saved 408,562 trades (6 MB zip) -> data\NEARUSDT_2026-10-08_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-09.zip
+saved 182,516 trades (3 MB zip) -> data\NEARUSDT_2026-10-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-10.zip
+saved 181,719 trades (3 MB zip) -> data\NEARUSDT_2026-10-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-11.zip
+saved 214,731 trades (3 MB zip) -> data\NEARUSDT_2026-10-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-12.zip
+saved 300,903 trades (5 MB zip) -> data\NEARUSDT_2026-10-12_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-13.zip
+saved 340,722 trades (5 MB zip) -> data\NEARUSDT_2026-10-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-14.zip
+saved 216,273 trades (4 MB zip) -> data\NEARUSDT_2026-10-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-15.zip
+saved 295,942 trades (5 MB zip) -> data\NEARUSDT_2026-10-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-16.zip
+saved 209,960 trades (3 MB zip) -> data\NEARUSDT_2026-10-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-17.zip
+saved 106,436 trades (2 MB zip) -> data\NEARUSDT_2026-10-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-18.zip
+saved 123,493 trades (2 MB zip) -> data\NEARUSDT_2026-10-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-19.zip
+saved 139,480 trades (2 MB zip) -> data\NEARUSDT_2026-10-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-20.zip
+saved 219,605 trades (4 MB zip) -> data\NEARUSDT_2026-10-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-21.zip
+saved 240,003 trades (4 MB zip) -> data\NEARUSDT_2026-10-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-22.zip
+saved 167,309 trades (3 MB zip) -> data\NEARUSDT_2026-10-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-23.zip
+saved 175,168 trades (3 MB zip) -> data\NEARUSDT_2026-10-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-24.zip
+saved 155,530 trades (2 MB zip) -> data\NEARUSDT_2026-10-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-25.zip
+saved 92,682 trades (2 MB zip) -> data\NEARUSDT_2026-10-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-26.zip
+saved 114,088 trades (2 MB zip) -> data\NEARUSDT_2026-10-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-27.zip
+saved 103,077 trades (2 MB zip) -> data\NEARUSDT_2026-10-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-28.zip
+saved 95,127 trades (2 MB zip) -> data\NEARUSDT_2026-10-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-29.zip
+saved 270,994 trades (4 MB zip) -> data\NEARUSDT_2026-10-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-30.zip
+saved 284,765 trades (4 MB zip) -> data\NEARUSDT_2026-10-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-10-31.zip
+saved 76,891 trades (1 MB zip) -> data\NEARUSDT_2026-10-31_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-11-01.zip
+saved 53,868 trades (1 MB zip) -> data\NEARUSDT_2026-11-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-11-02.zip
+saved 113,865 trades (2 MB zip) -> data\NEARUSDT_2026-11-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-11-03.zip
+saved 82,733 trades (1 MB zip) -> data\NEARUSDT_2026-11-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-11-11.zip
+saved 109,334 trades (2 MB zip) -> data\NEARUSDT_2026-11-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-13.zip
+saved 4,662 trades (0 MB zip) -> data\ONEUSDT_2026-09-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-14.zip
+saved 5,108 trades (0 MB zip) -> data\ONEUSDT_2026-09-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-15.zip
+saved 9,070 trades (0 MB zip) -> data\ONEUSDT_2026-09-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-16.zip
+saved 44,720 trades (1 MB zip) -> data\ONEUSDT_2026-09-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-17.zip
+saved 394,134 trades (7 MB zip) -> data\ONEUSDT_2026-09-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-18.zip
+saved 340,720 trades (6 MB zip) -> data\ONEUSDT_2026-09-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-19.zip
+saved 801,089 trades (13 MB zip) -> data\ONEUSDT_2026-09-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-20.zip
+saved 687,900 trades (11 MB zip) -> data\ONEUSDT_2026-09-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-21.zip
+saved 657,798 trades (11 MB zip) -> data\ONEUSDT_2026-09-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-22.zip
+saved 388,714 trades (6 MB zip) -> data\ONEUSDT_2026-09-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-23.zip
+saved 170,311 trades (3 MB zip) -> data\ONEUSDT_2026-09-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-24.zip
+saved 148,278 trades (2 MB zip) -> data\ONEUSDT_2026-09-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-25.zip
+saved 123,608 trades (2 MB zip) -> data\ONEUSDT_2026-09-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-26.zip
+saved 60,614 trades (1 MB zip) -> data\ONEUSDT_2026-09-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-27.zip
+saved 94,122 trades (2 MB zip) -> data\ONEUSDT_2026-09-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-28.zip
+saved 145,326 trades (2 MB zip) -> data\ONEUSDT_2026-09-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-29.zip
+saved 57,091 trades (1 MB zip) -> data\ONEUSDT_2026-09-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-09-30.zip
+saved 39,234 trades (1 MB zip) -> data\ONEUSDT_2026-09-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-01.zip
+saved 41,096 trades (1 MB zip) -> data\ONEUSDT_2026-10-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-02.zip
+saved 37,268 trades (1 MB zip) -> data\ONEUSDT_2026-10-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-03.zip
+saved 185,868 trades (3 MB zip) -> data\ONEUSDT_2026-10-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-04.zip
+saved 43,997 trades (1 MB zip) -> data\ONEUSDT_2026-10-04_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-05.zip
+saved 25,516 trades (0 MB zip) -> data\ONEUSDT_2026-10-05_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-06.zip
+saved 19,187 trades (0 MB zip) -> data\ONEUSDT_2026-10-06_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-07.zip
+saved 27,847 trades (0 MB zip) -> data\ONEUSDT_2026-10-07_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-08.zip
+saved 29,951 trades (1 MB zip) -> data\ONEUSDT_2026-10-08_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-09.zip
+saved 24,459 trades (0 MB zip) -> data\ONEUSDT_2026-10-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-10.zip
+saved 13,591 trades (0 MB zip) -> data\ONEUSDT_2026-10-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-11.zip
+saved 15,806 trades (0 MB zip) -> data\ONEUSDT_2026-10-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-12.zip
+saved 17,972 trades (0 MB zip) -> data\ONEUSDT_2026-10-12_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-13.zip
+saved 70,802 trades (1 MB zip) -> data\ONEUSDT_2026-10-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-14.zip
+saved 57,771 trades (1 MB zip) -> data\ONEUSDT_2026-10-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-15.zip
+saved 30,234 trades (0 MB zip) -> data\ONEUSDT_2026-10-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-16.zip
+saved 19,718 trades (0 MB zip) -> data\ONEUSDT_2026-10-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-17.zip
+saved 19,386 trades (0 MB zip) -> data\ONEUSDT_2026-10-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-18.zip
+saved 14,461 trades (0 MB zip) -> data\ONEUSDT_2026-10-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-19.zip
+saved 9,434 trades (0 MB zip) -> data\ONEUSDT_2026-10-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-20.zip
+saved 15,524 trades (0 MB zip) -> data\ONEUSDT_2026-10-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-21.zip
+saved 21,716 trades (0 MB zip) -> data\ONEUSDT_2026-10-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-22.zip
+saved 18,116 trades (0 MB zip) -> data\ONEUSDT_2026-10-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-23.zip
+saved 24,041 trades (0 MB zip) -> data\ONEUSDT_2026-10-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-24.zip
+saved 8,376 trades (0 MB zip) -> data\ONEUSDT_2026-10-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-25.zip
+saved 6,003 trades (0 MB zip) -> data\ONEUSDT_2026-10-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-26.zip
+saved 9,704 trades (0 MB zip) -> data\ONEUSDT_2026-10-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-27.zip
+saved 11,006 trades (0 MB zip) -> data\ONEUSDT_2026-10-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-28.zip
+saved 14,131 trades (0 MB zip) -> data\ONEUSDT_2026-10-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-29.zip
+saved 17,718 trades (0 MB zip) -> data\ONEUSDT_2026-10-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-30.zip
+saved 8,350 trades (0 MB zip) -> data\ONEUSDT_2026-10-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-10-31.zip
+saved 5,134 trades (0 MB zip) -> data\ONEUSDT_2026-10-31_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-11-01.zip
+saved 3,158 trades (0 MB zip) -> data\ONEUSDT_2026-11-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-11-02.zip
+saved 8,429 trades (0 MB zip) -> data\ONEUSDT_2026-11-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-11-03.zip
+saved 4,247 trades (0 MB zip) -> data\ONEUSDT_2026-11-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-11-11.zip
+saved 75,244 trades (1 MB zip) -> data\ONEUSDT_2026-11-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-13.zip
+saved 3,317 trades (0 MB zip) -> data\SKLUSDT_2026-09-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-14.zip
+saved 2,352 trades (0 MB zip) -> data\SKLUSDT_2026-09-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-15.zip
+saved 3,929 trades (0 MB zip) -> data\SKLUSDT_2026-09-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-16.zip
+saved 2,210 trades (0 MB zip) -> data\SKLUSDT_2026-09-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-17.zip
+saved 3,685 trades (0 MB zip) -> data\SKLUSDT_2026-09-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-18.zip
+saved 3,816 trades (0 MB zip) -> data\SKLUSDT_2026-09-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-19.zip
+saved 39,731 trades (1 MB zip) -> data\SKLUSDT_2026-09-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-20.zip
+saved 43,064 trades (1 MB zip) -> data\SKLUSDT_2026-09-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-21.zip
+saved 10,876 trades (0 MB zip) -> data\SKLUSDT_2026-09-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-22.zip
+saved 5,146 trades (0 MB zip) -> data\SKLUSDT_2026-09-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-23.zip
+saved 5,126 trades (0 MB zip) -> data\SKLUSDT_2026-09-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-24.zip
+saved 4,499 trades (0 MB zip) -> data\SKLUSDT_2026-09-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-25.zip
+saved 5,556 trades (0 MB zip) -> data\SKLUSDT_2026-09-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-26.zip
+saved 3,421 trades (0 MB zip) -> data\SKLUSDT_2026-09-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-27.zip
+saved 2,575 trades (0 MB zip) -> data\SKLUSDT_2026-09-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-28.zip
+saved 2,494 trades (0 MB zip) -> data\SKLUSDT_2026-09-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-29.zip
+saved 5,246 trades (0 MB zip) -> data\SKLUSDT_2026-09-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-09-30.zip
+saved 3,761 trades (0 MB zip) -> data\SKLUSDT_2026-09-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-01.zip
+saved 5,836 trades (0 MB zip) -> data\SKLUSDT_2026-10-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-02.zip
+saved 3,188 trades (0 MB zip) -> data\SKLUSDT_2026-10-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-03.zip
+saved 2,101 trades (0 MB zip) -> data\SKLUSDT_2026-10-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-04.zip
+saved 2,773 trades (0 MB zip) -> data\SKLUSDT_2026-10-04_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-05.zip
+saved 10,507 trades (0 MB zip) -> data\SKLUSDT_2026-10-05_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-06.zip
+saved 5,101 trades (0 MB zip) -> data\SKLUSDT_2026-10-06_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-07.zip
+saved 4,005 trades (0 MB zip) -> data\SKLUSDT_2026-10-07_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-08.zip
+saved 75,238 trades (1 MB zip) -> data\SKLUSDT_2026-10-08_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-09.zip
+saved 44,052 trades (1 MB zip) -> data\SKLUSDT_2026-10-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-10.zip
+saved 11,319 trades (0 MB zip) -> data\SKLUSDT_2026-10-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-11.zip
+saved 4,891 trades (0 MB zip) -> data\SKLUSDT_2026-10-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-12.zip
+saved 36,944 trades (1 MB zip) -> data\SKLUSDT_2026-10-12_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-13.zip
+saved 24,562 trades (0 MB zip) -> data\SKLUSDT_2026-10-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-14.zip
+saved 7,363 trades (0 MB zip) -> data\SKLUSDT_2026-10-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-15.zip
+saved 5,602 trades (0 MB zip) -> data\SKLUSDT_2026-10-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-16.zip
+saved 4,058 trades (0 MB zip) -> data\SKLUSDT_2026-10-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-17.zip
+saved 10,233 trades (0 MB zip) -> data\SKLUSDT_2026-10-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-18.zip
+saved 5,320 trades (0 MB zip) -> data\SKLUSDT_2026-10-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-19.zip
+saved 7,722 trades (0 MB zip) -> data\SKLUSDT_2026-10-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-20.zip
+saved 5,744 trades (0 MB zip) -> data\SKLUSDT_2026-10-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-21.zip
+saved 3,185 trades (0 MB zip) -> data\SKLUSDT_2026-10-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-22.zip
+saved 3,469 trades (0 MB zip) -> data\SKLUSDT_2026-10-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-23.zip
+saved 2,856 trades (0 MB zip) -> data\SKLUSDT_2026-10-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-24.zip
+saved 2,983 trades (0 MB zip) -> data\SKLUSDT_2026-10-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-25.zip
+saved 6,664 trades (0 MB zip) -> data\SKLUSDT_2026-10-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-26.zip
+saved 1,758 trades (0 MB zip) -> data\SKLUSDT_2026-10-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-27.zip
+saved 1,710 trades (0 MB zip) -> data\SKLUSDT_2026-10-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-28.zip
+saved 1,832 trades (0 MB zip) -> data\SKLUSDT_2026-10-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-29.zip
+saved 3,773 trades (0 MB zip) -> data\SKLUSDT_2026-10-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-30.zip
+saved 6,486 trades (0 MB zip) -> data\SKLUSDT_2026-10-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-10-31.zip
+saved 6,387 trades (0 MB zip) -> data\SKLUSDT_2026-10-31_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-11-01.zip
+saved 4,279 trades (0 MB zip) -> data\SKLUSDT_2026-11-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-11-02.zip
+saved 4,134 trades (0 MB zip) -> data\SKLUSDT_2026-11-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-11-03.zip
+saved 2,555 trades (0 MB zip) -> data\SKLUSDT_2026-11-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-11-11.zip
+saved 2,210 trades (0 MB zip) -> data\SKLUSDT_2026-11-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-13.zip
+saved 117,422 trades (2 MB zip) -> data\SOLUSDT_2026-09-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-14.zip
+saved 216,737 trades (4 MB zip) -> data\SOLUSDT_2026-09-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-15.zip
+saved 246,785 trades (4 MB zip) -> data\SOLUSDT_2026-09-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-16.zip
+saved 168,766 trades (3 MB zip) -> data\SOLUSDT_2026-09-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-17.zip
+saved 172,677 trades (3 MB zip) -> data\SOLUSDT_2026-09-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-18.zip
+saved 341,438 trades (6 MB zip) -> data\SOLUSDT_2026-09-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-19.zip
+saved 212,865 trades (4 MB zip) -> data\SOLUSDT_2026-09-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-20.zip
+saved 207,304 trades (4 MB zip) -> data\SOLUSDT_2026-09-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-21.zip
+saved 342,455 trades (6 MB zip) -> data\SOLUSDT_2026-09-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-22.zip
+saved 249,855 trades (4 MB zip) -> data\SOLUSDT_2026-09-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-23.zip
+saved 363,126 trades (6 MB zip) -> data\SOLUSDT_2026-09-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-24.zip
+saved 202,266 trades (4 MB zip) -> data\SOLUSDT_2026-09-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-25.zip
+saved 300,642 trades (5 MB zip) -> data\SOLUSDT_2026-09-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-26.zip
+saved 142,070 trades (2 MB zip) -> data\SOLUSDT_2026-09-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-27.zip
+saved 196,478 trades (3 MB zip) -> data\SOLUSDT_2026-09-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-28.zip
+saved 204,392 trades (4 MB zip) -> data\SOLUSDT_2026-09-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-29.zip
+saved 201,919 trades (4 MB zip) -> data\SOLUSDT_2026-09-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-09-30.zip
+saved 241,643 trades (4 MB zip) -> data\SOLUSDT_2026-09-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-01.zip
+saved 157,510 trades (3 MB zip) -> data\SOLUSDT_2026-10-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-02.zip
+saved 275,306 trades (5 MB zip) -> data\SOLUSDT_2026-10-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-03.zip
+saved 80,089 trades (1 MB zip) -> data\SOLUSDT_2026-10-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-04.zip
+saved 95,997 trades (2 MB zip) -> data\SOLUSDT_2026-10-04_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-05.zip
+saved 139,576 trades (2 MB zip) -> data\SOLUSDT_2026-10-05_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-06.zip
+saved 133,325 trades (2 MB zip) -> data\SOLUSDT_2026-10-06_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-07.zip
+saved 203,527 trades (3 MB zip) -> data\SOLUSDT_2026-10-07_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-08.zip
+saved 257,295 trades (5 MB zip) -> data\SOLUSDT_2026-10-08_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-09.zip
+saved 136,793 trades (2 MB zip) -> data\SOLUSDT_2026-10-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-10.zip
+saved 69,656 trades (1 MB zip) -> data\SOLUSDT_2026-10-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-11.zip
+saved 97,804 trades (2 MB zip) -> data\SOLUSDT_2026-10-11_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-12.zip
+saved 160,896 trades (3 MB zip) -> data\SOLUSDT_2026-10-12_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-13.zip
+saved 211,411 trades (4 MB zip) -> data\SOLUSDT_2026-10-13_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-14.zip
+saved 162,011 trades (3 MB zip) -> data\SOLUSDT_2026-10-14_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-15.zip
+saved 215,377 trades (4 MB zip) -> data\SOLUSDT_2026-10-15_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-16.zip
+saved 209,509 trades (3 MB zip) -> data\SOLUSDT_2026-10-16_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-17.zip
+saved 103,263 trades (2 MB zip) -> data\SOLUSDT_2026-10-17_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-18.zip
+saved 134,009 trades (2 MB zip) -> data\SOLUSDT_2026-10-18_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-19.zip
+saved 131,526 trades (2 MB zip) -> data\SOLUSDT_2026-10-19_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-20.zip
+saved 147,170 trades (3 MB zip) -> data\SOLUSDT_2026-10-20_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-21.zip
+saved 133,125 trades (2 MB zip) -> data\SOLUSDT_2026-10-21_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-22.zip
+saved 139,175 trades (2 MB zip) -> data\SOLUSDT_2026-10-22_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-23.zip
+saved 148,818 trades (3 MB zip) -> data\SOLUSDT_2026-10-23_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-24.zip
+saved 165,041 trades (3 MB zip) -> data\SOLUSDT_2026-10-24_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-25.zip
+saved 81,453 trades (1 MB zip) -> data\SOLUSDT_2026-10-25_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-26.zip
+saved 188,161 trades (3 MB zip) -> data\SOLUSDT_2026-10-26_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-27.zip
+saved 157,078 trades (3 MB zip) -> data\SOLUSDT_2026-10-27_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-28.zip
+saved 158,629 trades (3 MB zip) -> data\SOLUSDT_2026-10-28_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-29.zip
+saved 334,223 trades (5 MB zip) -> data\SOLUSDT_2026-10-29_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-30.zip
+saved 285,663 trades (5 MB zip) -> data\SOLUSDT_2026-10-30_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-10-31.zip
+saved 79,043 trades (1 MB zip) -> data\SOLUSDT_2026-10-31_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-11-01.zip
+saved 81,343 trades (1 MB zip) -> data\SOLUSDT_2026-11-01_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-11-02.zip
+saved 178,054 trades (3 MB zip) -> data\SOLUSDT_2026-11-02_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-11-03.zip
+saved 99,527 trades (2 MB zip) -> data\SOLUSDT_2026-11-03_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-11-11.zip
+saved 122,253 trades (2 MB zip) -> data\SOLUSDT_2026-11-11_trades.parquet
+
+days present per symbol
+  ANKRUSDT      60 / 60
+  ARBUSDT       60 / 60
+  BTCUSDT       60 / 60
+  CELRUSDT      60 / 60
+  COTIUSDT      60 / 60
+  DOGEUSDT      60 / 60
+  INJUSDT       60 / 60
+  IOTXUSDT      60 / 60
+  NEARUSDT      60 / 60
+  ONEUSDT       60 / 60
+  SKLUSDT       60 / 60
+  SOLUSDT       60 / 60
+[screen] 
+  symbol  days  tick_bp_med  spread_ticks_med   usd_volume_med  trades_per_sec_med  constrained
+COTIUSDT     7        10.42              1.00       581,427.02                0.05         True
+ANKRUSDT     7        25.71              1.00       222,535.71                0.03         True
+ SKLUSDT     7        27.17              1.00       197,678.78                0.03         True
+ BTCUSDT     7         0.00              1.00 1,194,383,288.48               10.52        False
+ SOLUSDT     7         1.13              1.00   154,839,836.03                1.42        False
+NEARUSDT     7         2.70              1.00    65,393,007.69                1.23        False
+DOGEUSDT     7         1.44              1.00    33,819,918.34                0.90        False
+ ONEUSDT     7         5.79              1.00    20,292,941.08                1.75        False
+ ARBUSDT     7         6.00              1.00    16,081,519.41                0.47        False
+ INJUSDT     7         1.23              1.00    14,589,926.90                1.18        False
+CELRUSDT     7         4.16              1.00       527,579.15                0.10        False
+IOTXUSDT     7         3.38              7.00        92,883.36                0.02        False
+
+v2 universe (constrained): COTIUSDT, ANKRUSDT, SKLUSDT
+saved -> results/screen.csv
+=== DONE 18:44:08.14 === 

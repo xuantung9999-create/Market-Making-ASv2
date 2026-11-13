@@ -1,0 +1,64 @@
+{
+  "coin_days": 0,
+  "min_fills": 20,
+  "checks": {
+    "1_mean_daily_net_pos_and_t_gt_3": {
+      "mean_daily_net_usd": NaN,
+      "t": NaN,
+      "pass": false
+    },
+    "2_three_symbols_positive": {
+      "positive_symbols": 0,
+      "per_symbol": {},
+      "pass": false
+    },
+    "3_share_positive_ge_60pct": {
+      "share_positive": NaN,
+      "pass": false
+    },
+    "4_stress_queue_mean_pos": {
+      "mean_daily_net_usd_q2": NaN,
+      "pass": false
+    },
+    "5_agent_beats_join_touch": {
+      "agent_total": 0.0,
+      "join_touch_total": 0.0,
+      "pass": false
+    }
+  },
+  "conditions": [
+    {
+      "id": "A1",
+      "text": "mean daily net P&L > 0 and t > 3 across coin-days",
+      "value": null,
+      "pass": false
+    },
+    {
+      "id": "A2",
+      "text": "at least 3 coins with positive total net P&L",
+      "value": 0,
+      "pass": false
+    },
+    {
+      "id": "A3",
+      "text": "at least 60% of coin-days positive",
+      "value": null,
+      "pass": false
+    },
+    {
+      "id": "A4",
+      "text": "mean daily net P&L > 0 at queue_mult 2.0",
+      "value": null,
+      "pass": false
+    },
+    {
+      "id": "A5",
+      "text": "agent total net P&L >= Join touch total",
+      "value": 0.0,
+      "pass": false
+    }
+  ],
+  "pass": false,
+  "warmup_days": 7,
+  "status": "fail: the agent declined to trade (< 20 fills on every counted day): no edge found"
+}

@@ -1,0 +1,83 @@
+exists, skipping: data\BTCUSDT_2026-11-09_trades.parquet
+exists, skipping: data\BTCUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-11-09.zip
+saved 160,829 trades (3 MB zip) -> data\SOLUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2026-11-10.zip
+saved 191,312 trades (3 MB zip) -> data\SOLUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/DOGEUSDT/DOGEUSDT-aggTrades-2026-11-09.zip
+saved 78,173 trades (1 MB zip) -> data\DOGEUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/DOGEUSDT/DOGEUSDT-aggTrades-2026-11-10.zip
+saved 92,305 trades (2 MB zip) -> data\DOGEUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ARBUSDT/ARBUSDT-aggTrades-2026-11-09.zip
+saved 64,692 trades (1 MB zip) -> data\ARBUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ARBUSDT/ARBUSDT-aggTrades-2026-11-10.zip
+saved 43,879 trades (1 MB zip) -> data\ARBUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-11-09.zip
+saved 106,166 trades (2 MB zip) -> data\NEARUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/NEARUSDT/NEARUSDT-aggTrades-2026-11-10.zip
+saved 102,914 trades (2 MB zip) -> data\NEARUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-11-09.zip
+saved 90,525 trades (1 MB zip) -> data\INJUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/INJUSDT/INJUSDT-aggTrades-2026-11-10.zip
+saved 107,027 trades (2 MB zip) -> data\INJUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-11-09.zip
+saved 49,805 trades (1 MB zip) -> data\ONEUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ONEUSDT/ONEUSDT-aggTrades-2026-11-10.zip
+saved 151,397 trades (3 MB zip) -> data\ONEUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/CELRUSDT/CELRUSDT-aggTrades-2026-11-09.zip
+saved 5,125 trades (0 MB zip) -> data\CELRUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/CELRUSDT/CELRUSDT-aggTrades-2026-11-10.zip
+saved 8,404 trades (0 MB zip) -> data\CELRUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-11-09.zip
+saved 2,086 trades (0 MB zip) -> data\IOTXUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/IOTXUSDT/IOTXUSDT-aggTrades-2026-11-10.zip
+saved 2,038 trades (0 MB zip) -> data\IOTXUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ANKRUSDT/ANKRUSDT-aggTrades-2026-11-09.zip
+saved 4,753 trades (0 MB zip) -> data\ANKRUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/ANKRUSDT/ANKRUSDT-aggTrades-2026-11-10.zip
+saved 1,354 trades (0 MB zip) -> data\ANKRUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-11-09.zip
+saved 4,041 trades (0 MB zip) -> data\SKLUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/SKLUSDT/SKLUSDT-aggTrades-2026-11-10.zip
+saved 3,958 trades (0 MB zip) -> data\SKLUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/COTIUSDT/COTIUSDT-aggTrades-2026-11-09.zip
+saved 5,041 trades (0 MB zip) -> data\COTIUSDT_2026-11-09_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/COTIUSDT/COTIUSDT-aggTrades-2026-11-10.zip
+saved 2,532 trades (0 MB zip) -> data\COTIUSDT_2026-11-10_trades.parquet
+downloading https://data.binance.vision/data/spot/daily/aggTrades/HOOKUSDT/HOOKUSDT-aggTrades-2026-11-09.zip
+  skip HOOKUSDT 2026-11-09: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/HOOKUSDT/HOOKUSDT-aggTrades-2026-11-10.zip
+  skip HOOKUSDT 2026-11-10: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/DATAUSDT/DATAUSDT-aggTrades-2026-11-09.zip
+  skip DATAUSDT 2026-11-09: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/DATAUSDT/DATAUSDT-aggTrades-2026-11-10.zip
+  skip DATAUSDT 2026-11-10: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/HIGHUSDT/HIGHUSDT-aggTrades-2026-11-09.zip
+  skip HIGHUSDT 2026-11-09: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/HIGHUSDT/HIGHUSDT-aggTrades-2026-11-10.zip
+  skip HIGHUSDT 2026-11-10: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/PERPUSDT/PERPUSDT-aggTrades-2026-11-09.zip
+  skip PERPUSDT 2026-11-09: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/PERPUSDT/PERPUSDT-aggTrades-2026-11-10.zip
+  skip PERPUSDT 2026-11-10: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/LOKAUSDT/LOKAUSDT-aggTrades-2026-11-09.zip
+  skip LOKAUSDT 2026-11-09: HTTP 404 (not available)
+downloading https://data.binance.vision/data/spot/daily/aggTrades/LOKAUSDT/LOKAUSDT-aggTrades-2026-11-10.zip
+  skip LOKAUSDT 2026-11-10: HTTP 404 (not available)
+
+downloaded 24 symbol-days, skipped 10
+            trades    usd_volume       price
+symbol                                      
+BTCUSDT   922987.5  1.194663e+09  74582.2350
+SOLUSDT   176070.5  1.942193e+08     85.0450
+NEARUSDT  104540.0  7.245016e+07      3.6085
+DOGEUSDT   85239.0  3.459267e+07      0.0691
+ARBUSDT    54285.5  2.554431e+07      0.1678
+ONEUSDT   100601.0  1.604019e+07      0.0017
+INJUSDT    98776.0  1.457039e+07      8.0665
+COTIUSDT    3786.5  7.962198e+05      0.0096
+CELRUSDT    6764.5  5.791781e+05      0.0022
+SKLUSDT     3999.5  3.869264e+05      0.0036
+ANKRUSDT    3053.5  3.683162e+05      0.0038
+IOTXUSDT    2062.0  1.033741e+05      0.0029
+=== DONE === 

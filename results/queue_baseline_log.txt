@@ -1,0 +1,216 @@
+=== queue baseline 12-Nov-26 18:46:14.30 === 
+v2 universe: COTIUSDT, ANKRUSDT, SKLUSDT
+done COTIUSDT 2026-09-13
+done COTIUSDT 2026-09-14
+done COTIUSDT 2026-09-15
+done COTIUSDT 2026-09-16
+done COTIUSDT 2026-09-17
+done COTIUSDT 2026-09-18
+done COTIUSDT 2026-09-19
+done COTIUSDT 2026-09-20
+done COTIUSDT 2026-09-21
+done COTIUSDT 2026-09-22
+done COTIUSDT 2026-09-23
+done COTIUSDT 2026-09-24
+done COTIUSDT 2026-09-25
+done COTIUSDT 2026-09-26
+done COTIUSDT 2026-09-27
+done COTIUSDT 2026-09-28
+done COTIUSDT 2026-09-29
+done COTIUSDT 2026-09-30
+done COTIUSDT 2026-10-01
+done COTIUSDT 2026-10-02
+done COTIUSDT 2026-10-03
+done COTIUSDT 2026-10-04
+done COTIUSDT 2026-10-05
+done COTIUSDT 2026-10-06
+done COTIUSDT 2026-10-07
+done COTIUSDT 2026-10-08
+done COTIUSDT 2026-10-09
+done COTIUSDT 2026-10-10
+done COTIUSDT 2026-10-11
+done COTIUSDT 2026-10-12
+done COTIUSDT 2026-10-13
+done COTIUSDT 2026-10-14
+done COTIUSDT 2026-10-15
+done COTIUSDT 2026-10-16
+done COTIUSDT 2026-10-17
+done COTIUSDT 2026-10-18
+done COTIUSDT 2026-10-19
+done COTIUSDT 2026-10-20
+done COTIUSDT 2026-10-21
+done COTIUSDT 2026-10-22
+done COTIUSDT 2026-10-23
+done COTIUSDT 2026-10-24
+done COTIUSDT 2026-10-25
+done COTIUSDT 2026-10-26
+done COTIUSDT 2026-10-27
+done COTIUSDT 2026-10-28
+done COTIUSDT 2026-10-29
+done COTIUSDT 2026-10-30
+done COTIUSDT 2026-10-31
+done COTIUSDT 2026-11-01
+done COTIUSDT 2026-11-02
+done COTIUSDT 2026-11-03
+done COTIUSDT 2026-11-04
+done COTIUSDT 2026-11-05
+done COTIUSDT 2026-11-06
+done COTIUSDT 2026-11-07
+done COTIUSDT 2026-11-08
+done COTIUSDT 2026-11-09
+done COTIUSDT 2026-11-10
+done COTIUSDT 2026-11-11
+done ANKRUSDT 2026-09-13
+done ANKRUSDT 2026-09-14
+done ANKRUSDT 2026-09-15
+done ANKRUSDT 2026-09-16
+done ANKRUSDT 2026-09-17
+done ANKRUSDT 2026-09-18
+done ANKRUSDT 2026-09-19
+done ANKRUSDT 2026-09-20
+done ANKRUSDT 2026-09-21
+done ANKRUSDT 2026-09-22
+done ANKRUSDT 2026-09-23
+done ANKRUSDT 2026-09-24
+done ANKRUSDT 2026-09-25
+done ANKRUSDT 2026-09-26
+done ANKRUSDT 2026-09-27
+done ANKRUSDT 2026-09-28
+done ANKRUSDT 2026-09-29
+done ANKRUSDT 2026-09-30
+done ANKRUSDT 2026-10-01
+done ANKRUSDT 2026-10-02
+done ANKRUSDT 2026-10-03
+done ANKRUSDT 2026-10-04
+done ANKRUSDT 2026-10-05
+done ANKRUSDT 2026-10-06
+done ANKRUSDT 2026-10-07
+done ANKRUSDT 2026-10-08
+done ANKRUSDT 2026-10-09
+done ANKRUSDT 2026-10-10
+done ANKRUSDT 2026-10-11
+done ANKRUSDT 2026-10-12
+done ANKRUSDT 2026-10-13
+done ANKRUSDT 2026-10-14
+done ANKRUSDT 2026-10-15
+done ANKRUSDT 2026-10-16
+done ANKRUSDT 2026-10-17
+done ANKRUSDT 2026-10-18
+done ANKRUSDT 2026-10-19
+done ANKRUSDT 2026-10-20
+done ANKRUSDT 2026-10-21
+done ANKRUSDT 2026-10-22
+done ANKRUSDT 2026-10-23
+done ANKRUSDT 2026-10-24
+done ANKRUSDT 2026-10-25
+done ANKRUSDT 2026-10-26
+done ANKRUSDT 2026-10-27
+done ANKRUSDT 2026-10-28
+done ANKRUSDT 2026-10-29
+done ANKRUSDT 2026-10-30
+done ANKRUSDT 2026-10-31
+done ANKRUSDT 2026-11-01
+done ANKRUSDT 2026-11-02
+done ANKRUSDT 2026-11-03
+done ANKRUSDT 2026-11-04
+done ANKRUSDT 2026-11-05
+done ANKRUSDT 2026-11-06
+done ANKRUSDT 2026-11-07
+done ANKRUSDT 2026-11-08
+done ANKRUSDT 2026-11-09
+done ANKRUSDT 2026-11-10
+done ANKRUSDT 2026-11-11
+done SKLUSDT 2026-09-13
+done SKLUSDT 2026-09-14
+done SKLUSDT 2026-09-15
+done SKLUSDT 2026-09-16
+done SKLUSDT 2026-09-17
+done SKLUSDT 2026-09-18
+done SKLUSDT 2026-09-19
+done SKLUSDT 2026-09-20
+done SKLUSDT 2026-09-21
+done SKLUSDT 2026-09-22
+done SKLUSDT 2026-09-23
+done SKLUSDT 2026-09-24
+done SKLUSDT 2026-09-25
+done SKLUSDT 2026-09-26
+done SKLUSDT 2026-09-27
+done SKLUSDT 2026-09-28
+done SKLUSDT 2026-09-29
+done SKLUSDT 2026-09-30
+done SKLUSDT 2026-10-01
+done SKLUSDT 2026-10-02
+done SKLUSDT 2026-10-03
+done SKLUSDT 2026-10-04
+done SKLUSDT 2026-10-05
+done SKLUSDT 2026-10-06
+done SKLUSDT 2026-10-07
+done SKLUSDT 2026-10-08
+done SKLUSDT 2026-10-09
+done SKLUSDT 2026-10-10
+done SKLUSDT 2026-10-11
+done SKLUSDT 2026-10-12
+done SKLUSDT 2026-10-13
+done SKLUSDT 2026-10-14
+done SKLUSDT 2026-10-15
+done SKLUSDT 2026-10-16
+done SKLUSDT 2026-10-17
+done SKLUSDT 2026-10-18
+done SKLUSDT 2026-10-19
+done SKLUSDT 2026-10-20
+done SKLUSDT 2026-10-21
+done SKLUSDT 2026-10-22
+done SKLUSDT 2026-10-23
+done SKLUSDT 2026-10-24
+done SKLUSDT 2026-10-25
+done SKLUSDT 2026-10-26
+done SKLUSDT 2026-10-27
+done SKLUSDT 2026-10-28
+done SKLUSDT 2026-10-29
+done SKLUSDT 2026-10-30
+done SKLUSDT 2026-10-31
+done SKLUSDT 2026-11-01
+done SKLUSDT 2026-11-02
+done SKLUSDT 2026-11-03
+done SKLUSDT 2026-11-04
+done SKLUSDT 2026-11-05
+done SKLUSDT 2026-11-06
+done SKLUSDT 2026-11-07
+done SKLUSDT 2026-11-08
+done SKLUSDT 2026-11-09
+done SKLUSDT 2026-11-10
+done SKLUSDT 2026-11-11
+
+== Join touch, q1.0 ==
+  symbol  days  fills_per_day  net_usd_per_day  net_bp_per_usd  net7.5_usd_per_day  net_edge_bp_mean  positive_days     t
+COTIUSDT    60       2,349.30          -403.36          -17.17             -344.62            -16.35           0.00 -7.18
+ANKRUSDT    60         335.03           -63.80          -19.04              -55.43            -12.49           0.03 -7.11
+ SKLUSDT    60         644.75          -140.14          -21.74             -124.02            -12.38           0.02 -4.49
+
+== Join touch, q0.5 ==
+  symbol  days  fills_per_day  net_usd_per_day  net_bp_per_usd  net7.5_usd_per_day  net_edge_bp_mean  positive_days     t
+COTIUSDT    60       2,527.22          -418.14          -16.55             -354.96            -15.64           0.00 -7.28
+ANKRUSDT    60         432.45           -69.40          -16.05              -58.59            -10.29           0.05 -7.86
+ SKLUSDT    60         761.60          -145.48          -19.10             -126.44            -10.43           0.02 -4.64
+
+== Join touch, q2.0 ==
+  symbol  days  fills_per_day  net_usd_per_day  net_bp_per_usd  net7.5_usd_per_day  net_edge_bp_mean  positive_days     t
+COTIUSDT    60       2,242.97          -394.42          -17.58             -338.34            -16.86           0.00 -7.05
+ANKRUSDT    60         260.05           -55.02          -21.16              -48.52            -14.51           0.05 -6.61
+ SKLUSDT    60         564.38          -132.54          -23.48             -118.43            -14.42           0.02 -4.41
+
+== Join touch, bridge q0 lat100 ==
+  symbol  days  fills_per_day  net_usd_per_day  net_bp_per_usd  net7.5_usd_per_day  net_edge_bp_mean  positive_days     t
+COTIUSDT    60       4,485.20          -577.44          -12.87             -465.31            -12.17           0.00 -7.73
+ANKRUSDT    60       1,031.75           -70.77           -6.86              -44.98             -3.87           0.10 -6.91
+ SKLUSDT    60       1,628.87          -162.33           -9.97             -121.60             -4.54           0.03 -5.24
+
+net P&L uses a 10 bp maker fee; net_7.5bp columns show the 7.5 bp case
+
+Sanity check ANKRUSDT 2026-11-10, v2 bridge (queue 0, 100 ms) vs v1 Join touch 'touch':
+  fills  v2 404  v1 408
+  net 10bp USD  v2 -43.36  v1 -42.98
+  same sign: True
+saved -> results/queue_baseline.csv
+dashboard bundle -> dashboard\runs\qb-2026-11-12.js
+=== DONE 18:50:45.64 === 
