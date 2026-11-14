@@ -40,6 +40,7 @@ if (typeof document !== "undefined") (function () {
     try { record(src, true, await get(url), Date.now()); } catch (e) { record(src, false, null, Date.now()); }
     if (after) after();
     renderLive();
+    if (typeof window.onLiveStatus === "function") window.onLiveStatus();
   }
   function pollTestnet() {
     const syms = new Set(heartbeat.data ? Object.keys(heartbeat.data.symbols || {}) : []);
@@ -123,7 +124,7 @@ if (typeof document !== "undefined") (function () {
   }
 
   function renderLive() {
-    if (typeof current === "undefined" || current !== "live") return;
+    if (typeof current === "undefined" || (current !== "live" && current !== "pcstatus")) return;
     renderFeed(); renderTestnet(); renderPaper();
   }
   register("live", () => {
@@ -135,4 +136,9 @@ if (typeof document !== "undefined") (function () {
     startLive(); renderLive();
   });
   window.startLive = startLive;
+  /* Fresh numbers for the live tabs' state strip: the newest status.json / paper snapshot read, with its age. */
+  window.liveStatusFor = (source, sym) => {
+    if (source === "paper") { const r = paper.data && paper.data.symbols && paper.data.symbols[sym]; return r ? { ...r, ts: paper.data.ts_utc } : null; }
+    return testnet[sym] && testnet[sym].data ? testnet[sym].data : null;
+  };
 })();

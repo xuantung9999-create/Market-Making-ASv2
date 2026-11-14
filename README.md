@@ -19,11 +19,15 @@ Basis points per dollar traded, 180 coin-days (`results/queue_baseline.csv`). Th
 - v2 (`docs/BUILD_GUIDE.md`, Tasks 0-11): queue-aware engine shared by backtest, walk-forward and paper trading; edge table; calibration agent; tick-constraint screener; multi-symbol recorder; paper trader with exact replay; daily supervisor.
 - Testnet trader: the same agent sending real post-only orders on the Binance spot testnet, to prove the execution code.
 
-**The dashboard** (`dashboard/`, no build step; the published copy is made by `python -m scripts.publish_dashboard`). The Verdict tab answers "did it work?" in one screen; the detail tabs (P&L, Execution, Risk, Model, Data) read the selected run.
+**The dashboard** (`dashboard/`, no build step; the published copy is made by `python -m scripts.publish_dashboard`). It opens on the **live sessions** (the two testnet traders and the paper trader): Overview (is each bot healthy, what went wrong), P&L (where the money went, with testnet artifacts in their own bucket), Execution (quote state, markouts, queue wait, a tape around any fill), Model (which arm was live and why it stayed out) and Market & health. The 60-day backtest lives under **Research**: Verdict, P&L, Execution, Risk, Model, Market book, Data, Simulator, Archive, About.
 
-![Verdict tab: headline, forest plot by coin and queue assumption, gate scoreboard](docs/img/verdict.png)
-![Execution tab: markouts by side and action against the 10 bp fee line](docs/img/execution.png)
-![Market book > Universe: the screener with tick size, spread and volume per coin](docs/img/universe.png)
+![Overview: state per bot, incidents, cumulative P&L across restarts](docs/img/live-overview.jpg)
+![P&L: attribution waterfall, per-hour attribution, per-day table, worst and best fills](docs/img/live-pnl.jpg)
+![Execution: the tape around a glitch fill, with our orders and the markout ticks](docs/img/live-execution-tape.jpg)
+![Model: live-arm strip, arm scores and why the agent stays out](docs/img/live-model.jpg)
+![Research > Verdict: headline, forest plot by coin and queue assumption, gate scoreboard](docs/img/verdict.png)
+![Research > Execution: markouts by side and action against the 10 bp fee line](docs/img/execution.png)
+![Research > Market book > Universe: the screener with tick size, spread and volume per coin](docs/img/universe.png)
 
 The recorded-order-book views (Market book > Order book, Live, Data > Recorder health and tape validation) fill in once the recorder has run for a few days; until then they say so instead of showing placeholder numbers.
 
@@ -98,7 +102,7 @@ code. Only a few coins exist on testnet (BTC, ETH, BNB and some others), not the
 
 `dashboard/index.html` is an interactive, static dashboard: a live A-S simulator with sliders, model intuition charts, the paper replication, and the real BTCUSDT data analysis. Open the file in a browser (double-click), or host it free on GitHub Pages: Settings → Pages → deploy from the `main` branch, root folder; it is then at `https://<user>.github.io/<repo>/dashboard/`.
 
-The page has two groups of tabs. **Desk** (Overview, P&L, Execution, Risk, ...) is a trading dashboard that reads *run bundles* from `dashboard/runs/` (written by `mm/report.py`; see `docs/DASHBOARD_GUIDE.md`). Until real runs exist it shows a clearly marked demo run: `python -m mm.report` rewrites it. **Research** holds the original nine tabs.
+The page has six tabs. The first five (Overview, P&L, Execution, Model, Market & health) are about the **live sessions** and read *session bundles* from `dashboard/live/`, written every 5 minutes by `scripts/build_session.py` (the supervisor runs it; see `docs/DASHBOARD_GUIDE.md`, "Live tabs"). They need the page served by the supervisor (`http://localhost:8765`), and nothing under `dashboard/live` is ever published. **Research** holds everything that reads *run bundles* from `dashboard/runs/` (written by `mm/report.py`) plus the original tabs; old links such as `#pnl` or `#simulator` still land there.
 
 Regenerate its data after new results or downloads:
 

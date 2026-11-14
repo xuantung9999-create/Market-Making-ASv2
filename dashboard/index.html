@@ -225,6 +225,46 @@ dl.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 6
 dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; font: 500 13px var(--font-mono); text-align: right; }
 table.mini { font-size: 12px; } table.mini td { padding: 2px 8px; border: 0; }
 .note.cap { margin: 4px 0 8px; }
+
+/* ---------- Live tabs (live spec): session bar, research bar, state strip, tables ---------- */
+.livebar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 2px 0 8px; font-size: 13px; color: var(--muted); }
+.live-headline { margin: 0; flex: 1 1 360px; font: 500 13px var(--font-mono); color: var(--text); }
+.sess-label { font: 600 11px var(--font-mono); padding: 2px 10px; border-radius: 999px; border: 1px solid var(--c, var(--line)); color: var(--c, var(--muted)); }
+body.research-mode .livebar, body.live-mode .research-bar, body.live-mode .bar-verdict { display: none !important; }
+body.live-mode .bar-run, body.live-mode .runbar, body.live-mode #run-badge { display: none !important; }
+.research-bar { display: flex; flex-wrap: wrap; gap: 0; margin: 0 0 8px; }
+.research-bar a { padding: 5px 12px; border: 1px solid var(--line); color: var(--muted); text-decoration: none; font-size: 13px; background: var(--panel); }
+.research-bar a:first-child { border-radius: 8px 0 0 8px; } .research-bar a:last-child { border-radius: 0 8px 8px 0; } .research-bar a + a { border-left: 0; }
+.research-bar a[aria-current="page"] { color: var(--accent); border-color: var(--accent); background: #0c2433; }
+.lv-gap { margin-top: 16px; }
+.chart.short2 { height: 280px; } .chart.short3 { height: 200px; } .chart.lv-cum { height: 360px; } .chart.lv-strip { height: 130px; }
+.state-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.state-card .side { display: grid; grid-template-columns: 44px auto 1fr; gap: 8px; align-items: baseline; margin: 6px 0; font-size: 13px; }
+.state-card .side b { font: 500 12px var(--font-mono); color: var(--muted); }
+.pill { font: 600 11px var(--font-mono); padding: 2px 9px; border-radius: 999px; color: #0a0f16; background: var(--c, #64748b); white-space: nowrap; }
+.capbar { position: relative; height: 12px; border-radius: 6px; background: var(--panel-2); margin: 10px 0 4px; }
+.capbar i { position: absolute; top: 0; bottom: 0; background: #818cf8; border-radius: 6px; }
+.capbar em { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--muted); }
+.capbar.over i { background: #fb923c; }
+.sev { font: 600 11px var(--font-mono); padding: 1px 8px; border-radius: 999px; color: #0a0f16; background: var(--c); }
+table.lv { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.lv th { position: sticky; top: 0; background: var(--panel); text-align: right; font-weight: 500; color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--line); cursor: pointer; white-space: nowrap; }
+table.lv th.l, table.lv td.l { text-align: left; }
+table.lv td { padding: 4px 8px; text-align: right; font: 500 12px var(--font-mono); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--grid); }
+table.lv td.l { font-family: var(--font-body); }
+table.lv tr.art td { background: rgba(167, 139, 250, .14); }
+table.lv tr.live td { background: rgba(56, 189, 248, .14); font-weight: 600; }
+table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: var(--panel-2); }
+.table-wrap.scroll { max-height: 360px; overflow: auto; }
+/* Market & health: the old Market feed and PC status views are one tab, stacked */
+.tab-wrap[data-tab="l-health"] > .subtabs { display: none !important; }
+.tab-wrap.active[data-tab="l-health"] section.view { display: block; }
+.tab-wrap.active[data-tab="l-health"] section.view + section.view { margin-top: 24px; }
+.lv-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; align-items: center; font-size: 13px; }
+.lv-pager { display: flex; gap: 8px; align-items: center; margin: 8px 0; font-size: 13px; color: var(--muted); }
+.legend-note { font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
+.dot-art { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #a78bfa; margin-right: 4px; }
+@media (max-width: 900px) { .state-strip { grid-template-columns: 1fr; } .chart.lv-cum { height: 320px; } }
 </style>
 </head>
 <body>
@@ -242,23 +282,97 @@ table.mini { font-size: 12px; } table.mini td { padding: 2px 8px; border: 0; }
     <label>Compare with <select id="run-compare"></select></label>
     <span id="compare-badge"></span>
   </div>
+  <div class="livebar" id="livebar" aria-label="Live session options">
+    <label>Session <select id="sess-select" aria-label="Session"></select></label>
+    <span class="sess-label" id="sess-label"></span>
+    <span class="range-btns" id="live-range" role="group" aria-label="Time range">
+      <span class="run-meta">Range</span>
+      <button type="button" data-r="6h" aria-pressed="false">6h</button><button type="button" data-r="24h" aria-pressed="false">24h</button><button type="button" data-r="3d" aria-pressed="false">3d</button><button type="button" data-r="all" aria-pressed="true">all</button>
+    </span>
+    <p class="live-headline" id="live-headline" aria-live="polite"></p>
+  </div>
   <div class="demo-banner" id="demo-banner" hidden>DEMO DATA, NOT RESULTS · synthetic numbers for building and checking the page</div>
   <nav class="tabs" aria-label="Sections">
-    <a href="#overview" data-view="overview">Verdict</a>
-    <a href="#live" data-view="live">Live</a>
-    <a href="#book" data-view="book">Market book</a>
-    <a href="#pnl" data-view="pnl">P&amp;L</a>
-    <a href="#execution" data-view="execution">Execution</a>
-    <a href="#risk" data-view="risk">Risk</a>
-    <a href="#model-health" data-view="model-health">Model</a>
-    <a href="#data" data-view="data">Data</a>
-    <a href="#simulator" data-view="simulator">Simulator</a>
-    <a href="#archive" data-view="archive">Research archive</a>
-    <a href="#about" data-view="about">About</a>
+    <a href="#l-overview" data-view="l-overview">Overview</a>
+    <a href="#l-pnl" data-view="l-pnl">P&amp;L</a>
+    <a href="#l-exec" data-view="l-exec">Execution</a>
+    <a href="#l-model" data-view="l-model">Model</a>
+    <a href="#l-health" data-view="l-health">Market &amp; health</a>
+    <a href="#overview" data-view="research">Research</a>
+  </nav>
+  <nav class="research-bar" id="research-bar" aria-label="Research sections">
+    <a href="#overview" data-tab="overview">Verdict</a>
+    <a href="#pnl" data-tab="pnl">P&amp;L</a>
+    <a href="#execution" data-tab="execution">Execution</a>
+    <a href="#risk" data-tab="risk">Risk</a>
+    <a href="#model-health" data-tab="model-health">Model</a>
+    <a href="#book" data-tab="book">Market book</a>
+    <a href="#data" data-tab="data">Data</a>
+    <a href="#simulator" data-tab="simulator">Simulator</a>
+    <a href="#archive" data-tab="archive">Archive</a>
+    <a href="#about" data-tab="about">About</a>
   </nav>
 </header>
 
 <main>
+  <div class="tab-wrap" data-tab="l-overview">
+  <section class="view" id="view-lv-overview">
+    <p class="view-intro">Is each bot healthy right now, and if not, what went wrong? Incidents and state first, the money below.</p>
+    <div class="state-strip" id="ov2-state"></div>
+    <div class="tiles" id="ov2-tiles"></div>
+    <div class="card"><h2>Incident timeline</h2><p class="sub" id="ov2-tl-sub"></p><div class="chart short" id="ov2-timeline"></div></div>
+    <div class="card lv-gap"><h2>Incidents</h2><p class="sub" id="ov2-inc-sub"></p><div class="table-wrap" id="ov2-incidents"></div></div>
+    <div class="card lv-gap"><h2>Cumulative P&amp;L</h2><p class="sub" id="ov2-cum-sub"></p><div class="chart lv-cum" id="ov2-cum"></div></div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="l-pnl">
+  <section class="view" id="view-lv-pnl">
+    <p class="view-intro">Where did the money go? Five terms that add up to net exactly, with testnet artifacts in a bucket of their own. USDT on 100 USDT lots, bp of notional traded; all times UTC.</p>
+    <div class="grid g2">
+      <div class="card"><h2>Attribution waterfall</h2><p class="sub" id="lvp-wf-sub"></p><div class="chart" id="lvp-waterfall"></div><p class="note" id="lvp-thresholds"></p></div>
+      <div class="card"><h2>Attribution over time</h2><p class="sub" id="lvp-time-sub"></p><div class="chart" id="lvp-time"></div></div>
+    </div>
+    <div class="card lv-gap"><h2>Per day</h2><p class="sub" id="lvp-days-sub"></p><div class="table-wrap" id="lvp-days"></div></div>
+    <div class="grid g2 lv-gap">
+      <div class="card"><h2>Worst 20 fills</h2><p class="sub" id="lvp-worst-sub"></p><div class="table-wrap" id="lvp-worst"></div></div>
+      <div class="card"><h2>Best 20 fills</h2><p class="sub">Ranked by edge plus the 60 s markout, in bp. Click a row to open the tape.</p><div class="table-wrap" id="lvp-best"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="l-exec">
+  <section class="view" id="view-lv-exec">
+    <p class="view-intro">How did it execute? Was it quoting, how long orders waited, and what happened after each fill.</p>
+    <div class="card"><h2>Quote state</h2><p class="sub" id="lvx-state-sub"></p><div class="chart lv-strip" id="lvx-state"></div><div class="table-wrap" id="lvx-uptime"></div></div>
+    <div class="grid g2 lv-gap">
+      <div class="card"><h2>Markout after fill</h2><p class="sub" id="lvx-mk-sub"></p><div class="chart short2" id="lvx-markout"></div></div>
+      <div class="card"><h2>Edge at fill</h2><p class="sub" id="lvx-edge-sub"></p><div class="chart short2" id="lvx-edge"></div></div>
+    </div>
+    <div class="grid g2 lv-gap">
+      <div class="card"><h2>Queue wait</h2><p class="sub" id="lvx-wait-sub"></p><div class="chart short2" id="lvx-wait"></div><div class="table-wrap" id="lvx-wait-table"></div></div>
+      <div class="card"><h2>Order funnel</h2><p class="sub" id="lvx-fun-sub"></p><div class="table-wrap" id="lvx-funnel"></div><div class="chart short3" id="lvx-activity"></div></div>
+    </div>
+    <div class="card lv-gap" id="lvx-tape-card" hidden><div class="card-head"><h2>Tape around the fill</h2><button type="button" id="lvx-tape-close">Close</button></div><p class="sub" id="lvx-tape-sub"></p><div class="chart" id="lvx-tape"></div></div>
+    <div class="card lv-gap"><h2>Fills</h2><p class="sub" id="lvx-fills-sub"></p><div class="lv-filters" id="lvx-fills-filter"></div><div class="table-wrap" id="lvx-fills"></div><div class="lv-pager" id="lvx-fills-pager"></div></div>
+  </section>
+  </div>
+
+  <div class="tab-wrap" data-tab="l-model">
+  <section class="view" id="view-lv-model">
+    <p class="view-intro">What was the model thinking? Which arm was live, what edge it predicted, and why it stayed out.</p>
+    <p class="verdict" id="lvm-fixed" hidden></p>
+    <div id="lvm-body">
+      <div class="card"><h2>Live arm</h2><p class="sub" id="lvm-strip-sub"></p><div class="chart lv-strip" id="lvm-strip"></div><div class="table-wrap" id="lvm-arms"></div></div>
+      <div class="grid g2 lv-gap">
+        <div class="card"><h2>Arm scores over time</h2><p class="sub" id="lvm-scores-sub"></p><div class="chart short2" id="lvm-scores"></div></div>
+        <div class="card"><h2>Predicted against realised edge</h2><p class="sub" id="lvm-calib-sub"></p><div class="chart short2" id="lvm-calib"></div></div>
+      </div>
+      <div class="card lv-gap"><h2>Why it stayed out</h2><p class="sub" id="lvm-why"></p></div>
+    </div>
+  </section>
+  </div>
+
   <div class="tab-wrap" data-tab="overview">
   <section class="view" id="view-overview">
     <p class="desk-msg" id="desk-msg-overview" hidden></p>
@@ -275,8 +389,8 @@ table.mini { font-size: 12px; } table.mini td { padding: 2px 8px; border: 0; }
   </section>
   </div>
 
-  <div class="tab-wrap" data-tab="live">
-  <div class="subtabs" id="sub-live" role="tablist"></div>
+  <div class="tab-wrap" data-tab="l-health">
+  <div class="subtabs" id="sub-l-health" role="tablist"></div>
   <section class="view" id="view-live">
     <p class="view-intro">Is the recorder alive, and what is each market doing right now? Read from the files the recorder and the traders write; needs the page served over http. Amber after 10 s, red after 60 s without an update.</p>
     <p class="live-status" id="lv-status"></p>
@@ -285,19 +399,12 @@ table.mini { font-size: 12px; } table.mini td { padding: 2px 8px; border: 0; }
     <h2 class="live-h">Paper trader</h2><div class="live-grid" id="lv-paper"></div>
   </section>
   <section class="view" id="view-pcstatus">
-    <p class="view-intro">What the always-on PC is doing: the supervisor and its processes, the testnet traders (real orders, fake money) and the order-book recorder. Read from live/status.js, rewritten every minute by scripts/build_live.py.</p>
+    <p class="view-intro">What the always-on PC is doing: the supervisor and its processes, the order-book recorder and the gaps in the recorded feed. The traders' own numbers are on the Overview, P&amp;L and Execution tabs.</p>
     <p class="desk-msg" id="pcs-msg" hidden></p>
     <div id="pcs-body">
       <div class="tiles" id="live-tiles"></div>
       <div class="card" style="margin-bottom:16px"><h2>Processes</h2><div class="table-wrap" id="live-procs"></div></div>
-      <div class="card" style="margin-bottom:16px"><h2>Testnet traders</h2><div class="table-wrap" id="live-tn-table"></div></div>
-      <div class="grid g2">
-        <div class="card"><h2>Testnet P&amp;L</h2><div class="chart" id="live-pnl"></div></div>
-        <div class="card"><h2>Position</h2><div class="chart" id="live-pos"></div></div>
-      </div>
-      <div class="card" style="margin-top:16px"><h2>Order activity, last 24 h</h2><div class="chart short" id="live-activity"></div></div>
-      <div class="card" style="margin-top:16px"><h2>Recent fills</h2><div class="table-wrap" id="live-fills"></div></div>
-      <div class="card" style="margin-top:16px"><h2>Recent order events</h2><div class="table-wrap" id="live-events"></div></div>
+      <div class="card" style="margin-bottom:16px"><h2>Feed gaps</h2><p class="sub" id="hl-gaps-sub"></p><div class="table-wrap" id="hl-gaps"></div></div>
       <div class="card" style="margin-top:16px"><h2>Recorder</h2><div class="table-wrap" id="live-rec"></div></div>
     </div>
   </section>
@@ -666,7 +773,13 @@ table.mini { font-size: 12px; } table.mini td { padding: 2px 8px; border: 0; }
 <script src="js/views/model.js"></script>
 <script src="js/views/book.js"></script>
 <script src="js/live.js"></script>
+<script src="js/live_sessions.js"></script>
+<script src="js/views/lv_overview.js"></script>
+<script src="js/views/lv_pnl.js"></script>
+<script src="js/views/lv_exec.js"></script>
+<script src="js/views/lv_model.js"></script>
 <script src="js/views/pcstatus.js"></script>
+<script src="js/views/lv_health.js"></script>
 <script src="js/compare.js"></script>
 <script src="js/views/data.js"></script>
 <script src="js/views/signals.js"></script>

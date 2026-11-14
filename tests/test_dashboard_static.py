@@ -93,8 +93,14 @@ def _tree():
     return t
 
 
-def test_tab_row_has_exactly_eleven_links():
-    assert len(_tree().tab_links) == 11
+LIVE_TABS = ["l-overview", "l-pnl", "l-exec", "l-model", "l-health"]
+RESEARCH_TABS = ["overview", "book", "pnl", "execution", "risk", "model-health", "data", "simulator", "archive", "about"]
+
+
+def test_tab_row_has_exactly_six_links():
+    """Live spec section 4: five live tabs, then Research (changed from eleven)."""
+    links = [a["data-view"] for a in _tree().tab_links]
+    assert links == LIVE_TABS + ["research"]
 
 
 def test_tab_row_has_no_link_to_a_nested_view():
@@ -116,7 +122,11 @@ def test_every_tab_link_points_at_a_tab_wrapper_and_every_view_is_in_one():
     t = _tree()
     html = _html()
     wrappers = set(re.findall(r'class="tab-wrap" data-tab="([^"]+)"', html))
-    assert {a["data-view"] for a in t.tab_links} == wrappers
+    # the Research link has no wrapper of its own: its content is the old tabs, each with its own wrapper
+    assert {a["data-view"] for a in t.tab_links} - {"research"} == set(LIVE_TABS) <= wrappers
+    assert wrappers == set(LIVE_TABS) | set(RESEARCH_TABS)
+    bar = re.findall(r'<nav class="research-bar".*?</nav>', html, re.S)[0]
+    assert re.findall(r'data-tab="([^"]+)"', bar) == ["overview", "pnl", "execution", "risk", "model-health", "book", "data", "simulator", "archive", "about"]
     for v in RESEARCH_VIEWS + DESK_VIEWS + ["live", "book"]:
         assert t.under[f"view-{v}"], f"view-{v} is not inside a tab"
 
@@ -126,6 +136,11 @@ def test_every_old_hash_resolves_to_a_tab_in_core_js():
     assert "const TABS" in core and "function subtabs" in core
     for v in RESEARCH_VIEWS + DESK_VIEWS + ["live", "book", "archive", "data"]:
         assert f'"{v}"' in core, v
+    # old hashes resolve to their new place: the old tab keys are still tabs (Research), the old Live tab's
+    # views moved into Market & health, and the default landing tab is the live Overview
+    for t in RESEARCH_TABS + LIVE_TABS:
+        assert f'"{t}":' in core, t
+    assert '"live", "Market feed"' in core and 'tab: "l-overview"' in core
 
 
 def test_demo_run_is_hidden_unless_asked_for():
@@ -247,3 +262,14 @@ def test_book_view_has_the_depth_panels_and_a_recorder_hint():
     assert 'id="bk-ladder"' in _html() and 'id="bk-depth"' in _html()
     js = (DASH / "js" / "views" / "book.js").read_text(encoding="utf-8")
     assert "drawBookDepth" in js and "--depth" in js
+
+
+def test_no_duplicate_element_ids_and_the_live_views_are_loaded():
+    """The live tabs share the page with the Research views: a repeated id draws a chart into the wrong tab."""
+    from collections import Counter
+    html = _html()
+    dups = [i for i, n in Counter(re.findall(r'\sid="([^"]+)"', html)).items() if n > 1]
+    assert not dups, dups
+    for f in ("live_sessions.js", "views/lv_overview.js", "views/lv_pnl.js", "views/lv_exec.js", "views/lv_model.js", "views/lv_health.js"):
+        assert f'src="js/{f}"' in html, f
+        assert "fetch(" not in (DASH / "js" / f).read_text(encoding="utf-8"), f

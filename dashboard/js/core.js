@@ -66,9 +66,16 @@ const plot = (id, data, lay) => Plotly.react(id, data, layout(lay), CONFIG);
 const VIEWS = [];
 const dirty = {};
 const draw = {};
+/* Six top-level tabs (live spec 4): five about the live sessions, then Research. The old tab keys below stay as
+   they were and are the Research tab's content, so every old hash (#pnl, #risk, #simulator ...) still resolves.
+   "live" and "pcstatus" (the old Live tab) moved into Market & health. */
 const TABS = {
+  "l-overview":   { label: "Overview", views: ["lv-overview"] },
+  "l-pnl":        { label: "P&L", views: ["lv-pnl"] },
+  "l-exec":       { label: "Execution", views: ["lv-exec"] },
+  "l-model":      { label: "Model", views: ["lv-model"] },
+  "l-health":     { label: "Market & health", views: [["live", "Market feed"], ["pcstatus", "PC status"]] },
   "overview":     { label: "Verdict", views: ["overview"] },
-  "live":         { label: "Live", views: [["live", "Market feed"], ["pcstatus", "PC status"]] },
   "book":         { label: "Market book", views: [["book", "Order book"], ["market", "Universe"]] },
   "pnl":          { label: "P&L", views: ["pnl"] },
   "execution":    { label: "Execution", views: ["execution"] },
@@ -83,7 +90,16 @@ const TABS = {
 const viewIds = t => TABS[t].views.map(v => Array.isArray(v) ? v[0] : v);
 const VIEW_TAB = {};
 Object.keys(TABS).forEach(t => viewIds(t).forEach(v => { VIEW_TAB[v] = t; }));
-const DEFAULT_VIEW = { name: "overview" };
+const RESEARCH_TABS = ["overview", "book", "pnl", "execution", "risk", "model-health", "data", "simulator", "archive", "about"];
+const navKey = tab => RESEARCH_TABS.includes(tab) ? "research" : tab;
+const DEFAULT_VIEW = { tab: "l-overview", view: "lv-overview" };
+/* Quote-state palette, defined once. Green and red are reserved for profit and loss, bid blue and ask amber for
+   the two sides, purple for artifacts only. */
+const BID_C = "#38bdf8", ASK_C = "#f5a524", ART_C = "#a78bfa";
+const STATE_COLOR = { QUOTING: "#475569", WARMUP: "#94a3b8", POLICY_OUT: "#2dd4bf", LOSS_STOP: "#fb923c", INV_CAP: "#818cf8",
+                      NO_BALANCE: "#f472b6", BELOW_MIN: "#cbd5e1", REJECTED: "#e879f9", STALE_FEED: "#64748b",
+                      EXCHANGE_ERROR: "#facc15", UNKNOWN: "#334155" };
+const SEVERITY_COLOR = { high: "#fb923c", medium: "#facc15", low: "#94a3b8", info: "#64748b" };
 function register(name, fn, initiallyDirty = true) {
   if (!VIEWS.includes(name)) VIEWS.push(name);
   draw[name] = fn; dirty[name] = initiallyDirty;
@@ -95,7 +111,7 @@ function renderVisible() { if (current && dirty[current]) { dirty[current] = fal
 function resolveHash(h) {
   const [a, b] = String(h || "").replace(/^#/, "").split("/");
   let tab = TABS[a] ? a : VIEW_TAB[a], view = null;
-  if (!tab) return { tab: DEFAULT_VIEW.name, view: DEFAULT_VIEW.name };
+  if (!tab) return { tab: DEFAULT_VIEW.tab, view: DEFAULT_VIEW.view };
   const ids = viewIds(tab);
   if (!TABS[a]) view = a;
   else if (b && ids.includes(b)) view = b;
@@ -112,9 +128,13 @@ function show(hash) {
   current = view; currentTab = tab;
   document.body.classList.toggle("desk-mode", DESK_VIEWS.includes(view));
   document.body.classList.toggle("verdict-mode", tab === "overview");
+  document.body.classList.toggle("research-mode", RESEARCH_TABS.includes(tab));
+  document.body.classList.toggle("live-mode", !RESEARCH_TABS.includes(tab));
   document.querySelectorAll("div.tab-wrap").forEach(w => w.classList.toggle("active", w.dataset.tab === tab));
   document.querySelectorAll("section.view").forEach(s => s.classList.toggle("active", s.id === "view-" + view));
-  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.view === tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.view === navKey(tab)) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  document.querySelectorAll("#research-bar a").forEach(a => { if (a.dataset.tab === tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  if (typeof Sess !== "undefined") Sess.onShow(tab);
   document.querySelectorAll(`#sub-${tab} a`).forEach(a => { if (a.dataset.sub === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   if (dirty[view]) renderVisible();
   else document.querySelectorAll(`#view-${view} .chart`).forEach(el => el.data && Plotly.Plots.resize(el));
@@ -123,7 +143,8 @@ window.addEventListener("hashchange", () => show(location.hash));
 function boot() {
   Object.keys(TABS).forEach(t => { if (TABS[t].views.some(Array.isArray)) subtabs("sub-" + t, TABS[t].views.map(v => Array.isArray(v) ? v : [v, TABS[t].label]), t); });
   initShell();
-  show(location.hash || "#" + DEFAULT_VIEW.name);
+  if (typeof Sess !== "undefined") Sess.init();
+  show(location.hash || "#" + DEFAULT_VIEW.tab);
 }
 
 /* ======================= Desk helpers =======================

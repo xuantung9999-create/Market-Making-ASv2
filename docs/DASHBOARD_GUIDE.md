@@ -36,6 +36,28 @@ simulation against live. Those are also the things a trading interviewer will as
   - The demo bundle uses 30-minute curve points (real producers use 5-minute points) to stay small.
 - [x] D5-D8 (P&L, Execution, Risk, Model) are built; D9-D11 are still placeholders in `js/views/desk_pending.js`.
 - Layout and chart changes from 13 Nov 2026 are in `docs/DASHBOARD_REDESIGN.md`; where it disagrees with section 2 below, it wins.
+- **Live tabs, 14 Nov 2026: `docs/DASHBOARD_LIVE_SPEC.md` wins over this guide and over the redesign file.** Six tabs now:
+  Overview, P&L, Execution, Model, Market & health (all about the live sessions), then Research (everything below
+  in this guide, unchanged). See "Live tabs" at the end of this file.
+
+## Live tabs (added 14 Nov 2026)
+
+- **Producers.** The traders (`mm/testnet.py`, `mm/paper.py`) log quote states (`state_<date>.jsonl`), richer place and
+  fill records and `session.jsonl`; the executor carries position, cash, fees and the daily loss stop across restarts
+  (`data/testnet/state/<SYM>_exec.json`) and releases the balance reserved for a cancelled order. `mm/livestats.py`
+  computes continuous P&L, the five-term attribution (edge, adverse selection, carry, fees, artifact; they sum to net
+  to 1e-6), artifact detection, markouts, queue wait, state intervals and incidents. `scripts/build_session.py` writes
+  `dashboard/live/sessions.js`, `session-<id>.js` (under 1.5 MB) and `tape-<id>-<date>.js` (under 1.5 MB); the supervisor
+  runs it at most every 5 minutes in a background thread. Nothing under `dashboard/live` is committed or published.
+- **Page.** `js/live_sessions.js` (session selector, range buttons 6h/24h/3d/all, live headline, shared helpers),
+  `js/views/lv_overview.js`, `lv_pnl.js`, `lv_exec.js` (with the tape drill-down), `lv_model.js`, `lv_health.js`. Bundles load
+  by script tag; `fetch(` stays only in `js/live.js`. Python writes every sentence (`takeaways`, `headline`, fill captions);
+  JavaScript formats and draws. Chart rules are in section 5 of the spec: one unit per axis, outliers off scale as hollow
+  triangles, state bands behind time series, green and red only for profit and loss, artifacts purple.
+- **Hashes.** `#l-overview`, `#l-pnl`, `#l-exec`, `#l-model`, `#l-health`; every old hash (`#pnl`, `#risk`, `#simulator`,
+  `#live`, `#pcstatus` ...) still resolves, to Research or to Market & health.
+- **Adding a field.** Add it to the bundle in `scripts/build_session.py` (with a test in `tests/test_build_session.py`), then
+  read it in the view; never compute a statistic or write a finding in JavaScript.
 
 ## 1. What exists today
 
