@@ -1,4 +1,4 @@
-.venv/
+﻿.venv/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -17,7 +17,7 @@ dashboard_public/
 
 # runtime logs from the live recorder / testnet (machine-specific, regenerated)
 results/live_*.log
-dashboard/live/status.js
+dashboard/live/*
 
 # local secrets
 .env
