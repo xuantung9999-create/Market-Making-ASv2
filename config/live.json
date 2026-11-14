@@ -4,6 +4,7 @@
     {"name": "testnet-join", "symbols": ["BTCUSDT"], "policy": "join", "lot_usd": 100, "q_max": 10, "max_loss": 20},
     {"name": "testnet-agent", "symbols": ["ETHUSDT"], "policy": "agent", "lot_usd": 100, "q_max": 10, "max_loss": 20}
   ],
+  "paper": {"name": "paper", "symbols": ["ANKRUSDT", "COTIUSDT", "SKLUSDT"]},
   "dashboard_every_s": 60,
   "dashboard_port": 8765
 }

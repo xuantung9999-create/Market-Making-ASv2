@@ -9,6 +9,7 @@ What it runs (config/live.json):
              "depth": true in the recorder block adds --depth)
   testnet    one python -m mm.testnet process per entry (needs .env with testnet keys; if the keys
              are missing it waits and checks again every minute, the recorder keeps running)
+  paper      python -m mm.paper --symbols ...   (config "paper": {"symbols": [...]}; no keys, no orders)
 
 Restarts: a crashed process is restarted after 10 s, doubling up to 5 min while it keeps failing;
 the wait resets once it has run for 10 minutes. Logs: results/live_<name>.log (rotated at 20 MB).
@@ -168,6 +169,10 @@ class Supervisor:
                 if k in t:
                     args += [flag, str(t[k])]
             self.children.append(Child(t.get("name", "testnet"), args, needs_keys=True))
+        pp = cfg.get("paper")
+        if pp and pp.get("enabled", True):               # the paper trader: real mainnet book, simulated fills, no keys
+            self.children.append(Child(pp.get("name", "paper"),
+                                       ["-m", "mm.paper", "--symbols", ",".join(pp["symbols"])]))
         self.started = time.time()
         self.status_path = base / "data/live_status/supervisor.json"
         self.last_dash = 0.0
@@ -272,6 +277,21 @@ class Supervisor:
             build(self.base)
         except Exception as e:                            # noqa: BLE001 - never let the dashboard stop trading
             print(f"dashboard refresh failed: {e!r}", flush=True)
+        self._refresh_sessions()
+
+    def _refresh_sessions(self) -> None:
+        """Session bundles (live spec L4): heavy, so at most every 5 minutes and off the supervisor's thread."""
+        t = getattr(self, "_sessions_thread", None)
+        if t is not None and t.is_alive():
+            return
+        def work():
+            try:
+                from scripts.build_session import build_if_due
+                build_if_due(self.base)
+            except Exception as e:                        # noqa: BLE001 - never let the dashboard stop trading
+                print(f"session bundles failed: {e!r}", flush=True)
+        self._sessions_thread = threading.Thread(target=work, daemon=True, name="session-bundles")
+        self._sessions_thread.start()
 
     def loop(self, hours: Optional[float] = None) -> None:
         end = None if hours is None else time.time() + hours * 3600

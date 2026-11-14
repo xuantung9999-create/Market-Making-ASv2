@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import re
 import time
 from dataclasses import asdict, replace
@@ -40,7 +41,7 @@ import pandas as pd
 from mm.agent import AgentConfig, CalibrationAgent
 from mm.calibrate import infer_tick
 from mm.edge import EdgeTable
-from mm.queue_sim import QSConfig, QSResult
+from mm.queue_sim import Action, QSConfig, QSResult
 from mm.recorder import MultiRecorder, combined_url, now_us, parse_book, parse_trade, read_symbols_file
 
 DAY_US = 86_400_000_000
@@ -73,6 +74,70 @@ def latest_tick(symbol: str, data_dir: str | Path = "data") -> Optional[float]:
     return float(t) if np.isfinite(t) and t > 0 else None
 
 
+def book_tick(symbol: str, data_dir: str | Path = "data") -> Optional[float]:
+    """Tick inferred from the recorder's own book files (data/live/<SYM>/book), for coins whose history was
+    never downloaded."""
+    files = sorted((Path(data_dir) / "live" / symbol / "book").glob("*.parquet"))[-3:]
+    if not files:
+        return None
+    px = np.concatenate([pd.read_parquet(f, columns=["bid", "ask"]).to_numpy(float).ravel() for f in files])
+    t = infer_tick(px)
+    return float(t) if np.isfinite(t) and t > 0 else None
+
+
+class StateLogger:
+    """Quote-state log (dashboard live spec 6.1): one ``state_<date>.jsonl`` line per side when its state
+    changes, plus one per side every ``every_us``. ``cur[side]`` = {state, detail, since_us} (or None)."""
+
+    def __init__(self, folder: str | Path, every_us: int = 60_000_000):
+        self.folder, self.every_us = Path(folder), int(every_us)
+        self.cur: dict = {1: None, -1: None}
+        self._last = {1: None, -1: None}
+
+    def update(self, side: int, state: str, detail, now: int) -> None:
+        c = self.cur[side]
+        changed = c is None or c["state"] != state
+        if changed:
+            self.cur[side] = {"state": state, "detail": detail, "since_us": int(now)}
+        else:
+            c["detail"] = detail
+        last = self._last[side]
+        if changed or last is None or now - last >= self.every_us:
+            self._last[side] = int(now)
+            self.folder.mkdir(parents=True, exist_ok=True)
+            with open(self.folder / f"state_{day_str(int(now) // DAY_US)}.jsonl", "a") as fh:
+                fh.write(json.dumps({"ts_us": int(now), "side": side, "state": state, "detail": detail}) + "\n")
+
+    def snapshot(self) -> dict:
+        return {"bid": self.cur[1], "ask": self.cur[-1]}
+
+
+def sim_info(a, now: int) -> dict:
+    """What the simulated live track knows about its own decision, for the quote-state and order logs."""
+    live = a.live
+    info: dict = {"live_arm": getattr(a, "live_arm", None)}
+    if live._book is not None:
+        bk, ak, bq, aq = live._book
+        info["book"] = (bk * live.tick, ak * live.tick, bq, aq)
+    cfg = live.cfg
+    info["warmup"] = live._book is None or live._day_start is None or now - live._day_start < cfg.warmup_s * 1e6
+    info["stale"] = (cfg.stale_s is not None and live._last_event is not None
+                     and now - live._last_event > cfg.stale_s * 1e6)
+    action, pred = {}, {}
+    for side in (1, -1):
+        o = live._pending[side] or live.orders[side]
+        if o is not None:
+            action[side] = Action(o.action).name
+            feat = o.feat if isinstance(o.feat, dict) else {}
+            pred[side] = feat.get("pred_bid" if side > 0 else "pred_ask")
+    info["action"], info["pred_bp"] = action, pred
+    try:
+        info["score_bp"] = float(a.score_mean[a.live_arm])
+    except (AttributeError, IndexError, TypeError):
+        pass
+    return info
+
+
 class PaperSession:
     def __init__(self, symbols: list[str], state_dir: str | Path = "data/paper/state", out_dir: str | Path = "data/paper",
                  agent_cfg: AgentConfig = AgentConfig(), sim_cfg: QSConfig = QSConfig(stale_s=120.0),
@@ -85,7 +150,8 @@ class PaperSession:
         self.recorder = MultiRecorder(self.symbols, out=self.out_dir / "feed")
         self.agents: dict[str, CalibrationAgent] = {}
         self._st: dict[str, dict] = {}
-        self.step = int(sim_cfg.decision_ms) * 1000
+        self._state_logs: dict[str, StateLogger] = {}
+        self.step =int(sim_cfg.decision_ms) * 1000
 
     # ------------------------------------------------------------------ agents and state
     def _coin_state(self, sym: str) -> dict:
@@ -97,7 +163,7 @@ class PaperSession:
         if sym in self.ticks:
             return float(self.ticks[sym])
         st = _read_json(self.state_dir / f"{sym}_agent.json") or {}
-        t = st.get("tick") or latest_tick(sym, self.data_dir)
+        t = st.get("tick") or latest_tick(sym, self.data_dir) or book_tick(sym, self.data_dir)
         if not t:
             raise RuntimeError(f"{sym}: unknown tick size; download one day of trades first (run_download_history.bat)")
         return float(t)
@@ -166,6 +232,66 @@ class PaperSession:
         for sym in list(self._st):
             if self._st[sym]["next"] is not None:
                 self._advance(sym, int(now), inclusive=True)
+                if self.log_sim_states:
+                    self._log_sim_state(sym, int(now))
+
+    # ------------------------------------------------------------------ quote state, snapshot (paper only)
+    log_sim_states = True                 # the testnet session logs real order states itself
+
+    def _state_logger(self, sym: str) -> StateLogger:
+        if sym not in self._state_logs:
+            self._state_logs[sym] = StateLogger(self.out_dir / sym)
+        return self._state_logs[sym]
+
+    def _log_sim_state(self, sym: str, now: int) -> None:
+        a = self.agents[sym]
+        info = sim_info(a, now)
+        log = self._state_logger(sym)
+        for side in (1, -1):
+            live = a.live
+            if info["warmup"]:
+                st, detail = "WARMUP", None
+            elif info["stale"]:
+                st, detail = "STALE_FEED", None
+            elif a.stopped:
+                st, detail = "LOSS_STOP", {"enabled": getattr(a, "_enabled", True)}
+            elif live._capped(side):
+                st, detail = "INV_CAP", {"lots": live.q, "q_max": live.cfg.q_max}
+            elif live._pending[side] is not None or live.orders[side] is not None:
+                st, detail = "QUOTING", None
+            else:
+                st, detail = "POLICY_OUT", {"live_arm": info["live_arm"], "score_bp": info.get("score_bp")}
+            log.update(side, st, detail, now)
+
+    def log_session(self, op: str, args: dict) -> None:
+        """``session.jsonl``: appended at every start and clean stop, one file per symbol."""
+        for sym in self.symbols:
+            folder = self.out_dir / sym
+            folder.mkdir(parents=True, exist_ok=True)
+            a = self.agents.get(sym)
+            rec = {"ts_us": now_us(), "op": op, "pid": os.getpid(), "args": args}
+            if op == "start":
+                rec["pos_at_start"] = a.live.q if a is not None else 0
+            with open(folder / "session.jsonl", "a") as fh:
+                fh.write(json.dumps(rec, default=str) + "\n")
+
+    def _write_snapshot(self) -> None:
+        """``snapshot.json``: what the dashboard's Live tab polls for the paper trader."""
+        syms = {}
+        for sym, a in self.agents.items():
+            live = a.live
+            bk = live._book
+            orders = {}
+            for side, name in ((1, "bid"), (-1, "ask")):
+                o = live.orders[side]
+                if o is not None:
+                    orders[name] = {"price": o.price, "queue_ahead": o.queue_ahead}
+            syms[sym] = {"bid": bk[0] * live.tick if bk else None, "ask": bk[1] * live.tick if bk else None,
+                         "q": live.q, "pnl_day": live.pnl - getattr(a, "_day_start_pnl", 0.0),
+                         "fills_day": len(live._fills), "orders": orders, "live_arm": a.live_arm,
+                         "loss_stop": bool(a.stopped), "state": self._state_logger(sym).snapshot()}
+        _json(self.out_dir / "snapshot.json", {"kind": "paper", "ts_utc": datetime.now(timezone.utc).isoformat(),
+                                               "symbols": syms})
 
     def _advance(self, sym: str, ts: int, inclusive: bool) -> None:
         st = self._st[sym]
@@ -222,6 +348,8 @@ class PaperSession:
             _json(self.state_dir / f"{sym}_table.json", a.table.to_dict())
             _json(self.state_dir / f"{sym}_agent.json", {**a.state_dict(), "tick": a.tick})
             self._write_day_files(sym, final=False)
+        if self.log_sim_states:
+            self._write_snapshot()
 
 
 def replay_day(start: dict, book: pd.DataFrame, trades: pd.DataFrame, info: dict,
@@ -309,9 +437,12 @@ def _main(argv=None) -> None:
     session = PaperSession(syms, args.state, args.out)
     for s in syms:
         session.agent_for(s)                 # fail early on an unknown tick
+    session.log_session("start", vars(args))
     try:
         asyncio.run(_run(session, args.hours))
+        session.log_session("stop", vars(args))
     except KeyboardInterrupt:
+        session.log_session("stop", vars(args))
         print("stopped")
 
 
