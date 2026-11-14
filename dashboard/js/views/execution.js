@@ -19,7 +19,8 @@ function drawMarkoutChart(b, el, key, label) {
   const groups = poolMarkouts(rows, key), fee = (b.config || {}).maker_fee_bps;
   const tr = [];
   Object.entries(groups).forEach(([g, pts], i) => {
-    const col = SERIES[i % SERIES.length], x = pts.map(p => p.h);
+    const side = /^(buy|bid)/i.test(g) ? BID_C : /^(sell|ask)/i.test(g) ? ASK_C : null;      // sides keep their colours
+    const col = side || SERIES[i % SERIES.length], x = pts.map(p => p.h);
     tr.push({ x: x.concat([...x].reverse()), y: pts.map(p => p.bp + p.se).concat(pts.map(p => p.bp - p.se).reverse()), fill: "toself",
               fillcolor: rgba(col, 0.15), line: { width: 0 }, hoverinfo: "skip", showlegend: false });
     tr.push({ x, y: pts.map(p => p.bp), mode: "lines+markers", name: `${label} ${g}`, line: { color: col, width: 2 },
@@ -35,12 +36,14 @@ function drawExecWait(b) {
   if (!w) return emptyPanel("ex-wait");
   const syms = (f.symbol === "ALL" ? Object.keys(w) : [f.symbol]).filter(s => w[s]);
   if (!syms.length) return emptyPanel("ex-wait");
+  // share of each coin's own fills, so a coin with 10x the fills does not flatten the others' shapes
   const tr = syms.map((s, i) => {
-    const e = w[s].edges;
-    return { type: "bar", name: s, x: w[s].count.map((_, j) => `${e[j]}–${e[j + 1]}`), y: w[s].count, marker: { color: SERIES[i % SERIES.length] },
-             hovertemplate: `${s} %{x} s: %{y} fills<extra></extra>` };
+    const e = w[s].edges, tot = w[s].count.reduce((a, x) => a + x, 0) || 1;
+    return { type: "scatter", mode: "lines+markers", name: s.replace("USDT", ""), x: w[s].count.map((_, j) => `${e[j]}–${e[j + 1]}`), y: w[s].count.map(c => 100 * c / tot),
+             line: { color: SERIES[i % SERIES.length], width: 2, shape: "spline", smoothing: 0.6 }, marker: { size: 6 }, customdata: w[s].count,
+             hovertemplate: `${s} %{x} s: %{y:.1f}% (%{customdata} fills)<extra></extra>` };
   });
-  deskPlot("ex-wait", tr, { barmode: "group", xaxis: axis("Queue wait, order live to fill (s)"), yaxis: axis("Fills") });
+  deskPlot("ex-wait", tr, { hovermode: "closest", xaxis: axis("Queue wait, order live to fill (s)"), yaxis: axis("Share of the coin's fills (%)", { rangemode: "tozero" }) });
 }
 
 /* Fills per hour with an order resting, and the share of the day one was resting (uptime). */
@@ -53,9 +56,12 @@ function drawExecRate(b) {
     const fills = d.reduce((a, x) => a + (x.fills || 0), 0), hrs = d.reduce((a, x) => a + 24 * x.uptime, 0);
     return { s, perHour: fills / hrs, up: d.reduce((a, x) => a + x.uptime, 0) / d.length }; }).filter(Boolean);
   if (!rows.length) return emptyPanel("ex-rate", "No fills: the agent stayed out, or uptime was not recorded");
-  deskPlot("ex-rate", [{ type: "bar", name: "Fills per hour with an order resting", x: rows.map(r => r.s.replace("USDT", "")), y: rows.map(r => r.perHour), marker: { color: SERIES[0] },
-      text: rows.map(r => `${pct(r.up)} up`), textposition: "outside", hovertemplate: "%{x}: %{y:.1f} fills/h<extra></extra>" }],
-    { showlegend: false, yaxis: axis("fills per hour"), xaxis: axis("") });
+  // a few coins: thin horizontal bars sized to the number of rows, not a wall of colour
+  $("ex-rate").style.height = `${Math.max(140, 70 + 44 * rows.length)}px`;
+  deskPlot("ex-rate", [{ type: "bar", orientation: "h", name: "Fills per hour with an order resting", y: rows.map(r => r.s.replace("USDT", "")), x: rows.map(r => r.perHour),
+      marker: { color: rgba(C.accent, 0.8) }, width: 0.55, text: rows.map(r => `${fmt(r.perHour, 1)}/h · resting ${pct(r.up)} of the day`), textposition: "outside", cliponaxis: false,
+      hovertemplate: "%{y}: %{x:.1f} fills/h<extra></extra>" }],
+    { showlegend: false, hovermode: "closest", xaxis: axis("fills per hour while an order was resting", { rangemode: "tozero" }), yaxis: axis("", { autorange: "reversed" }), margin: { l: 56, r: 150, t: 10, b: 40 } });
 }
 
 function drawExecTable(b) {

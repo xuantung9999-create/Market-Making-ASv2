@@ -74,7 +74,7 @@ function drawPnlHist(b) {
   const x = ds.map(d => d.pnl), mean = x.reduce((a, v) => a + v, 0) / x.length;
   const sd = x.length > 1 ? Math.sqrt(x.reduce((a, v) => a + (v - mean) ** 2, 0) / (x.length - 1)) : null;
   const tstat = sd ? mean / (sd / Math.sqrt(x.length)) : null;
-  deskPlot("pnl-hist", [{ type: "histogram", x, nbinsx: 30, marker: { color: rgba(SERIES[0], 0.7) }, hovertemplate: "%{x} USD: %{y} days<extra></extra>" }],
+  deskPlot("pnl-hist", [{ type: "histogram", x, nbinsx: 30, marker: { color: rgba(C.accent, 0.7) }, hovertemplate: "%{x} USD: %{y} days<extra></extra>" }],
     { xaxis: axis("Daily net P&L (USD)"), yaxis: axis("Days"), showlegend: false,
       shapes: [{ type: "line", x0: 0, x1: 0, yref: "paper", y0: 0, y1: 1, line: { color: C.muted, dash: "dot" } },
                { type: "line", x0: mean, x1: mean, yref: "paper", y0: 0, y1: 1, line: { color: pnlColor(mean), width: 2 } }],

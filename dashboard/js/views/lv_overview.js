@@ -89,11 +89,12 @@ function drawTimeline(bs) {
                   fillcolor: STATE_COLOR[iv.state] || "#64748b", opacity: iv.state === "QUOTING" ? 0.3 : 0.85, line: { width: 0 }, layer: "below" });
   })));
   const w = bs.length ? Sess.windowOf(bs[0]) : null;
-  const lay = { height: Math.max(150, 90 + bs.length * 46), showlegend: true, shapes, hovermode: "closest",
+  const lay = { height: Math.max(130, 80 + bs.length * 44), showlegend: true, shapes, hovermode: "closest",
     xaxis: axis("", { type: "date", range: w ? [isoT(w[0]), isoT(w[1])] : undefined }),
     yaxis: axis("", { tickmode: "array", tickvals: bs.map((_, i) => i), ticktext: bs.map(b => `${b.meta.symbol} ${b.meta.policy}`), range: [-0.7, bs.length - 0.3], zeroline: false }),
     margin: { l: 110, r: 16, t: 10, b: 36 } };
   if (!inc.length && !shapes.length) { lvEmpty("ov2-timeline", "No incidents and no state log in this range."); return; }
+  $("ov2-timeline").style.height = lay.height + "px";          // one band per session, no empty floor
   deskPlot("ov2-timeline", traces, lay).then(el => {
     el.removeAllListeners && el.removeAllListeners("plotly_click");
     el.on("plotly_click", ev => { const cd = ev.points[0].customdata; if (cd) { const [id, sid] = cd.split("|"); const i = inc.find(x => x.id === id && x.sid === sid); if (i) openIncident(i); } });
@@ -125,7 +126,7 @@ function drawCum(bs) {
     const idx = c.t.map((t, i) => i).filter(i => !w || (c.t[i] >= w[0] && c.t[i] <= w[1]));
     if (!idx.length) return;
     const base = w && idx.length ? 0 : 0;
-    const col = single ? SERIES[0] : SERIES[k % SERIES.length];
+    const col = single ? "#e2e8f0" : SERIES[k % SERIES.length];
     traces.push({ type: "scatter", mode: "lines", name: single ? "net" : b.meta.symbol, x: idx.map(i => isoT(c.t[i])), y: idx.map(i => c.pnl[i] - base),
                   line: { color: col, width: 2 }, hovertemplate: "%{y:.2f} USDT<extra>net</extra>" });
     traces.push({ type: "scatter", mode: "lines", name: single ? "net excluding artifacts" : b.meta.symbol + " ex-artifact", x: idx.map(i => isoT(c.t[i])), y: idx.map(i => c.pnl_ex_artifact[i] - base),
@@ -133,7 +134,7 @@ function drawCum(bs) {
     if (single) {
       traces.push({ type: "scatter", mode: "lines", name: "inventory (lots)", x: idx.map(i => isoT(c.t[i])), y: idx.map(i => c.lots[i]), xaxis: "x", yaxis: "y2",
                     line: { color: "#cbd5e1", width: 1.5, shape: "hv" }, hovertemplate: "%{y} lots<extra></extra>" });
-      markerLines(b).forEach(s => shapes.push(s));
+      markerLines(b, ["restart", "loss_stop", "day"]).forEach(s => shapes.push(s));   // incidents are on the timeline above
       stateBands(b, 1.0, 0.03).forEach(s => shapes.push(s));
       [-b.meta.q_max, b.meta.q_max].forEach(q => shapes.push({ type: "line", xref: "paper", yref: "y2", x0: 0, x1: 1, y0: q, y1: q, line: { color: "#818cf8", width: 1, dash: "dot" } }));
     }

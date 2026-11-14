@@ -13,15 +13,22 @@ function drawRiskInventory(b) {
     all.push(...c.q);
   });
   if (!tr.length) { emptyPanel("rk-inv"); emptyPanel("rk-invdist"); return; }
-  const shapes = isNum(qmax) ? [qmax, -qmax].map(y => ({ type: "line", xref: "paper", x0: 0, x1: 1, y0: y, y1: y, line: { color: LOSS, dash: "dash" } })) : [];
-  deskPlot("rk-inv", tr, { xaxis: axis("UTC", { type: "date", range: rangeX(Object.values(cv).map(c => (c.t || []).slice(-1)[0]).filter(Boolean).sort().pop()) || undefined }), yaxis: axis("Inventory (lots)", { zeroline: true, zerolinecolor: C.muted }), shapes });
+  const shapes = isNum(qmax) ? [qmax, -qmax].map(y => ({ type: "line", xref: "paper", x0: 0, x1: 1, y0: y, y1: y, line: { color: STATE_COLOR.INV_CAP, dash: "dash" } })) : [];
+  // the inventory record covers only the last days of the run: frame the axis on it, not on the 60-day P&L span
+  // (the curve is padded with zeros before that, so frame the last 3 days, as the caption says)
+  const ts = tr.flatMap(t => t.x.filter((_, j) => isNum(t.y[j]))).sort();
+  const end = ts.length ? Date.parse(String(ts[ts.length - 1]).replace(" ", "T") + (/[zZ+]/.test(String(ts[ts.length - 1]).slice(10)) ? "" : "Z")) : NaN;
+  const span = isFinite(end) ? [new Date(end - 3 * 864e5).toISOString(), new Date(end).toISOString()] : undefined;
+  const qlim = isNum(qmax) ? qmax * 1.15 : undefined;
+  deskPlot("rk-inv", tr, { xaxis: axis("UTC", { type: "date", range: rangeX(span && span[1]) || span }),
+    yaxis: axis("Inventory (lots)", { zeroline: true, zerolinecolor: C.muted, range: qlim && Math.max(...all.map(Math.abs)) <= qlim ? [-qlim, qlim] : undefined }), shapes });
   const qh = section(b, "q_hist"), hist = qh ? riskSyms(b).map(x => qh[`${x}|${f.variant}`]).filter(Boolean) : [];
   const lv = [...new Set(hist.flatMap(h => h.levels))].sort((p, q) => p - q);
   const share = lv.map(l => hist.reduce((a, h) => { const i = h.levels.indexOf(l); return a + (i >= 0 ? h.share[i] : 0); }, 0) / Math.max(1, hist.length) * 100);
   const x = hist.length ? lv : null;
-  deskPlot("rk-invdist", [hist.length ? { type: "bar", x: lv, y: share, marker: { color: lv.map(l => isNum(qmax) && Math.abs(l) >= qmax ? LOSS : rgba(SERIES[0], 0.75)) },
+  deskPlot("rk-invdist", [hist.length ? { type: "bar", x: lv, y: share, marker: { color: lv.map(l => isNum(qmax) && Math.abs(l) >= qmax ? STATE_COLOR.INV_CAP : rgba(C.accent, 0.55)) },
       hovertemplate: "%{x} lots: %{y:.1f}% of the run<extra></extra>" }
-    : { type: "histogram", x: all, histnorm: "percent", xbins: { size: 1 }, marker: { color: rgba(SERIES[0], 0.75) }, hovertemplate: "%{x} lots: %{y:.1f}% of time<extra></extra>" }],
+    : { type: "histogram", x: all, histnorm: "percent", xbins: { size: 1 }, marker: { color: rgba(C.accent, 0.55) }, hovertemplate: "%{x} lots: %{y:.1f}% of time<extra></extra>" }],
     { xaxis: axis("Inventory (lots)"), yaxis: axis("Share of the whole run (%)"), showlegend: false });
 }
 
@@ -32,7 +39,7 @@ function drawRiskDrawdown(b) {
   let peak = 0;
   const dd = c.pnl.map(v => { peak = Math.max(peak, v); return v - peak; });
   deskPlot("rk-dd", [
-    { x: c.t, y: c.pnl, name: "Cumulative P&L", mode: "lines", line: { color: SERIES[0], width: 1.5 }, hovertemplate: "%{y:,.2f} USD<extra></extra>" },
+    { x: c.t, y: c.pnl, name: "Cumulative P&L", mode: "lines", line: { color: C.accent, width: 1.5 }, hovertemplate: "%{y:,.2f} USD<extra></extra>" },
     { x: c.t, y: dd, name: "Drawdown", mode: "lines", fill: "tozeroy", line: { color: LOSS, width: 1 }, fillcolor: rgba(LOSS, 0.2), hovertemplate: "%{y:,.2f} USD<extra></extra>" },
   ], { xaxis: axis("UTC", { type: "date", range: rangeX(c.t.slice(-1)[0]) || undefined }), yaxis: axis("USD", { zeroline: true, zerolinecolor: C.muted }) });
 }

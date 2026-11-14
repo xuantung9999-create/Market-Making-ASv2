@@ -57,11 +57,13 @@ function paintTape(b, req, fill, inc, tape) {
   const shapes = [], ann = [];
   if (fill) {
     tr.push({ type: "scatter", mode: "markers", name: "fill", x: [isoT(fill.t)], y: [fill.price], marker: { symbol: "star", size: 16, color: fill.artifact ? ART_C : "#e2e8f0", line: { width: 1, color: "#0a0f16" } }, hovertemplate: `fill ${fill.price}<extra></extra>` });
-    HORIZONS.forEach(h => {
+    HORIZONS.forEach((h, k) => {
       const mk = fill["mk_" + h], t = fill.t + h * 1000;
       if (t > win.t1) return;
-      shapes.push({ type: "line", xref: "x", yref: "paper", x0: isoT(t), x1: isoT(t), y0: 0, y1: 0.06, line: { color: "#94a3b8", width: 2 } });
-      ann.push({ x: isoT(t), y: 0.0, yref: "paper", text: `${h} s ${isNum(mk) ? sign(mk, 1) + " bp" : "n/a"}`, showarrow: false, yanchor: "top", font: { size: 10, color: "#94a3b8" } });
+      const y = 0.97 - 0.07 * (k % 3);                   // stagger: 1 s, 5 s and 30 s sit a few seconds apart
+      shapes.push({ type: "line", xref: "x", yref: "paper", x0: isoT(t), x1: isoT(t), y0: 0, y1: y, line: { color: "#475569", width: 1, dash: "dot" } });
+      ann.push({ x: isoT(t), y, yref: "paper", text: `${h} s: ${isNum(mk) ? sign(mk, 1) + " bp" : "n/a"}`, showarrow: false, xanchor: "left", yanchor: "middle",
+                 bgcolor: "rgba(16,24,35,.85)", font: { size: 10, color: "#cbd5e1" } });
     });
   } else shapes.push({ type: "line", xref: "x", yref: "paper", x0: isoT(req.t), x1: isoT(req.t), y0: 0, y1: 1, line: { color: "#facc15", width: 1.5, dash: "dash" } });
   // the stored window can be many events merged: show 60 s before to 300 s after this one

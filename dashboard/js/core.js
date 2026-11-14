@@ -47,6 +47,15 @@ function axis(title, extra = {}) {
                          linecolor: C.line, tickfont: { family: MONO, size: 11, color: C.muted }, automargin: true }, extra);
 }
 function layout(extra = {}) {
+  const lay = baseLayout(extra);
+  // log axes: label powers of ten only (Plotly's default labels every 2 and 5 in between, which reads as noise)
+  Object.keys(lay).forEach(k => {
+    const a = lay[k];
+    if (/^[xy]axis\d*$/.test(k) && a && a.type === "log" && a.tickvals === undefined && a.dtick === undefined) { a.dtick = 1; a.minor = { showgrid: false }; }
+  });
+  return lay;
+}
+function baseLayout(extra = {}) {
   return Object.assign({
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "IBM Plex Sans, system-ui, sans-serif", color: C.muted, size: 12 },
@@ -158,7 +167,9 @@ const KIND = {
   live:        { label: "LIVE",         c: "#22d3ee" },
   demo:        { label: "DEMO",         c: "#e879f9" },
 };
-const SERIES = ["#38bdf8", "#f5a524", "#a78bfa", "#e2e8f0", "#f472b6", "#2dd4bf", "#fb923c", "#818cf8"];
+/* Categorical colours for coins, sessions and variants. None of them is bid blue, ask amber, artifact purple or
+   profit/loss green/red, so a coloured line never reads as one of those meanings. */
+const SERIES = ["#2dd4bf", "#f472b6", "#facc15", "#818cf8", "#e2e8f0", "#fb923c", "#94a3b8", "#c084fc"];
 const esc = x => String(x).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 const isNum = x => typeof x === "number" && isFinite(x);
 const sign = (x, d = 2) => isNum(x) ? (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d) : "–";

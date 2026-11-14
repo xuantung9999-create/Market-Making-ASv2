@@ -43,9 +43,9 @@ function drawBookNow(b) {
   const spBp = (ask - bid) / mid * 1e4;
   const ticks = isNum(p.tick_bp) && p.tick_bp > 0 ? spBp / p.tick_bp : null;
   fillHtml("bk-now", `<h2>${esc(BOOK.coin)}</h2><p class="sub">Last recorded sample · ${esc(lastOf(t.t).replace("T", " ").replace("Z", ""))} UTC</p>
-    <div style="display:flex;justify-content:space-between"><div><div class="k note">BID</div><div class="px" style="color:${SERIES[0]}">${fmtP(bid)}</div><div class="note">${bq4(bQ)} units</div></div>
-      <div style="text-align:right"><div class="k note">ASK</div><div class="px" style="color:${SERIES[1]}">${fmtP(ask)}</div><div class="note">${bq4(aQ)} units</div></div></div>
-    <div class="imbbar" aria-hidden="true"><i style="width:${(100 * bQ / (tot || 1)).toFixed(1)}%;background:${SERIES[0]}"></i><i style="width:${(100 * aQ / (tot || 1)).toFixed(1)}%;background:${SERIES[1]}"></i></div>
+    <div style="display:flex;justify-content:space-between"><div><div class="k note">BID</div><div class="px" style="color:${BID_C}">${fmtP(bid)}</div><div class="note">${bq4(bQ)} units</div></div>
+      <div style="text-align:right"><div class="k note">ASK</div><div class="px" style="color:${ASK_C}">${fmtP(ask)}</div><div class="note">${bq4(aQ)} units</div></div></div>
+    <div class="imbbar" aria-hidden="true"><i style="width:${(100 * bQ / (tot || 1)).toFixed(1)}%;background:${BID_C}"></i><i style="width:${(100 * aQ / (tot || 1)).toFixed(1)}%;background:${ASK_C}"></i></div>
     <dl><dt>Imbalance</dt><dd>${sign(imb, 2)}</dd>
       <dt>Spread</dt><dd>${ticks !== null ? fmt(ticks, 0) + (Math.round(ticks) === 1 ? " tick" : " ticks") + " = " : ""}${fmt(spBp, 1)} bp</dd>
       <dt>Microprice − mid</dt><dd>${sign((micro - mid) / mid * 1e4, 1)} bp</dd>
@@ -63,13 +63,13 @@ function drawBookPrice(b) {
   const t = b.touch[BOOK.coin], tr = (b.trades || {})[BOOK.coin];
   if (!t || !t.t.length) return emptyPanel("bk-price");
   const data = [
-    { x: t.t, y: t.bid, name: "Best bid", mode: "lines", line: { shape: "hv", width: 1.4, color: SERIES[0] }, hovertemplate: "bid %{y}<extra></extra>" },
-    { x: t.t, y: t.ask, name: "Best ask", mode: "lines", line: { shape: "hv", width: 1.4, color: SERIES[1] }, hovertemplate: "ask %{y}<extra></extra>" },
+    { x: t.t, y: t.bid, name: "Best bid", mode: "lines", line: { shape: "hv", width: 1.4, color: BID_C }, hovertemplate: "bid %{y}<extra></extra>" },
+    { x: t.t, y: t.ask, name: "Best ask", mode: "lines", line: { shape: "hv", width: 1.4, color: ASK_C }, hovertemplate: "ask %{y}<extra></extra>" },
   ];
   if (tr && tr.t.length) {
     const mx = Math.max(...tr.qty, 1e-12);
     data.push({ x: tr.t, y: tr.price, name: "Trades", mode: "markers", marker: { size: tr.qty.map(q => 3 + 12 * Math.sqrt(q / mx)),
-                color: tr.side.map(s => s > 0 ? SERIES[0] : SERIES[1]), opacity: 0.65, line: { width: 0 } },
+                color: tr.side.map(s => s > 0 ? BID_C : ASK_C), opacity: 0.65, line: { width: 0 } },
                 customdata: tr.qty, hovertemplate: "%{y} · %{customdata} units<extra>trade</extra>" });
   }
   deskPlot("bk-price", data, { xaxis: axis("UTC", { type: "date", range: windowRange(t) }), yaxis: axis("price"), hovermode: "x" });
@@ -80,8 +80,8 @@ function drawBookSize(b) {
   if (!t || !t.t.length) return emptyPanel("bk-size");
   const imb = t.bid_qty.map((q, i) => { const s = q + t.ask_qty[i]; return s > 0 ? (q - t.ask_qty[i]) / s : 0; });
   deskPlot("bk-size", [
-    { x: t.t, y: t.bid_qty, name: "Bid size", mode: "lines", line: { shape: "hv", width: 0.5, color: SERIES[0] }, fill: "tozeroy", fillcolor: rgba(SERIES[0], 0.35) },
-    { x: t.t, y: t.ask_qty.map(q => -q), name: "Ask size", mode: "lines", line: { shape: "hv", width: 0.5, color: SERIES[1] }, fill: "tozeroy", fillcolor: rgba(SERIES[1], 0.35),
+    { x: t.t, y: t.bid_qty, name: "Bid size", mode: "lines", line: { shape: "hv", width: 0.5, color: BID_C }, fill: "tozeroy", fillcolor: rgba(BID_C, 0.35) },
+    { x: t.t, y: t.ask_qty.map(q => -q), name: "Ask size", mode: "lines", line: { shape: "hv", width: 0.5, color: ASK_C }, fill: "tozeroy", fillcolor: rgba(ASK_C, 0.35),
       customdata: t.ask_qty, hovertemplate: "%{customdata}<extra>ask size</extra>" },
     { x: t.t, y: imb, name: "Imbalance", mode: "lines", yaxis: "y2", line: { shape: "hv", width: 1, color: C.text } },
   ], { xaxis: axis("UTC", { type: "date", range: windowRange(t) }), yaxis: axis("units", { zeroline: true, zerolinecolor: C.muted }),
@@ -109,7 +109,7 @@ function drawBookImb(b) {
 function drawBookSpread(b) {
   const h = (b.spread_hist || {})[BOOK.coin];
   if (!h || !h.ticks.length) return emptyPanel("bk-spread");
-  deskPlot("bk-spread", [{ type: "bar", x: h.ticks.map(t => t === 10 ? "10+" : String(t)), y: h.share.map(x => 100 * x), marker: { color: SERIES[0] },
+  deskPlot("bk-spread", [{ type: "bar", x: h.ticks.map(t => t === 10 ? "10+" : String(t)), y: h.share.map(x => 100 * x), marker: { color: C.accent },
                            hovertemplate: "%{x} ticks: %{y:.1f}%<extra></extra>" }],
            { showlegend: false, xaxis: axis("spread (ticks)", { type: "category" }), yaxis: axis("% of time") });
 }

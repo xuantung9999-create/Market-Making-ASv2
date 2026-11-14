@@ -65,9 +65,9 @@ if (typeof document !== "undefined") (function () {
     const spBp = isNum(r.bid) && isNum(r.ask) && r.bid > 0 ? (r.ask - r.bid) / ((r.ask + r.bid) / 2) * 1e4 : null;
     const tot = (r.bid_qty || 0) + (r.ask_qty || 0), imb = tot > 0 ? (r.bid_qty - r.ask_qty) / tot : null;
     const trades = (r.last_trades || []).slice(-6).reverse().map(t =>
-      `<tr><td>${esc(String(t.t).slice(11, 23))}</td><td style="color:${t.side > 0 ? SERIES[0] : SERIES[1]}">${t.side > 0 ? "buy" : "sell"}</td><td>${fmtP(t.price)}</td><td>${fmtP(t.qty)}</td></tr>`).join("");
+      `<tr><td>${esc(String(t.t).slice(11, 23))}</td><td style="color:${t.side > 0 ? BID_C : ASK_C}">${t.side > 0 ? "buy" : "sell"}</td><td>${fmtP(t.price)}</td><td>${fmtP(t.qty)}</td></tr>`).join("");
     return `<div class="card live-card${dim ? " dim" : ""}"><div class="card-head"><h2>${esc(sym)}</h2>${ageHtml(r.last_book_utc)}</div>
-      <div class="live-px"><span style="color:${SERIES[0]}">${isNum(r.bid) ? fmtP(r.bid) : "–"}</span><span class="note"> / </span><span style="color:${SERIES[1]}">${isNum(r.ask) ? fmtP(r.ask) : "–"}</span></div>
+      <div class="live-px"><span style="color:${BID_C}">${isNum(r.bid) ? fmtP(r.bid) : "–"}</span><span class="note"> / </span><span style="color:${ASK_C}">${isNum(r.ask) ? fmtP(r.ask) : "–"}</span></div>
       <dl class="kv"><dt>Size bid / ask</dt><dd>${fmtP(r.bid_qty)} / ${fmtP(r.ask_qty)}</dd><dt>Imbalance</dt><dd>${imb === null ? "–" : sign(imb, 2)}</dd>
       <dt>Spread</dt><dd>${spBp === null ? "–" : fmt(spBp, 1) + " bp"}</dd><dt>Book updates / min</dt><dd>${num(r.book_per_min, 0)}</dd>
       <dt>Trades / min</dt><dd>${num(r.trades_per_min, 0)}</dd><dt>Last trade</dt><dd>${ageHtml(r.last_trade_utc)}</dd></dl>

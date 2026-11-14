@@ -35,8 +35,14 @@ function drawLvModel() {
   if (h.length < 2) lvEmpty("lvm-scores", "Fewer than two history points are recorded for this session, so no score lines can be drawn yet.");
   else {
     const n = h[0].scores.length;
-    const tr = Array.from({ length: n }, (_, i) => ({ type: "scatter", mode: "lines", name: `arm ${i}`, x: h.map(r => isoT(r.t)), y: h.map(r => r.scores[i]),
-      line: { color: armColor(i), width: mo.live_arm === i ? 3 : 1 }, opacity: mo.live_arm === i ? 1 : 0.7 }));
+    // twelve lines at once is noise: the live arm and the best-scoring arm in colour, the rest as grey context
+    const last = h[h.length - 1].scores, best = last.indexOf(Math.max(...last));
+    const key = i => i === mo.live_arm || i === best;
+    const tr = Array.from({ length: n }, (_, i) => i).sort((a, b) => key(a) - key(b)).map(i => ({ type: "scatter", mode: "lines",
+      name: i === mo.live_arm ? `arm ${i} (live)` : i === best ? `arm ${i} (best now)` : "other arms", legendgroup: key(i) ? `a${i}` : "other",
+      showlegend: key(i) || i === [...Array(n).keys()].find(j => !key(j)), x: h.map(r => isoT(r.t)), y: h.map(r => r.scores[i]),
+      line: { color: i === mo.live_arm ? BID_C : i === best ? "#2dd4bf" : "#475569", width: key(i) ? 2.5 : 1 }, opacity: key(i) ? 1 : 0.6,
+      hovertemplate: `arm ${i}: %{y:.2f} bp<extra></extra>` }));
     deskPlot("lvm-scores", tr, { yaxis: axis("score, bp", { zeroline: true, zerolinewidth: 1.5, zerolinecolor: "#94a3b8" }), xaxis: axis("", { type: "date", range: w ? [isoT(w[0]), isoT(w[1])] : undefined }),
       shapes: h.filter(r => r.switched).map(r => ({ type: "line", xref: "x", yref: "paper", x0: isoT(r.t), x1: isoT(r.t), y0: 0, y1: 1, line: { color: "#facc15", width: 1, dash: "dot" } })) });
   }

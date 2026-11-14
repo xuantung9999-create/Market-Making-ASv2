@@ -156,10 +156,10 @@ function stateBands(b, top = 1.0, h = 0.035) {
   return out;
 }
 const band = (iv, y1, h, color, op) => ({ type: "rect", xref: "x", yref: "paper", x0: isoT(iv.t0), x1: isoT(iv.t1), y0: y1 - h, y1, fillcolor: color, opacity: op, line: { width: 0 }, layer: "below" });
-function markerLines(b) {
+function markerLines(b, kinds = ["restart", "loss_stop", "day", "incident"]) {
   const col = { restart: "#e2e8f0", loss_stop: "#fb923c", day: "#334155", incident: "#facc15" };
   const dash = { restart: "dot", loss_stop: "solid", day: "dot", incident: "dash" };
-  return (b.markers || []).filter(m => Sess.inWin(b, m.t)).map(m => ({ type: "line", xref: "x", yref: "paper", x0: isoT(m.t), x1: isoT(m.t), y0: 0, y1: 1,
+  return (b.markers || []).filter(m => kinds.includes(m.kind) && Sess.inWin(b, m.t)).map(m => ({ type: "line", xref: "x", yref: "paper", x0: isoT(m.t), x1: isoT(m.t), y0: 0, y1: 1,
     line: { color: col[m.kind] || "#64748b", width: m.kind === "day" ? 1 : 1.5, dash: dash[m.kind] || "dot" }, layer: "below" }));
 }
 function lvRange(b) { const w = Sess.windowOf(b); return w ? [isoT(w[0]), isoT(w[1])] : null; }
