@@ -47,7 +47,7 @@ function drawVerdictTiles(b) {
     ["t-statistic", isNum(r.t) ? fmt(r.t, 1) : "–", "", "|t| > 2: unlikely to be luck"],
     ["Days with profit", pct(r.hit_rate), "", `of ${fmt(r.n_days, 0)} days`],
     ["Counted coin-days", fmt(coinDays, 0), "", "days with 20+ fills"],
-    ["Agent fills", ag ? fmt(ag.fills, 0) : "–", "", ag ? `in ${fmt(ag.days_total, 0)} days` : "agent not run"],
+    ["Agent fills", ag ? fmt(ag.fills, 0) : "–", "", ag ? tk(b, "ov-agent-tile", `in ${fmt(ag.days_total, 0)} days`) : "agent not run"],
     ["Gate A", gate ? (gate.pass ? "PASS" : "FAIL") : "–", gate ? (gate.pass ? "pos" : "neg") : "", "pre-registered, before real money"],
   ];
   fillHtml("ov-tiles", tiles.map(t => `<div class="tile"><div class="k">${t[0]}</div><div class="v ${t[2]}">${t[1]}</div><div class="s">${t[3]}</div></div>`).join(""));

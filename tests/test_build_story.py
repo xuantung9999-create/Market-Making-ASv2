@@ -109,7 +109,7 @@ def test_hero_tiles_and_facts_come_from_the_bundles(tmp_path):
     h = story(make_base(tmp_path))["sections"]["hero"]
     t = {x["key"]: x for x in h["tiles"]}
     assert t["net"]["value"] == pytest.approx(-18.2) and t["t"]["value"] == pytest.approx(-9.1)
-    assert t["agent_fills"]["value"] == 0 and t["agent_fills"]["context"] == "in 53 days" and t["gate"]["value"] == "FAIL"
+    assert t["agent_fills"]["value"] == 0 and t["agent_fills"]["context"] == "in 53 counted days (106 coin-days)" and t["gate"]["value"] == "FAIL"
     assert h["facts_line"] == "431 tests · 60 days and 2 coins tested · 1,000 simulated fills · 100 real orders sent on testnet"
     assert h["sentence"].endswith("-18.2 bp per dollar traded after fees.")
 

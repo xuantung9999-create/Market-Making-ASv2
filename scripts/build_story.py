@@ -458,6 +458,55 @@ def limits(src: Sources) -> Optional[list[str]]:
     return items[:3] if len(items) >= 3 else None
 
 
+SHORT_MAX = 18          # recruiter-ready spec 5.1: a forest label that fits a phone
+
+
+def coin_name(symbol: str) -> str:
+    return symbol[:-4] if symbol.endswith("USDT") else symbol
+
+
+def label_short(row: dict) -> str:
+    """The forest row's label for narrow screens, at most SHORT_MAX characters: 'Front, 100 ms', 'Queue 1x', 'Agent, 1x' for the
+    pooled rows, 'ANKR 1x', 'ANKR front', 'ANKR agent 1x' per coin. The long label stays for hover and wide screens."""
+    qm, var, sym = row.get("queue_mult"), str(row.get("variant", "")), str(row.get("symbol", ""))
+    front = qm == 0.0 and var != "agent"
+    q = f"{qm:g}x" if finite(qm) else ""
+    if sym == "ALL":
+        if front:
+            lat = latency_of(row)
+            s = f"Front, {lat} ms" if lat else "Front of queue"
+        elif var == "agent":
+            s = f"Agent, {q}" if q else "Agent"
+        elif var == HEADLINE_STRATEGY or not var:
+            s = f"Queue {q}" if q else var
+        else:
+            s = f"{var} {q}".strip()
+    else:
+        c = coin_name(sym)
+        s = f"{c} front" if front else f"{c} agent {q}".strip() if var == "agent" else f"{c} {q}".strip()
+    return s[:SHORT_MAX]
+
+
+def add_short_labels(forest: list[dict]) -> list[dict]:
+    """Every forest row with its label_short (written into the verdict bundle by scripts/build_verdict.py)."""
+    return [{**r, "label_short": label_short(r)} for r in forest]
+
+
+def agent_days(forest: list[dict], coins: list[str]) -> Optional[dict]:
+    """The agent's counted days and coin-days (spec 5.2): '53 counted days (159 coin-days)'. Coin-days add the per-coin agent rows;
+    without them, days times coins."""
+    ag = next((r for r in forest if r.get("symbol") == "ALL" and r.get("variant") == "agent" and r.get("queue_mult") == HEADLINE_QUEUE), None)
+    if ag is None or not finite(ag.get("days_total")):
+        return None
+    per = [r["days_total"] for r in forest if r.get("symbol") != "ALL" and r.get("variant") == "agent"
+           and r.get("queue_mult") == HEADLINE_QUEUE and finite(r.get("days_total"))]
+    days, n = int(ag["days_total"]), len(coins)
+    coin_days = int(sum(per)) if per else days * n
+    return {"fills": int(ag.get("fills") or 0), "days": days, "coins": n, "coin_days": coin_days,
+            "context": f"in {days} counted days ({coin_days:,} coin-days)",
+            "text": f"{int(ag.get('fills') or 0):,} fills · {days} counted days ({coin_days:,} coin-days)"}
+
+
 def forest_rows(facts: dict) -> list[dict]:
     rows = []
     for qm in (0.0, 0.5, 1.0, 2.0):
@@ -468,9 +517,9 @@ def forest_rows(facts: dict) -> list[dict]:
         r = next((x for x in facts["forest"] if x.get("symbol") == coin and x.get("variant") == HEADLINE_STRATEGY
                   and x.get("queue_mult") == HEADLINE_QUEUE and "net_bp" in x), None)
         if r:
-            rows.append({**r, "label": f"{coin[:-4] if coin.endswith('USDT') else coin}, queue {HEADLINE_QUEUE:g}x", "pooled": False})
-    keep = ("label", "scenario", "symbol", "queue_mult", "net_bp", "gross_bp", "net_se", "gross_se", "t", "n_days", "fills", "pooled")
-    return [{k: r.get(k) for k in keep} for r in rows[:8]]
+            rows.append({**r, "label": f"{coin_name(coin)}, queue {HEADLINE_QUEUE:g}x", "pooled": False})
+    keep = ("label", "label_short", "scenario", "symbol", "queue_mult", "net_bp", "gross_bp", "net_se", "gross_se", "t", "n_days", "fills", "pooled")
+    return [{k: r.get(k) for k in keep} for r in ({**r, "label_short": label_short(r)} for r in rows[:8])]
 
 
 STACK = [
@@ -552,12 +601,14 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
         q1, ag = facts["q1"], facts["agent"]
         tests = (src.tests or {}).get("passed")
         coins = len(facts["coins"])
+        agd = agent_days(facts["forest"], facts["coins"])
         tiles = [
             {"key": "net", "label": "Net, bp per dollar traded", "value": q1["net_bp"],
              "context": f"queue {HEADLINE_QUEUE:g}x, after fees, {q1['n_days']} dates, {coins} coins"},
             {"key": "t", "label": "t-statistic", "value": q1.get("t"), "context": f"{q1['n_days']} dates, {coins} coins"},
             {"key": "agent_fills", "label": "Agent fills", "value": ag["fills"] if ag else None,
-             "context": f"in {ag['days_total']} days" if ag else "the agent row is missing from the verdict bundle"},
+             "context": agd["context"] if agd else "the agent row is missing from the verdict bundle",
+             **({k: agd[k] for k in ("days", "coins", "coin_days", "text")} if agd else {})},
             {"key": "gate", "label": "Gate A", "context": "fixed before the test",
              "value": ("PASS" if facts["gates"].get("pass") else "FAIL") if facts["gates"] else None},
         ]
@@ -600,9 +651,11 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
                    and r.get("queue_mult") == HEADLINE_QUEUE and finite(r.get("mk_60"))), None)
         sections["waterfall"] = {
             "status": "ok", "title": "Where a fill's money goes.", "net_bp": wf["net"], "days": wf["days"],
-            "terms": [{"key": "spread", "label": "Spread captured", "bp": wf["spread"]},
-                      {"key": "inventory", "label": "Inventory and adverse selection", "bp": wf["inventory"]},
-                      {"key": "fee", "label": "Fee", "bp": wf["fee"]}],
+            "terms": [{"key": "spread", "label": "Spread captured", "label_short": "Spread<br>captured", "bp": wf["spread"]},
+                      {"key": "inventory", "label": "Inventory and adverse selection", "label_short": "Inventory and<br>adverse selection",
+                       "bp": wf["inventory"]},
+                      {"key": "fee", "label": "Fee", "label_short": "Fee", "bp": wf["fee"]}],
+            "net_label_short": "Net",
             "markout_60_bp": mk["mk_60"] if mk else None,
             "sentence": (f"At queue {HEADLINE_QUEUE:g}x, per dollar traded: {wf['spread']:+.1f} bp of spread captured, "
                          f"{wf['inventory']:+.1f} bp lost to the price moving against the fill and to inventory, "
@@ -617,6 +670,7 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
         lat = facts["cfg"].get("latency_ms")
         suffix = f", {lat:g} ms" if finite(lat) else ""
         pts = [{"key": "v1", "label": f"v1 backtest, no queue model ({v1['symbol'][:-4]}, one day, {v1['date']})",
+                "label_short": f"v1, no queue<br>{coin_name(v1['symbol'])}, one day",
                 "gross_bp": v1["gross_bp"], "net_bp": v1["net_bp"], "one_day": True}]
         for key, qm in (("front", 0.0), ("q1", 1.0), ("q2", 2.0)):
             r = pooled(facts["forest"], HEADLINE_STRATEGY, qm)
@@ -624,7 +678,9 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
                 break
             fl = latency_of(r)
             label = (f"front of queue{f', {fl} ms' if fl else ''}" if key == "front" else f"queue {qm:g}x{suffix}")
-            pts.append({"key": key, "label": label, "gross_bp": r["gross_bp"], "net_bp": r["net_bp"], "one_day": False})
+            short = (f"Front of queue{f'<br>{fl} ms' if fl else ''}" if key == "front"
+                     else f"Queue {qm:g}x" + (f"<br>{lat:g} ms" if finite(lat) else ""))
+            pts.append({"key": key, "label": label, "label_short": short, "gross_bp": r["gross_bp"], "net_bp": r["net_bp"], "one_day": False})
         if len(pts) == 4:
             sections["ladder"] = {"status": "ok", "title": title5, "points": pts, "sentence": by_id[3]["text"],
                                   "link": {"href": "#verdict", "label": "See the evidence →"}}

@@ -1,6 +1,6 @@
 # Crypto Market Making: from Avellaneda-Stoikov to a queue-aware, self-calibrating quoter
 
-A market-making research project on Binance spot, built from the Avellaneda & Stoikov (2008) paper up to an event-driven, queue-aware simulator with an online calibration agent, a paper trader, a testnet execution layer and an interactive dashboard. 331 tests.
+A market-making research project on Binance spot, built from the Avellaneda & Stoikov (2008) paper up to an event-driven, queue-aware simulator with an online calibration agent, a paper trader, a testnet execution layer and an interactive dashboard. Over 500 tests.
 
 **The result is negative, and that is the finding.** A candidate edge on tick-constrained micro caps (+16 bp per dollar traded on one day) was put through a pre-registered test: 60 days, three coins, a queue model, 300 ms latency and base-tier fees. It did not survive.
 
