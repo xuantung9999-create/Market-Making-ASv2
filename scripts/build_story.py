@@ -393,7 +393,7 @@ def agent_conclusion(facts: dict, edge: Optional[dict], gates: Optional[list[dic
                   f"It learned that {edge['positive']} of {edge['cells']} market states it could see make money and ")
     if ag["fills"] == 0:
         lead = "The agent was right to refuse. " if facts["q1"]["net_bp"] < 0 else ""
-        text = f"{lead}{states or 'It '}made no fills in {ag['days_total']} counted days. {gate}"
+        text = f"{lead}{states or 'It '}made no fills in {ag['days_total']} test days. {gate}"
     else:
         text = f"The agent made {ag['fills']:,} fills in {ag['days_total']} days. {gate}"
     return {"id": 4, "key": "agent_refused", "status": "ok", "text": text, "fills": ag["fills"], "days": ag["days_total"],
@@ -493,7 +493,7 @@ def add_short_labels(forest: list[dict]) -> list[dict]:
 
 
 def agent_days(forest: list[dict], coins: list[str]) -> Optional[dict]:
-    """The agent's counted days and coin-days (spec 5.2): '53 counted days (159 coin-days)'. Coin-days add the per-coin agent rows;
+    """The agent's test days and coin-days (spec 5.2): '53 test days (159 coin-days)'. Coin-days add the per-coin agent rows;
     without them, days times coins."""
     ag = next((r for r in forest if r.get("symbol") == "ALL" and r.get("variant") == "agent" and r.get("queue_mult") == HEADLINE_QUEUE), None)
     if ag is None or not finite(ag.get("days_total")):
@@ -503,8 +503,8 @@ def agent_days(forest: list[dict], coins: list[str]) -> Optional[dict]:
     days, n = int(ag["days_total"]), len(coins)
     coin_days = int(sum(per)) if per else days * n
     return {"fills": int(ag.get("fills") or 0), "days": days, "coins": n, "coin_days": coin_days,
-            "context": f"in {days} counted days ({coin_days:,} coin-days)",
-            "text": f"{int(ag.get('fills') or 0):,} fills · {days} counted days ({coin_days:,} coin-days)"}
+            "context": f"in {days} test days ({coin_days:,} coin-days)",
+            "text": f"{int(ag.get('fills') or 0):,} fills · {days} test days ({coin_days:,} coin-days)"}
 
 
 def forest_rows(facts: dict) -> list[dict]:

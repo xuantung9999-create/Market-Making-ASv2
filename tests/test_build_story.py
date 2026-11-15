@@ -99,7 +99,7 @@ def test_five_conclusions_carry_numbers_read_from_the_bundles(tmp_path):
                     "behind the displayed size it is -8.2 bp.")
     assert c[3].startswith("A backtest with no queue model manufactured a +16 bp edge on ANKR from one day.")
     assert c[4] == ("The agent was right to refuse. It learned that every market state it could see loses money and made no fills "
-                    "in 53 counted days. Gate A: fail, 0 of 5 conditions.")
+                    "in 53 test days. Gate A: fail, 0 of 5 conditions.")
     assert "Book imbalance is a real open bet" in c[5] and c[5].endswith("Not yet evaluated.") and "docs/SPEC_V2_1.md" in c[5]
     assert all(x["status"] == "ok" for x in s["conclusions"])
     assert "fees alone" not in " ".join(c.values()).lower()
@@ -109,7 +109,7 @@ def test_hero_tiles_and_facts_come_from_the_bundles(tmp_path):
     h = story(make_base(tmp_path))["sections"]["hero"]
     t = {x["key"]: x for x in h["tiles"]}
     assert t["net"]["value"] == pytest.approx(-18.2) and t["t"]["value"] == pytest.approx(-9.1)
-    assert t["agent_fills"]["value"] == 0 and t["agent_fills"]["context"] == "in 53 counted days (106 coin-days)" and t["gate"]["value"] == "FAIL"
+    assert t["agent_fills"]["value"] == 0 and t["agent_fills"]["context"] == "in 53 test days (106 coin-days)" and t["gate"]["value"] == "FAIL"
     assert h["facts_line"] == "431 tests · 60 days and 2 coins tested · 1,000 simulated fills · 100 real orders sent on testnet"
     assert h["sentence"].endswith("-18.2 bp per dollar traded after fees.")
 
@@ -243,7 +243,7 @@ def test_on_the_real_files_the_story_agrees_with_the_verdict_bundle():
     assert round(s["sections"]["ladder"]["points"][0]["gross_bp"]) == 16
     headline = v["takeaways"]["headline"]
     assert f"{abs(q1['net_bp']):.1f}" in headline and f"{q1['net_bp']:.1f}" in s["sections"]["hero"]["sentence"]
-    assert "no fills in 53 days" in headline and "made no fills in 53 counted days" in s["conclusions"][3]["text"]
+    assert "no fills in 53 days" in headline and "made no fills in 53 test days" in s["conclusions"][3]["text"]
     assert re.search(r"-1\.3 bp", s["conclusions"][1]["text"]) and "loses 8.2 bp" in s["conclusions"][0]["text"]
     assert s["conclusions"][4]["text"].endswith("Not yet evaluated.")
     text = json.dumps(s, allow_nan=False)                                                        # strict: no NaN anywhere

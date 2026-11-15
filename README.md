@@ -11,7 +11,7 @@
 | Queue = 2.0x (stress) | -9.0 bp | -19.0 bp | -8.1 |
 | Front of queue, 100 ms (the earlier assumption) | -1.3 bp | -11.3 bp | -8.5 |
 
-Basis points per dollar traded, 180 coin-days (`results/queue_baseline.csv`). The t column treats each coin-day as one observation; pooling the three coins by date (60 dates) gives t = -9.1 at the headline queue, the figure on the page's Verdict tab. The self-calibrating agent, which learns the net edge of a fill per market state from shadow orders, concluded that every state it could see loses money and declined to trade on all 159 counted coin-days, 53 days per coin after its warm-up (**Gate A: fail**, `results/gate_a.json`).
+Basis points per dollar traded, 180 coin-days (`results/queue_baseline.csv`). The t column treats each coin-day as one observation; pooling the three coins by date (60 dates) gives t = -9.1 at the headline queue, the figure on the page's Verdict tab. The self-calibrating agent, which learns the net edge of a fill per market state from shadow orders, concluded that every state it could see loses money and declined to trade on all 159 coin-days (53 test days per coin after its warm-up) (**Gate A: fail**, `results/gate_a.json`).
 
 ![Story at 1,440 px: the finding, the stack, the forest plot, the waterfall, the realism ladder, the Gate A scoreboard, the testnet tape](docs/img/showcase-story-1440.png)
 

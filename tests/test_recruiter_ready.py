@@ -36,7 +36,7 @@ def test_verdict_forest_rows_get_unique_short_labels():
     shorts = _all_short_ok(b["forest"])
     assert len(set(shorts)) == len(shorts)
     assert shorts[:5] == ["Front, 100 ms", "Queue 0.5x", "Queue 1x", "Queue 2x", "Agent, 1x"] and "ANKR 1x" in shorts
-    assert b["takeaways"]["ov-agent-tile"] == "in 53 counted days (106 coin-days)" and b["takeaways"]["headline"] == "h"
+    assert b["takeaways"]["ov-agent-tile"] == "in 53 test days (106 coin-days)" and b["takeaways"]["headline"] == "h"
 
 
 def test_story_waterfall_and_ladder_categories_break_instead_of_rotating(tmp_path):
@@ -51,22 +51,22 @@ def test_story_waterfall_and_ladder_categories_break_instead_of_rotating(tmp_pat
 def test_the_committed_verdict_bundle_carries_short_labels():
     v = bst.load_js(ROOT / "dashboard/runs/pub-verdict.js")
     _all_short_ok(v["forest"])
-    assert "counted days" in v["takeaways"]["ov-agent-tile"]
+    assert "test days" in v["takeaways"]["ov-agent-tile"]
 
 
 # ---- R2: numbers (spec 5.2)
 def test_hero_agent_tile_names_counted_days_and_coin_days(tmp_path):
     t = {x["key"]: x for x in story(make_base(tmp_path))["sections"]["hero"]["tiles"]}["agent_fills"]
     assert t["coin_days"] == t["days"] * t["coins"]
-    assert f"{t['days']} counted days" in t["context"] and f"{t['coin_days']:,} coin-days" in t["context"]
-    assert t["text"] == f"0 fills · {t['days']} counted days ({t['coin_days']:,} coin-days)"
+    assert f"{t['days']} test days" in t["context"] and f"{t['coin_days']:,} coin-days" in t["context"]
+    assert t["text"] == f"0 fills · {t['days']} test days ({t['coin_days']:,} coin-days)"
 
 
 def test_coin_days_add_the_per_coin_agent_rows_when_they_exist():
     forest = [{"symbol": "ALL", "variant": "agent", "queue_mult": 1.0, "days_total": 53, "fills": 0}] + [
         {"symbol": s, "variant": "agent", "queue_mult": 1.0, "days_total": 53, "fills": 0} for s in ("A", "B", "C")]
     d = bst.agent_days(forest, ["A", "B", "C"])
-    assert (d["days"], d["coins"], d["coin_days"]) == (53, 3, 159) and d["context"] == "in 53 counted days (159 coin-days)"
+    assert (d["days"], d["coins"], d["coin_days"]) == (53, 3, 159) and d["context"] == "in 53 test days (159 coin-days)"
 
 
 def test_readme_test_count_is_rounded_down_and_not_above_the_last_green_run():

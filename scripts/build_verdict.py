@@ -15,7 +15,7 @@ SOURCES = ("qb-", "wf-")
 
 def finish(b: dict) -> dict:
     """The phone additions of the recruiter-ready spec (5.1, 5.2): label_short on every forest row, and the Agent fills tile's
-    context ('in 53 counted days (159 coin-days)') in the takeaways the Verdict tab prints."""
+    context ('in 53 test days (159 coin-days)') in the takeaways the Verdict tab prints."""
     from scripts import build_story
     b = {**b, "forest": build_story.add_short_labels(b.get("forest") or [])}
     coins = sorted({r["symbol"] for r in b["forest"] if r.get("symbol") != "ALL" and r.get("variant") == "join_touch"})

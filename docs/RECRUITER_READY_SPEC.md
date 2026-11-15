@@ -114,7 +114,7 @@ ladder categories gain the same field with `<br>` breaks (`Spread<br>captured`).
 
 ### 5.2 Numbers
 
-- Story hero tile: "0 fills · 53 counted days (159 coin-days)". Written by `scripts/build_story.py`.
+- Story hero tile: "0 fills · 53 test days (159 coin-days)" (owner changed "counted" to "test", 15 Nov 2026). Written by `scripts/build_story.py`.
   The Verdict "Agent fills" tile follows the same wording.
 - The test count shown anywhere on the page comes from `results/tests_passed.json` as today. The
   build order in R7 makes it current.
@@ -278,7 +278,7 @@ On the **public URL**, on a phone:
 4. Does any page scroll sideways? (It must not.)
 5. Does the test count on the Story match the last green suite, and does the README's rounded figure
    agree with it?
-6. Is "53 counted days" explained where it appears?
+6. Is "53 test days" explained where it appears?
 7. Does the Story end on the next experiment, not on simulator caveats?
 
 On **GitHub**:
