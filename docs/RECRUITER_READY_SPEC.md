@@ -287,8 +287,7 @@ On **GitHub**:
 
 ## 10. Open questions for the owner
 
-1. R0 commits changes under `mm/` (`agent.py`, `edge.py`, `livestats.py`, `paper.py`, `report.py`,
-   `testnet.py`) without review. They are presumably the logging from the live spec. If any of them
-   should not go public, say so before R0.
+1. ~~R0 commits changes under `mm/` without review.~~ Answered 15 Nov 2026: the owner approved
+   publishing them.
 2. The snapshot is frozen at publish time. Re-deploy when you want newer testnet numbers. Nothing
    refreshes it automatically, by design.
