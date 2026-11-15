@@ -266,6 +266,9 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
 .lv-pager { display: flex; gap: 8px; align-items: center; margin: 8px 0; font-size: 13px; color: var(--muted); }
 .legend-note { font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
 .dot-art { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #a78bfa; margin-right: 4px; }
+/* fills made under the daily loss stop (the LOSS_STOP state colour): one-sided by design */
+.tag-unwind { display: inline-block; padding: 0 6px; border: 1px solid #fb923c; border-radius: 3px; color: #fb923c; font-size: 11px; white-space: nowrap; }
+.unwind-note { display: block; margin-bottom: 4px; padding-left: 8px; border-left: 2px solid #fb923c; }
 @media (max-width: 900px) { .state-strip { grid-template-columns: 1fr; } .chart.lv-cum { height: 320px; } }
 /* ---------- Showcase shell (spec section 5): header = name + one nav row; controls live in the page ---------- */
 .bar { min-height: 40px; }
@@ -354,6 +357,50 @@ header.nav-more::after { opacity: 1; }
 table.gates td:nth-child(3) { white-space: normal; text-align: left; }
 .about-cannot { border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); padding: 12px 16px 4px; margin: 0 0 8px; }
 .about-cannot h2 { margin-top: 0 !important; }
+/* Icons (explainers.js): line icons in the text colour of their box */
+.icon { width: 20px; height: 20px; flex: none; display: inline-block; vertical-align: middle; }
+.stack-box .stack-ico { width: 26px; height: 26px; color: var(--accent); }
+/* Method pipeline (explainers.js): steps grouped by phase; the selected step's text opens underneath */
+.pipe-hint { color: var(--muted); font-size: 13px; margin: 4px 0 10px; }
+.pipe { display: flex; flex-wrap: wrap; gap: 14px 18px; }
+.pipe-phase { display: flex; flex-direction: column; gap: 6px; }
+.pipe-phase-name { font: 600 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.pipe-nodes { display: flex; gap: 8px; }
+.pipe-node { --c: var(--accent); display: flex; flex-direction: column; align-items: center; gap: 4px; width: 92px; padding: 10px 6px 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: var(--text); cursor: pointer; font: 12px/1.25 var(--font-body); text-align: center; transition: border-color .15s, background .15s, transform .15s; }
+.pipe-node[data-s="loss"], .pipe-node[data-s="fail"] { --c: #ef4444; }
+.pipe-node[data-s="next"] { --c: var(--muted); border-style: dashed; }
+.pipe-node:hover { border-color: var(--c); transform: translateY(-1px); }
+.pipe-node .pipe-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--c); color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); }
+.pipe-node .pipe-n { font: 500 10px var(--font-mono); color: var(--muted); }
+.pipe-node.past .pipe-ico { background: color-mix(in srgb, var(--c) 22%, transparent); }
+.pipe-node[aria-selected="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, var(--panel)); box-shadow: 0 0 0 1px var(--c) inset; }
+.pipe-node[aria-selected="true"] .pipe-ico { background: var(--c); color: var(--bg); }
+.pipe-progress { height: 2px; background: var(--line); border-radius: 2px; margin: 14px 0 12px; overflow: hidden; }
+.pipe-progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+.pipe-detail { --c: var(--accent); border-left: 3px solid var(--c); }
+.pipe-detail[data-s="loss"], .pipe-detail[data-s="fail"] { --c: #ef4444; }
+.pipe-detail[data-s="next"] { --c: var(--muted); }
+.pipe-detail-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.pipe-detail-head h3 { font-size: 17px; }
+.pipe-detail-head .pipe-status { margin-left: auto; }
+.pipe-ico.big { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--c); border: 1.5px solid var(--c); flex: none; }
+.pipe-ico.big .icon { width: 24px; height: 24px; }
+.pipe-status { font: 600 11px var(--font-mono); padding: 2px 9px; border-radius: 999px; color: var(--c, var(--accent)); border: 1px solid currentColor; white-space: nowrap; }
+.pipe-status[data-s="done"] { --c: var(--accent); } .pipe-status[data-s="loss"], .pipe-status[data-s="fail"] { --c: #ef4444; } .pipe-status[data-s="next"] { --c: var(--muted); }
+.pipe-detail p { margin: 0 0 12px; max-width: 78ch; }
+.pipe-detail-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pipe-detail-foot a { margin: 0 auto; }
+/* Known limitations as icon cards */
+ul.limit-cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+ul.limit-cards li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); font-size: 14px; }
+.limit-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+@media (max-width: 720px) {
+  .pipe-phase, .pipe-nodes { width: 100%; }
+  .pipe-nodes { flex-wrap: wrap; }
+  .pipe-node { width: calc((100% - 16px) / 3); }
+  ul.limit-cards { grid-template-columns: minmax(0, 1fr); }
+  .pipe-detail-foot a { order: -1; width: 100%; margin: 0; }
+}
 @media (max-width: 640px) {
   /* wide numeric tables scroll in their wrapper with the first column pinned */
   .table-wrap table:not(.stack) th:first-child, .table-wrap table:not(.stack) td:first-child { position: sticky; left: 0; z-index: 1; background: var(--panel); }
@@ -402,18 +449,16 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
     <a href="#backtests" data-tab="backtests">Backtests</a>
     <a href="#exec-test" data-tab="exec-test">Execution test</a>
     <span class="nav-sep" aria-hidden="true"></span>
+    <a href="#about" data-tab="about">Method and limits</a>
     <details class="appendix" id="appendix-menu">
       <summary data-tab="appendix">Appendix <span aria-hidden="true">▾</span></summary>
       <div class="menu" role="menu">
-        <a href="#pnl" data-tab="pnl" role="menuitem">Backtest P&amp;L</a>
-        <a href="#risk" data-tab="risk" role="menuitem">Risk</a>
         <a href="#book" data-tab="book" role="menuitem">Market book</a>
         <a href="#book/market" data-tab="book" role="menuitem">Universe</a>
         <a href="#data/health" data-tab="data" role="menuitem">Data</a>
         <a href="#data/simlive" data-tab="data" role="menuitem">Sim vs live</a>
         <a href="#simulator" data-tab="simulator" role="menuitem">Simulator</a>
         <a href="#archive" data-tab="archive" role="menuitem">v1 archive</a>
-        <a href="#about" data-tab="about" role="menuitem">Method and limits</a>
         <a href="#l-health" data-tab="l-health" role="menuitem" data-local-only>Operations</a>
       </div>
     </details>
@@ -576,22 +621,6 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
   </section>
   </div>
 
-  <div class="tab-wrap" data-tab="pnl">
-  <section class="view" id="view-pnl">
-    <p class="desk-msg" id="desk-msg-pnl" hidden></p>
-    <div id="desk-body-pnl">
-      <p class="view-intro">Where does the P&amp;L come from, and is it statistically real? Net P&amp;L is after maker fees. All times UTC.</p>
-      <div class="grid g2">
-        <div class="card"><h2>Attribution</h2><p class="sub">Spread captured at the fill, what inventory did, fees and net, in bp per dollar traded, coin by coin</p><div class="chart" id="pnl-wf"></div></div>
-        <div class="card"><h2>Daily net P&amp;L</h2><p class="sub">USD per day, one row per coin; white line is the 7-day mean</p><div class="chart" id="pnl-daily"></div></div>
-        <div class="card"><h2>Net edge by hour of day</h2><p class="sub">Mean net edge per fill (bp, 60 s markout minus fee)</p><div class="chart" id="pnl-heat-edge"></div></div>
-      </div>
-      <div class="card" style="margin-top:16px"><h2>Statistics</h2><p class="sub">Computed in Python (mm/report.py). Only days with 20+ fills are counted; all days enter the total.</p><div class="table-wrap" id="pnl-stats"></div></div>
-      <div class="card" style="margin-top:16px"><h2>Distribution of daily P&amp;L</h2><p class="sub">Counted days; dotted line at zero, solid line at the mean</p><div class="chart" id="pnl-hist"></div></div>
-    </div>
-  </section>
-  </div>
-
   <div class="tab-wrap" data-tab="fills">
   <section class="view" id="view-execution">
     <p class="desk-msg" id="desk-msg-execution" hidden></p>
@@ -608,22 +637,6 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
       <div class="card" style="margin-top:16px"><h2>Fill rate</h2><p class="sub">Fills per hour while an order was resting; the label is the share of the day with one resting (uptime)</p><div class="chart short" id="ex-rate"></div></div>
       <div class="card" style="margin-top:16px"><h2>Queue wait</h2><p class="sub">Seconds from an order going live to its fill</p><div class="chart" id="ex-wait"></div></div>
       <div class="card" style="margin-top:16px"><h2>Fill quality per coin</h2><p class="sub">Fill-weighted over the selected days</p><div class="table-wrap" id="ex-table"></div></div>
-    </div>
-  </section>
-  </div>
-
-  <div class="tab-wrap" data-tab="risk">
-  <section class="view" id="view-risk">
-    <p class="desk-msg" id="desk-msg-risk" hidden></p>
-    <div id="desk-body-risk">
-      <p class="view-intro">How much can I lose? Inventory against its ±10-lot cap, drawdowns, and what a sudden price gap would cost.</p>
-      <div class="tiles" id="rk-tiles"></div>
-      <div class="grid g2">
-        <div class="card"><h2>Inventory</h2><p class="sub">Lots held (5-minute points, last 3 days of the run); red dashes are the cap</p><div class="chart" id="rk-inv"></div></div>
-        <div class="card"><h2>Time at each inventory level</h2><p class="sub">Share of the whole run, from the full-resolution record</p><div class="chart" id="rk-invdist"></div></div>
-      </div>
-      <div class="card" style="margin-top:16px"><h2>Drawdown</h2><p class="sub">Cumulative net P&amp;L and its fall from the running peak (USD)</p><div class="chart" id="rk-dd"></div></div>
-      <div class="card" style="margin-top:16px"><h2>Stress</h2><p class="sub">Loss if the price gaps against a full position</p><div class="table-wrap" id="rk-stress"></div></div>
     </div>
   </section>
   </div>
@@ -682,6 +695,32 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
       <div class="tiles" id="tun-book-tiles" style="margin-top:8px"></div>
       <div class="grid g2"><div class="chart" id="ch-tun-book-corr"></div><div class="chart" id="ch-tun-book-dec"></div></div></div>
     <p class="note">Full write-up: <span class="mono">notes/day10_tuning_signals.md</span>.</p>
+  </section>
+  <section class="view" id="view-pnl">
+    <p class="desk-msg" id="desk-msg-pnl" hidden></p>
+    <div id="desk-body-pnl">
+      <p class="view-intro">Where does the P&amp;L come from, and is it statistically real? Net P&amp;L is after maker fees. All times UTC.</p>
+      <div class="grid g2">
+        <div class="card"><h2>Attribution</h2><p class="sub">Spread captured at the fill, what inventory did, fees and net, in bp per dollar traded, coin by coin</p><div class="chart" id="pnl-wf"></div></div>
+        <div class="card"><h2>Daily net P&amp;L</h2><p class="sub">USD per day, one row per coin; white line is the 7-day mean</p><div class="chart" id="pnl-daily"></div></div>
+        <div class="card"><h2>Net edge by hour of day</h2><p class="sub">Mean net edge per fill (bp, 60 s markout minus fee)</p><div class="chart" id="pnl-heat-edge"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Statistics</h2><p class="sub">Computed in Python (mm/report.py). Only days with 20+ fills are counted; all days enter the total.</p><div class="table-wrap" id="pnl-stats"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Distribution of daily P&amp;L</h2><p class="sub">Counted days; dotted line at zero, solid line at the mean</p><div class="chart" id="pnl-hist"></div></div>
+    </div>
+  </section>
+  <section class="view" id="view-risk">
+    <p class="desk-msg" id="desk-msg-risk" hidden></p>
+    <div id="desk-body-risk">
+      <p class="view-intro">How much can I lose? Inventory against its ±10-lot cap, drawdowns, and what a sudden price gap would cost.</p>
+      <div class="tiles" id="rk-tiles"></div>
+      <div class="grid g2">
+        <div class="card"><h2>Inventory</h2><p class="sub">Lots held (5-minute points, last 3 days of the run); red dashes are the cap</p><div class="chart" id="rk-inv"></div></div>
+        <div class="card"><h2>Time at each inventory level</h2><p class="sub">Share of the whole run, from the full-resolution record</p><div class="chart" id="rk-invdist"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Drawdown</h2><p class="sub">Cumulative net P&amp;L and its fall from the running peak (USD)</p><div class="chart" id="rk-dd"></div></div>
+      <div class="card" style="margin-top:16px"><h2>Stress</h2><p class="sub">Loss if the price gaps against a full position</p><div class="table-wrap" id="rk-stress"></div></div>
+    </div>
   </section>
   </div>
 
@@ -864,7 +903,9 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
       <h2>What this is</h2>
       <p>A market maker posts a bid and an ask and earns the gap between them. The risk is inventory: after a run of buys you hold a position that loses money if the price falls. Avellaneda and Stoikov (2008) derive the quotes that maximise a risk-averse market maker's utility. This project implements that model from first principles, checks it against the paper, then takes it to real crypto data, where most of the paper's assumptions break.</p>
       <h2>Method</h2>
-      <ol>
+      <p class="pipe-hint">Twelve steps from the paper to the verdict. Click a step, or use the arrow keys.</p>
+      <div id="method-pipe"></div>
+      <ol id="method-list">
         <li><b>Derivation.</b> Reservation price and optimal spread from the CARA utility / HJB set-up (<span class="mono">notes/derivation.md</span>).</li>
         <li><b>Quoting engine.</b> One pure function, <span class="mono">quote(s, q, t, params)</span>, shared by the simulator, backtester and paper trader. Tick rounding and inventory caps included.</li>
         <li><b>Paper replication.</b> Vectorised Monte Carlo of the paper's market; inventory strategy vs symmetric benchmark on common random numbers.</li>
@@ -874,14 +915,14 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
         <li><b>Informed traders.</b> Walk-forward test of a flow model (trade imbalance → next 10 s) and a kill switch; losses fall 60%. The one apparent edge, on tick-constrained micro caps, did not survive the queue model (step 9).</li>
         <li><b>Tuning and signals.</b> GLFT vs A-S, a parameter sweep tuned only on past days, the BTC perpetual future as a leading signal, and a first look at the live order book.</li>
         <li><b>Queue model (v2).</b> An event-driven engine that models queue position at the best price, 300 ms latency and a 10 bp maker fee; a screener for tick-constrained coins (COTI, SKL, ANKR); an edge table and a self-calibrating agent that quotes only where a fill's expected net edge is positive.</li>
-        <li><b>First honest test (60 days, 13 Sep – 11 Nov 2026).</b> Once queue position is modelled, joining the best price loses on all three tick-constrained coins: −17 to −22 bp per dollar traded, at most 5% positive days, t between −4.5 and −7.2. A fill earns ~13 bp of spread, pays 10 bp of fee, then the price moves against it. See Desk &gt; P&amp;L and Execution, run "Queue baseline".</li>
-        <li><b>Gate A (pre-registered): fail.</b> After a 7-day warm-up the self-calibrating agent learned that every market state loses money and stayed out on all 53 test days per coin, at every queue assumption. Correctly refusing a losing strategy, but no tradable edge: paper trading is not started. See Desk &gt; Model, run "Agent walk-forward".</li>
+        <li><b>First honest test (60 days, 13 Sep – 11 Nov 2026).</b> Once queue position is modelled, joining the best price loses on all three tick-constrained coins: −17 to −22 bp per dollar traded, at most 5% positive days, t between −4.5 and −7.2. A fill earns ~13 bp of spread, pays 10 bp of fee, then the price moves against it.</li>
+        <li><b>Gate A (pre-registered): fail.</b> After a 7-day warm-up the self-calibrating agent learned that every market state loses money and stayed out on all 53 test days per coin, at every queue assumption. Correctly refusing a losing strategy, but no tradable edge: paper trading is not started.</li>
         <li><b>Next:</b> real order-book data (recording now) so the agent can use book imbalance, then a re-test; cheaper fills (maker rebates) and a wider coin screen are the other routes to an edge.</li>
       </ol>
       <h2>Roadmap</h2>
       <ol class="roadmap" id="roadmap"></ol>
       <h2>Known limitations so far</h2>
-      <ul>
+      <ul id="limits-list">
         <li>The simulated market has no adverse selection, fees, tick size or latency, so its Sharpe ratios are far higher than anything achievable live.</li>
         <li>Historical data has trades but no spot order book. The v2 engine models queue position on a book inferred from trades, with an assumed queue size; the live recorder will measure the real one. On the inferred book both sides show the same size, so book imbalance carries no information until real book data exists.</li>
         <li>BTCUSDT's spread is one tick (0.01 USDT), while the calibrated A-S half-spread is several USDT, so the model as written sits far behind the best prices and is only filled by sweeps.</li>
@@ -907,6 +948,7 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
 <script src="js/core.js"></script>
 <script src="js/session_chart.js"></script>
 <script src="js/source.js"></script>
+<script src="js/explainers.js"></script>
 <script src="js/views/research.js"></script>
 <script src="js/views/overview.js"></script>
 <script src="js/views/pnl.js"></script>

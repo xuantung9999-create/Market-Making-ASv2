@@ -553,8 +553,10 @@ def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] 
         r.pop("t0_us", None)
 
     # fills table
+    if len(f):
+        f["unwind"] = unwind_flags(f["t_us"], f["side"], intervals)
     keep = ["i", "t_us", "side", "price", "qty", "mid", "edge_bp", "mk_1", "mk_5", "mk_30", "mk_60", "mk_300", "wait_s",
-            "pnl_after", "lots_after", "artifact", "reason", "timing"]
+            "pnl_after", "lots_after", "artifact", "unwind", "reason", "timing"]
     ft = f[keep].copy() if len(f) else pd.DataFrame(columns=keep)
     ft["t"] = (ft["t_us"] // 1000).astype("int64")
     ft["dist_bp"] = (ft["price"] - ft["mid"]) / ft["mid"].where(ft["mid"] > 0) * 1e4     # signed in price terms: a sell under the mid is negative
@@ -606,6 +608,38 @@ def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] 
                          ranges={k: (RANGES[k][0], v["label"]) for k, v in bundle["by_range"].items()},
                          pnl_sentences={k: v["takeaways"]["cum_pnl"] for k, v in bundle["by_range"].items()})
     return bundle
+
+
+def unwind_flags(t_us: pd.Series, side: pd.Series, intervals: dict) -> list:
+    """True for a fill made while its own side was logged in the LOSS_STOP state (a buy on the bid, a sell on the ask).
+    While the stop holds the trader only rests the order that brings the position back to flat (mm/testnet.py), so these
+    fills are one-sided by design. The trader's state log is the source, not the loss-stop event: older trader versions
+    went back to quoting both sides after a same-day restart, and fills before the state log began are never tagged."""
+    t = t_us.to_numpy(dtype="int64")
+    sd = side.to_numpy()
+    out = np.zeros(len(t), dtype=bool)
+    for name, sgn in (("bid", 1), ("ask", -1)):
+        ivs = intervals.get(name, [])
+        # The state log writes WARMUP over LOSS_STOP for the first 2 minutes after a restart, while a stop restored from the
+        # state file is already unwinding: a warm-up that runs straight into LOSS_STOP on the same UTC day is part of the stop.
+        stops = [iv for k, iv in enumerate(ivs) if iv["state"] == "LOSS_STOP" or (
+                 iv["state"] == "WARMUP" and k + 1 < len(ivs) and ivs[k + 1]["state"] == "LOSS_STOP"
+                 and int(iv["t0"]) // ls.DAY_US == int(ivs[k + 1]["t0"]) // ls.DAY_US)]
+        for iv in stops:
+            out |= (sd == sgn) & (t >= int(iv["t0"])) & (t <= int(iv["t1"]))
+    return out.tolist()
+
+
+def _unwind_sentence(g: pd.DataFrame, label: str) -> str:
+    """About the fills made under the loss stop in a range (``g`` = those fills)."""
+    k = len(g)
+    if not k:
+        return f"No fill in {label} was made under the daily loss stop."
+    sells, buys = int((g["side"] < 0).sum()), int((g["side"] > 0).sum())
+    sides = "all sells" if not buys else "all buys" if not sells else f"{_plural(sells, 'sell')}, {_plural(buys, 'buy')}"
+    return (f"{_plural(k, 'fill')} in {label} ({sides}) came while the daily loss stop held. Under the stop the trader quotes "
+            f"only the side that brings its position back to flat, so these fills are one-sided by design, not a quoting "
+            f"fault. They are tagged 'loss-stop unwind' below.")
 
 
 # ---------------------------------------------------------------------- sentences (Python writes every finding)
@@ -671,11 +705,13 @@ def build_by_range(spec: Spec, b: dict, an: dict, f: pd.DataFrame, intervals: di
         shares = {u["side"]: u["share"] for u in rows_q}
         inw = _in_window(t_ms, w0, end_ms) if n else pd.Series(dtype=bool)
         n_art = int((inw & f["artifact"]).sum()) if n else 0
+        uw = f[inw & f["unwind"]] if n and "unwind" in f else f.iloc[0:0]
         tiles = {"net": s["net"], "net_ex_artifacts": net_ex, "edge": s["edge"], "adverse": s["adverse"], "carry": s["carry"],
                  "artifact": s["artifact"], "fees": s["fees"], "fills": s["fills"], "notional": s["notional"],
                  "quoting_share": quoting}
-        counts = {"fills": s["fills"], "incidents": len(inc), "open_incidents": n_open, "artifact_fills": n_art}
-        tk: dict = {}
+        counts = {"fills": s["fills"], "incidents": len(inc), "open_incidents": n_open, "artifact_fills": n_art,
+                  "unwind_fills": len(uw)}
+        tk: dict = {"unwind": _unwind_sentence(uw, label)}
         if n == 0:
             tk["cum_pnl"] = "No fills in this session yet, so there is no P&L to show."
             tk["waterfall"] = "Nothing to attribute yet: no fills."
@@ -735,8 +771,9 @@ def takeaways(spec: Spec, b: dict, an: dict, f: pd.DataFrame, intervals: dict, s
     tk: dict = dict(b["by_range"]["all"]["takeaways"])
     tk["attr_time"] = ("Each bar is one UTC hour of signed edge, adverse selection, carry, fees and artifacts; the line is their sum."
                        if n else "No fills yet.")
-    tk["day_table"] = (f"{len(b['attribution']['by_day'])} UTC day(s); a day with 'loss stop: yes' hit the "
-                       f"{spec.max_loss:g} USDT daily limit.") if n else "No fills yet."
+    stop_note = (f"a day with 'loss stop: yes' hit the {spec.max_loss:g} USDT daily limit." if math.isfinite(spec.max_loss)
+                 else "this run has no daily loss stop; the inventory cap of " f"{spec.q_max} lots is the only limit.")
+    tk["day_table"] = f"{len(b['attribution']['by_day'])} UTC day(s); {stop_note}" if n else "No fills yet."
     m60 = [r for r in b["markout"] if r["group"] == "all" and r["h_s"] == 60]
     if m60:
         r = m60[0]

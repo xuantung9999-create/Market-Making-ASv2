@@ -40,6 +40,7 @@ V1_FILL_RULE = "through"            # the Day-8 headline rule behind the +16 bp 
 V1_COIN = "ANKRUSDT"
 V1_STRATEGY = "Join touch"
 HEADLINE_STRATEGY = "join_touch"
+TAPE_HORIZONS = (1, 5, 30, 60, 300)  # the markout ticks the Story tape draws; the curated fill must carry all of them
 
 
 # ---------------------------------------------------------------------- loading
@@ -340,26 +341,44 @@ def caught_items(rows: list[dict]) -> list[dict]:
 
 
 def tape_example(src: Sources, live: dict) -> tuple[Optional[dict], Optional[str]]:
-    """The curated tape (spec section 7, item 6): the largest book-glitch fill of the testnet sessions, by the money it was
-    away from the mid (quantity times distance), with the touch, trades and our orders from 60 s before to 300 s after it.
-    Returns (example, None) or (None, the reason there is none)."""
-    cands = []
+    """The curated tape (spec section 7, item 6; owner's answer to open question 2, 15 Nov 2026): a typical ordinary fill,
+    not a book glitch. Candidates are the testnet fills that are not artifacts, carry every markout and have a stored tape
+    window covering 60 s before to 300 s after them; the agent's sessions are preferred over the join baseline. The pick is
+    the fill whose 60 s markout is closest to the median of the candidates (the latest on a tie), so it is neither the best
+    nor the worst fill. Returns (example, None) or (None, the reason there is none)."""
+    need = ("price", "mid", "qty", "t") + tuple(f"mk_{h}" for h in TAPE_HORIZONS)
+    tapes: dict[Path, Optional[dict]] = {}
+
+    def window_of(b: dict, f: dict):
+        day = datetime.fromtimestamp(f["t"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+        path = src.base / "dashboard" / "live" / f"tape-{b['meta']['id']}-{day}.js"
+        if path not in tapes:
+            try:
+                tapes[path] = load_js(path)
+            except Missing:
+                tapes[path] = None
+        tape = tapes[path] or {}
+        win = next((w for w in tape.get("windows", []) if w["t0"] <= f["t"] - 60_000 and f["t"] + 300_000 <= w["t1"]), None)
+        return day, path, win
+
+    cands, why = [], "no ordinary fill with all its markouts in the testnet session bundles"
     for b in live.get("testnet", []):
         for f in b.get("fills", []):
-            if f.get("artifact") and all(finite(f.get(k)) for k in ("price", "mid", "qty", "t")):
-                cands.append((abs(f["price"] - f["mid"]) * f["qty"], f["t"], b, f))
+            if f.get("artifact") or not all(finite(f.get(k)) for k in need):
+                continue
+            day, path, win = window_of(b, f)
+            if win is None:
+                why = f"a stored tape window around an ordinary fill (none in {path.name})"
+                continue
+            cands.append((str(b["meta"]["id"]).endswith("-agent"), b, f, day, win))
     if not cands:
-        return None, "no book-glitch fill in the testnet session bundles"
-    _, _, b, f = max(cands, key=lambda c: (c[0], c[1]))
-    sid, day = b["meta"]["id"], datetime.fromtimestamp(f["t"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
-    path = src.base / "dashboard" / "live" / f"tape-{sid}-{day}.js"
-    try:
-        tape = load_js(path)
-    except Missing:
-        return None, f"the tape file {path.name}"
-    win = next((w for w in tape.get("windows", []) if w["t0"] <= f["t"] <= w["t1"]), None)
-    if win is None:
-        return None, f"a stored tape window around the fill in {path.name}"
+        return None, why
+    if any(c[0] for c in cands):
+        cands = [c for c in cands if c[0]]
+    marks = sorted(c[2]["mk_60"] for c in cands)
+    med = marks[len(marks) // 2] if len(marks) % 2 else (marks[len(marks) // 2 - 1] + marks[len(marks) // 2]) / 2
+    _, b, f, day, win = min(cands, key=lambda c: (abs(c[2]["mk_60"] - med), -c[2]["t"]))
+    sid = b["meta"]["id"]
     lo, hi = f["t"] - 60_000, f["t"] + 300_000
     keep = {"t0": max(win["t0"], lo), "t1": min(win["t1"], hi),
             "touch": [r for r in win["touch"] if lo <= r[0] <= hi],
@@ -450,7 +469,7 @@ def limits(src: Sources) -> Optional[list[str]]:
     """Three limits from the About page's "Known limitations" list, each cut to its first sentence."""
     if src.about is None:
         return None
-    m = re.search(r"Known limitations[^<]*</h2>\s*<ul>(.*?)</ul>", src.about, re.S)
+    m = re.search(r"Known limitations[^<]*</h2>\s*<ul[^>]*>(.*?)</ul>", src.about, re.S)
     if not m:
         return None
     items = [htmllib.unescape(re.sub(r"<[^>]+>", "", li)).strip() for li in re.findall(r"<li>(.*?)</li>", m.group(1), re.S)]

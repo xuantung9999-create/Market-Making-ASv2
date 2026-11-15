@@ -1,4 +1,4 @@
-"""Recruiter-ready spec (docs/RECRUITER_READY_SPEC.md): numbers and short labels (R2), the Story ending (R4), the README (R6)."""
+"""Recruiter-ready spec: numbers and short labels (R2), the Story ending (R4), the README (R6)."""
 import json
 import re
 from pathlib import Path

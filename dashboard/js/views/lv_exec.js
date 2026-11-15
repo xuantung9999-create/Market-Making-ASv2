@@ -152,7 +152,11 @@ function drawLvExec() {
 }
 
 function drawFillsTable(b, fills) {
+  /* Fills made under the daily loss stop are one-sided by design; Python counts them and writes the sentence per range. */
+  const re = rangeEntry(b), uwN = re && re.counts ? re.counts.unwind_fills : 0;
   setSub("lvx-fills-sub", b.takeaways.fills_table);
+  const subEl = $("lvx-fills-sub");
+  if (uwN && subEl) subEl.innerHTML = `<span class="unwind-note">${esc(re.takeaways.unwind)}</span> ${esc(b.takeaways.fills_table)}`;
   const f = $("lvx-fills-filter");
   f.innerHTML = `<label>Side <select id="ff-side"><option value="all">all</option><option value="buy">buy</option><option value="sell">sell</option></select></label>
     <label>Artifacts <select id="ff-art"><option value="all">included</option><option value="only">only artifacts</option><option value="none">excluded</option></select></label>`;
@@ -168,8 +172,9 @@ function drawFillsTable(b, fills) {
   const cols = [{ k: "t", label: "Time (UTC)", left: true, f: v => utcStamp(v) }, { k: "side", label: "Side", left: true, f: v => v > 0 ? "buy" : "sell" },
     { k: "price", label: "Price", f: v => fmtP(v) }, { k: "mid", label: "Mid", f: v => fmtP(v) }, { k: "edge_bp", label: "Edge bp", f: bpTxt },
     ...HORIZONS.map(h => ({ k: "mk_" + h, label: `${h} s`, f: bpTxt })), { k: "wait_s", label: "Order age s", f: v => isNum(v) ? fmt(v, 1) : dashes },
-    { k: "lots_after", label: "Lots", f: v => nTxt(v) }, { k: "artifact", label: "", left: true, f: (v, r) => r.artifact ? '<span class="dot-art"></span>artifact' : "" }];
-  lvTable("lvx-fills", cols, slice, { presorted: true, sort: k, dir: FillsUI.dir, scroll: true, rowClass: r => r.artifact ? "art" : "", onClick: r => Tape.open(b.meta.id, r.t, r.i),
+    { k: "lots_after", label: "Lots", f: v => nTxt(v) }, { k: "artifact", label: "", left: true, f: (v, r) => [r.artifact ? '<span class="dot-art"></span>artifact' : "",
+      r.unwind ? '<span class="tag-unwind" title="Made while the daily loss stop held: only the side that flattens the position quotes">loss-stop unwind</span>' : ""].filter(Boolean).join(" ") }];
+  lvTable("lvx-fills", cols, slice, { presorted: true, sort: k, dir: FillsUI.dir, scroll: true, rowClass: r => (r.artifact ? "art" : "") + (r.unwind ? " unwind" : ""), onClick: r => Tape.open(b.meta.id, r.t, r.i),
     onSort: key => { FillsUI.dir = FillsUI.sort === key ? -FillsUI.dir : -1; FillsUI.sort = key; drawFillsTable(b, fills); }, empty: "No fills match this filter." });
   const pg = $("lvx-fills-pager");
   pg.innerHTML = `<button type="button" id="pg-prev"${FillsUI.page ? "" : " disabled"}>Previous</button><span>Page ${FillsUI.page + 1} of ${pages} · ${rows.length} fills · markout columns in bp, n/a where the feed had a gap</span><button type="button" id="pg-next"${FillsUI.page < pages - 1 ? "" : " disabled"}>Next</button>`;

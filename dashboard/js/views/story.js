@@ -72,7 +72,8 @@ function storyStack(host, S) {
   if (!sec) return;
   const boxes = (S.sections.stack.boxes || []).map(b => {
     const n = b.number && isNum(b.number.value) ? `<div class="stack-n"><span class="num">${storyCount(b.number.value)}</span> ${esc(b.number.label || "")}</div>` : "";
-    return `<a class="stack-box" href="${esc(b.href)}"><h3>${esc(b.name)}</h3><p>${esc(b.line)}</p>${n}<code>${esc(b.module)}</code></a>`;
+    const ico = typeof explainIcon === "function" ? explainIcon(b.key, "stack-ico") : "";      // icon set in explainers.js
+    return `<a class="stack-box" href="${esc(b.href)}">${ico}<h3>${esc(b.name)}</h3><p>${esc(b.line)}</p>${n}<code>${esc(b.module)}</code></a>`;
   }).join("");
   sec.appendChild(storyEl("div", "stack-row", boxes));
 }

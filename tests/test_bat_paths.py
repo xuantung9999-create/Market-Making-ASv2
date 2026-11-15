@@ -5,8 +5,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SKIP_DIRS = {".venv", "data", "dashboard_public", "__pycache__", ".pytest_cache", ".git", "node_modules"}
-# The spec that describes the move (it names the old, stale and deleted launchers on purpose) and the build ledger (a log).
-SKIP_FILES = {"docs/RECRUITER_READY_SPEC.md", "docs/progress/v2_ledger.md"}
+# The build ledger (a log) names old, stale and deleted launchers on purpose.
+SKIP_FILES = {"docs/progress/v2_ledger.md"}
 ROOT_BATS = {"run_24x7.bat", "install_autostart.bat", "run_dashboard.bat"}
 MENTION = re.compile(r"(?<![\w*-])((?:[\w.-]+[\\/])*[\w-]+\.bat)\b")
 

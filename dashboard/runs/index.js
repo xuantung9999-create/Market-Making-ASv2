@@ -1,5 +1,16 @@
 window.RUN_INDEX = [
  {
+  "run_id": "replay-testnet-2026-11-12",
+  "kind": "backtest",
+  "label": "Testnet replay: agent on the recorded testnet market, BTC, ETH, no loss stop, inventory cap 10 lots (simulated fills)",
+  "built_utc": "2026-11-15 14:03",
+  "symbols": [
+   "BTCUSDT",
+   "ETHUSDT"
+  ],
+  "n_days": 4
+ },
+ {
   "run_id": "wf-2026-11-12-q0.5",
   "kind": "walkforward",
   "label": "Agent walk-forward, queue 0.5x (optimistic)",

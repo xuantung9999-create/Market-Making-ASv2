@@ -249,6 +249,36 @@ def test_range_numbers_agree_with_the_sentences_and_counts(three_days):
     assert b["by_range"]["all"]["counts"]["open_incidents"] > b["by_range"]["24h"]["counts"]["open_incidents"] >= 1
 
 
+def test_fills_on_a_side_logged_in_loss_stop_are_tagged_unwind(tmp_path):
+    base = make_base(tmp_path, glitch=False)
+    d = base / "data/testnet/BTCUSDT"                       # the ask side is in LOSS_STOP from T0 + 2000 s; the bid keeps quoting
+    write_jsonl(d / "state_2026-11-14.jsonl", [
+        {"ts_us": T0 + k * 60 * S, "side": sd, "state": "LOSS_STOP" if sd < 0 and k * 60 >= 2000 else "QUOTING", "detail": None}
+        for k in range(0, 50) for sd in (1, -1)])
+    bs.build(base, now_us=T0 + 3600 * S)
+    b = load_bundle(base, "testnet-BTCUSDT-join")
+    first_stop_ms = (T0 + 34 * 60 * S) // 1000             # first logged LOSS_STOP line at or after 2000 s
+    assert b["fills"] and all(r["unwind"] == (r["side"] < 0 and r["t"] >= first_stop_ms) for r in b["fills"])
+    n = sum(r["unwind"] for r in b["fills"])
+    e = b["by_range"]["all"]
+    assert e["counts"]["unwind_fills"] == n > 0
+    s = e["takeaways"]["unwind"]
+    assert s.startswith(f"{n} fills in {e['label']} (all sells)") and "loss-stop unwind" in s
+
+
+def test_unwind_flags_follow_the_logged_state_not_the_stop_event():
+    """A same-day restart that went back to QUOTING (older traders) must not tag the fills after it."""
+    iv = {"bid": [{"t0": 0, "t1": 100, "state": "LOSS_STOP"}, {"t0": 100, "t1": 300, "state": "QUOTING"}],
+          "ask": [{"t0": 0, "t1": 300, "state": "QUOTING"}]}
+    t, side = pd.Series([50, 50, 200]), pd.Series([1, -1, 1])
+    assert bs.unwind_flags(t, side, iv) == [True, False, False]
+    assert bs.unwind_flags(t, side, {"bid": [], "ask": []}) == [False] * 3
+    # a restart's warm-up that runs straight into LOSS_STOP is part of the stop; one that runs into QUOTING is not
+    warm = {"bid": [], "ask": [{"t0": 0, "t1": 120, "state": "WARMUP"}, {"t0": 120, "t1": 300, "state": "LOSS_STOP"},
+                               {"t0": 300, "t1": 420, "state": "WARMUP"}, {"t0": 420, "t1": 600, "state": "QUOTING"}]}
+    assert bs.unwind_flags(pd.Series([60, 200, 360]), pd.Series([-1, -1, -1]), warm) == [True, True, False]
+
+
 def test_worst_fills_is_about_fills_and_never_a_loss_stop(three_days):
     b = load_bundle(three_days, "testnet-BTCUSDT-join")
     assert any(i["kind"] == "loss_stop" for i in b["incidents"])

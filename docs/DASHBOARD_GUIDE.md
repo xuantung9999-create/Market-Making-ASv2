@@ -69,7 +69,7 @@ simulation against live. Those are also the things a trading interviewer will as
 - **Session chart in UTC, 15 Nov 2026: `docs/DASHBOARD_SESSION_CHART_UTC_SPEC.md`, tasks U1-U2.** `plotX` in `js/session_chart.js` gives Plotly
   ISO UTC strings, so traces, bands and lines share one UTC axis on every viewer's machine (3db8a22); the PC status activity chart in
   `js/views/live.js` got the same fix (39a028a); public copy republished with `--live-snapshot` and the Execution test and Agent screenshots replaced.
-- **Recruiter-ready, 15 Nov 2026: `docs/RECRUITER_READY_SPEC.md`, tasks R1-R7.** `--deploy` pushes `dashboard_public/` to the `gh-pages`
+- **Recruiter-ready, 15 Nov 2026, tasks R1-R7.** `--deploy` pushes `dashboard_public/` to the `gh-pages`
   branch (public URL https://xuantung9999-create.github.io/Market-Making-ASv2/); `label_short` on forest, waterfall and ladder categories;
   phone rules at 640 px (scrolling nav with a fade, stacked long-text tables, pinned first column on wide tables, no rotated ticks);
   the Story ends on "What is next." and the simulator caveats open the Method and limits page; Windows launchers live in

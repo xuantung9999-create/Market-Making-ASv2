@@ -36,7 +36,8 @@ const Source = (() => {
   /* The queue baseline is the run the detail tabs open on; the verdict bundle and the demo run are never the default. */
   function defaultRunId(allowDemo = false) {
     const runs = list().filter(r => r.run_id !== VERDICT_ID && r.kind !== "book" && (allowDemo || r.kind !== "demo"));
-    const qb = runs.find(r => r.kind === "backtest");
+    const qb = runs.find(r => /^(pub-)?qb-/.test(r.run_id)) || runs.find(r => r.kind === "backtest" && !/^(pub-)?replay-/.test(r.run_id))
+            || runs.find(r => r.kind === "backtest");   // a newer replay run is never the default
     return ((qb || runs[0] || {}).run_id) || null;
   }
 

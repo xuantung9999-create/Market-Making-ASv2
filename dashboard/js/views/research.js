@@ -608,7 +608,7 @@ register("backtest", () => D && drawBacktest());
 register("universe", () => D && drawResearchUniverse());
 register("informed", () => D && drawInformed());
 register("tuning", () => D && drawTuning());
-register("about", () => { if (typeof drawAboutLimits === "function") drawAboutLimits(); });
+register("about", () => { if (typeof drawAboutLimits === "function") drawAboutLimits(); if (typeof drawMethodGraphics === "function") drawMethodGraphics(); });
 
 syncControls();
 document.getElementById("o-t").textContent = "0.00";

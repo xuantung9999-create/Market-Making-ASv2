@@ -98,10 +98,9 @@ def _tree():
     return t
 
 
-NAV_TABS = ["story", "verdict", "fills", "backtests", "exec-test"]           # showcase spec section 5: Story, then Evidence
-APPENDIX_HREFS = ["#pnl", "#risk", "#book", "#book/market", "#data/health", "#data/simlive", "#simulator", "#archive",
-                  "#about", "#l-health"]
-WRAPPERS = set(NAV_TABS) | {"l-health", "book", "pnl", "risk", "data", "simulator", "archive", "about"}
+NAV_TABS = ["story", "verdict", "fills", "backtests", "exec-test", "about"]  # Story, Evidence, then Method and limits in the bar
+APPENDIX_HREFS = ["#book", "#book/market", "#data/health", "#data/simlive", "#simulator", "#archive", "#l-health"]
+WRAPPERS = set(NAV_TABS) | {"l-health", "book", "data", "simulator", "archive"}   # Backtest P&L and Risk are sub-tabs of Backtests
 OLD_HASHES = ["l-overview", "l-pnl", "l-exec", "l-model", "l-health", "overview", "execution", "model-health", "pnl", "risk",
               "book", "data", "simulator", "archive", "about", "signals", "market", "model", "replication", "real-data"]
 
@@ -197,6 +196,7 @@ def test_hash_map_resolves_every_old_hash_under_node():
     for old in ("signals", "market", "model", "replication", "real-data", "pnl", "risk", "book", "data", "simulator", "archive", "about"):
         assert got["#" + old]["tab"] in WRAPPERS, old
     assert got["#model"]["tab"] == "simulator" and got["#market"]["tab"] == "book" and got["#signals"]["tab"] == "archive"
+    assert (got["#pnl"]["tab"], got["#pnl"]["view"]) == ("backtests", "pnl") and (got["#risk"]["tab"], got["#risk"]["view"]) == ("backtests", "risk")
     assert (got["#exec-test/tape"]["tab"], got["#exec-test/tape"]["section"]) == ("exec-test", "tape")
 
 

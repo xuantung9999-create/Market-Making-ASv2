@@ -56,7 +56,7 @@ function drawRiskTiles(b) {
   const tiles = [
     ["Time at the cap", atCap === null ? "–" : pct(atCap, 1), atCap > 0.1 ? "neg" : "", `share of the run at ±${qmax} lots`],
     ["Largest inventory", isNum(qmax) ? pct(qmaxSeen / qmax) : fmt(qmaxSeen, 0), "", `of the ±${qmax} lot cap`],
-    ["Worst coin-day (USD)", sign(worst), pnlCls(worst), `daily loss stop: −${stop} USD (agent only)`],
+    ["Worst coin-day (USD)", sign(worst), pnlCls(worst), (b.config || {}).loss_stop === "off" ? "no daily loss stop in this run" : `daily loss stop: −${stop} USD (agent only)`],
     ["Loss-stop days", hasStop ? fmt(stops, 0) : "–", "", hasStop ? "days the stop fired" : "not recorded in this run"],
   ];
   fillHtml("rk-tiles", tiles.map(t => `<div class="tile"><div class="k">${t[0]}</div><div class="v ${t[2]}">${t[1]}</div><div class="s">${t[3]}</div></div>`).join(""));

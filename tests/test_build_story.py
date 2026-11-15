@@ -290,24 +290,75 @@ def _tape_file(base, t, day):
         f'window.TAPES = window.TAPES || {{}};\nwindow.TAPES["testnet-X-join|{day}"] = {json.dumps({"windows": [w]})};\n')
 
 
-def test_tape_example_is_the_largest_glitch_fill_with_its_window_trimmed(tmp_path):
+T0 = 1_794_700_000_000
+MK = {"mk_1": 0.1, "mk_5": 0.2, "mk_30": 0.3, "mk_300": 0.5}
+
+
+def _ordinary(i, t, mk60, **kw):
+    return {"i": i, "t": t, "price": 100.0, "mid": 100.01, "qty": 1.0, "artifact": False, "caption": f"fill {i}",
+            **MK, "mk_60": mk60, **kw}
+
+
+def _session(base, sid, fills):
+    b = {"meta": {"id": sid, "source": "testnet", "symbol": "XUSDT", "built_ms": 1, "first_ms": 1},
+         "funnel": {"placed": 1, "filled": 1, "rejected": 0}, "fills": fills, "takeaways": {}, "states": {"bid": [], "ask": []}}
+    (base / "dashboard/live").mkdir(parents=True, exist_ok=True)
+    (base / f"dashboard/live/session-{sid}.js").write_text(
+        f'window.SESSION_DATA = window.SESSION_DATA || {{}};\nwindow.SESSION_DATA["{sid}"] = {json.dumps(b)};\n')
+
+
+def _wide_tape(base, sid, day, t0, t1):
+    w = {"t0": t0, "t1": t1, "touch": [[t0 + 1, 99, 101, 1, 1], [t1 - 1, 99, 101, 1, 1]], "trades": [],
+         "orders": [{"side": -1, "price": 101.0, "t_place": t0 - 900_000, "t_end": t0 - 800_000, "end": "cancel"}]}
+    (base / f"dashboard/live/tape-{sid}-{day}.js").write_text(
+        f'window.TAPES = window.TAPES || {{}};\nwindow.TAPES["{sid}|{day}"] = {json.dumps({"windows": [w]})};\n')
+
+
+def test_tape_example_is_an_ordinary_fill_not_a_glitch_with_its_window_trimmed(tmp_path):
     base = make_base(tmp_path, live=False)
-    fills = _glitch_session(base, big=0.5, small=0.5)                    # money away from the mid: 10 * 0.5 against 30 * 0.5
+    fills = _glitch_session(base, big=0.5, small=0.5)                    # glitch fills and one ordinary fill with no markouts
     t = fills[1]["t"]
     _tape_file(base, t, "2026-11-14")
     s = story(base)
+    e = s["sections"]["execution"]
+    assert e["tape"] is None and s["tape_example"] is None              # a glitch is never the curated example
+    assert "ordinary fill" in e["tape_missing"]
+
+    fills[2].update(MK, mk_60=0.4, t=t + 1_000)                          # now the ordinary fill carries every markout
+    _session(base, "testnet-X-join", fills)
+    s = story(base)
     ex = s["sections"]["execution"]["tape"]
-    assert ex["i"] == 2 and ex["session"] == "testnet-X-join" and ex["caption"] == "big" and ex["day"] == "2026-11-14"
-    assert s["tape_example"]["t"] == t and "window" not in s["tape_example"]
+    tf = t + 1_000
+    assert ex["i"] == 3 and ex["session"] == "testnet-X-join" and ex["fill"]["artifact"] is False
+    assert s["tape_example"]["t"] == tf and "window" not in s["tape_example"]
     w = ex["window"]
-    assert w["t0"] == t - 60_000 and w["t1"] == t + 300_000 and all(t - 60_000 <= r[0] <= t + 300_000 for r in w["touch"] + w["trades"])
-    assert [o["price"] for o in w["orders"]] == [99.0]                   # the order that ended before the window is dropped
+    assert w["t0"] == tf - 60_000 and w["t1"] == tf + 300_000 and all(tf - 60_000 <= r[0] <= tf + 300_000 for r in w["touch"] + w["trades"])
     assert s["sections"]["execution"]["tape_missing"] is None
+
+
+def test_tape_example_prefers_the_agent_and_the_median_markout(tmp_path):
+    base = make_base(tmp_path, live=False)
+    _session(base, "testnet-X-join", [_ordinary(1, T0, 0.0)])
+    _wide_tape(base, "testnet-X-join", "2026-11-14", T0 - 3_600_000, T0 + 3_600_000)
+    agent = [_ordinary(i, T0 + i * 1_000, mk) for i, mk in enumerate([-9.0, -1.0, 2.0, 30.0, 0.5], start=1)]
+    agent.append({**_ordinary(9, T0 + 9_000, -1.0), "artifact": True})   # glitches never count, even with markouts
+    _session(base, "testnet-X-agent", agent)
+    _wide_tape(base, "testnet-X-agent", "2026-11-14", T0 - 3_600_000, T0 + 3_600_000)
+    ex = story(base)["sections"]["execution"]["tape"]
+    assert ex["session"] == "testnet-X-agent" and ex["i"] == 5          # median of -9, -1, 0.5, 2, 30 is 0.5
+
+
+def test_a_fill_whose_window_is_cut_short_is_skipped(tmp_path):
+    base = make_base(tmp_path, live=False)
+    _session(base, "testnet-X-agent", [_ordinary(1, T0, 0.0), _ordinary(2, T0 + 400_000, 5.0)])
+    _wide_tape(base, "testnet-X-agent", "2026-11-14", T0 - 100_000, T0 + 350_000)   # fill 2 has no 60 s before / 300 s after
+    ex = story(base)["sections"]["execution"]["tape"]
+    assert ex["i"] == 1
 
 
 def test_missing_tape_gives_a_reason_and_no_example(tmp_path):
     base = make_base(tmp_path, live=False)
-    _glitch_session(base, big=0.5, small=0.5)                            # no tape file written
+    _session(base, "testnet-X-join", [_ordinary(1, T0, 0.0)])            # no tape file written
     s = story(base)
     e = s["sections"]["execution"]
     assert e["tape"] is None and s["tape_example"] is None and "tape-testnet-X-join" in e["tape_missing"]

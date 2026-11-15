@@ -116,12 +116,11 @@ const TABS = {
   "story":        { label: "Story", views: ["story"] },
   "verdict":      { label: "Verdict", views: ["overview"] },
   "fills":        { label: "Fill economics", views: ["execution"] },
-  "backtests":    { label: "Backtests", views: [["backtest", "A-S on BTC"], ["universe", "BTC to micro caps"], ["tuning", "Tuning and signals"]] },
+  "backtests":    { label: "Backtests", views: [["backtest", "A-S on BTC"], ["universe", "BTC to micro caps"], ["tuning", "Tuning and signals"],
+                                                       ["pnl", "60-day P&L"], ["risk", "60-day risk"]] },   // P&L and Risk folded in from the Appendix
   "exec-test":    { label: "Execution test", views: ["lv-overview"] },       // one page; its P&L and tape are sections (#exec-test/pnl, #exec-test/tape)
   "l-health":     { label: "Operations", views: [["live", "Market feed"], ["pcstatus", "PC status"]] },
   "book":         { label: "Market book", views: [["book", "Order book"], ["market", "Universe"]] },
-  "pnl":          { label: "Backtest P&L", views: ["pnl"] },
-  "risk":         { label: "Risk", views: ["risk"] },
   "data":         { label: "Data", views: [["health", "Recorder health"], ["simlive", "Sim vs live"]] },
   "simulator":    { label: "Simulator", views: [["simulator", "Playground"], ["model", "How it quotes"], ["replication", "Paper replication"]] },
   /* The agent pages moved here from the main nav: the agent never traded, so its tab was mostly empty. The Story still links to them. */
@@ -138,7 +137,7 @@ const viewIds = t => TABS[t].views.map(v => Array.isArray(v) ? v[0] : v);
 const VIEW_TAB = {};
 Object.keys(TABS).forEach(t => viewIds(t).forEach(v => { VIEW_TAB[v] = t; }));
 const EVIDENCE_TABS = ["verdict", "fills", "backtests", "exec-test"];
-const APPENDIX_TABS = ["pnl", "risk", "book", "data", "simulator", "archive", "about", "l-health"];
+const APPENDIX_TABS = ["book", "data", "simulator", "archive", "l-health"];     // "about" (Method and limits) sits in the main bar
 const LIVE_VIEWS = ["lv-overview", "lv-pnl", "lv-exec", "lv-model"];     // the views that use the session selector and range buttons
 const DEFAULT_VIEW = { tab: "story", view: "story" };/* Quote-state palette, defined once. Green and red are reserved for profit and loss, bid blue and ask amber for
    the two sides, purple for artifacts only. */

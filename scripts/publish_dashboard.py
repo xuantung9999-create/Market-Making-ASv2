@@ -40,7 +40,7 @@ OPERATIONS_SCRIPTS = ("js/live.js", "js/views/pcstatus.js", "js/views/lv_health.
 
 # Allow-list of the keys a published session bundle may keep (live spec 6.2 plus the showcase additions). None = any value.
 _FILL = {k: None for k in ("i", "t", "side", "price", "qty", "mid", "edge_bp", "mk_1", "mk_5", "mk_30", "mk_60", "mk_300", "wait_s",
-                           "pnl_after", "lots_after", "artifact", "reason", "timing", "caption", "dist_bp")}
+                           "pnl_after", "lots_after", "artifact", "unwind", "reason", "timing", "caption", "dist_bp")}
 _STATES = [{k: None for k in ("t0", "t1", "state", "detail")}]
 SESSION_ALLOW = {
     "meta": {k: None for k in ("id", "source", "symbol", "policy", "lot_usd", "q_max", "max_loss", "fee_bps", "built_ms", "thresholds",
