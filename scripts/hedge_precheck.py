@@ -7,9 +7,9 @@ Per coin, from the Join-touch fills at the headline queue (1x) and the BTCUSDT p
 
 STOP if the half-life is under 5 minutes (positions are gone before a hedge could act) or R2 is under
 0.15 (BTC explains too little of the coin). Otherwise GO to Task 18 for that coin. Expected for micro caps
-in calm markets: stop. Needs data/futures/BTCUSDT_<date>_trades.parquet (run_futures_download.bat).
+in calm markets: stop. Needs data/futures/BTCUSDT_<date>_trades.parquet (scripts/windows/run_futures_download.bat).
 
-    python -m scripts.hedge_precheck                     # or run_hedge_precheck.bat
+    python -m scripts.hedge_precheck                     # or scripts/windows/run_hedge_precheck.bat
 Writes results/hedge_precheck.json.
 """
 from __future__ import annotations
@@ -121,7 +121,7 @@ def precheck(sym: str, data_dir: str = "data", fut_dir: str = "data/futures", qu
     ols = _ols(np.concatenate([r[0] for r in rets]), np.concatenate([r[1] for r in rets])) if rets else {"beta": float("nan"), "r2": float("nan"), "n": 0}
     decision, reason = decide(hl, ols["r2"])
     if not days:
-        reason = "no days with both the coin's trades and BTC perp trades (run_futures_download.bat)"
+        reason = "no days with both the coin's trades and BTC perp trades (scripts/windows/run_futures_download.bat)"
     return {"symbol": sym, "days": len(days), "half_life_min": hl, "horizon_min": horizon, "r2": ols["r2"],
             "beta": ols["beta"], "n_returns": ols["n"], "decision": decision, "reason": reason}
 

@@ -68,8 +68,10 @@ collects the real best bid/ask and sizes to check that inference (Task 9).
 - **Data is never committed.** `data/` is git-ignored; keep it that way.
 - **Style.** Follow the existing files: module docstring that explains the idea in plain words, type
   hints, dataclasses for configs, no classes where a function will do.
-- **Windows.** The user runs things by double-clicking `.bat` files in the repo root. Any script the
-  user must run gets a `.bat` launcher modelled on `run_day5.bat`, logging to `results\<name>_log.txt`.
+- **Windows.** The user runs things by double-clicking `.bat` files in `scripts/windows/` (only `run_24x7.bat`,
+  `install_autostart.bat` and `run_dashboard.bat` stay at the repo root). Any script the user must run gets a `.bat`
+  launcher there, modelled on `scripts/windows/run_day5.bat`: it starts with `cd /d "%~dp0..\.."` so it runs from the
+  repo root, and logs to `results\<name>_log.txt`.
 
 Deferred by the user until paper-trading results exist (do NOT build, do NOT ask about): legal route,
 live risk budget, cloud server, exchange order placement.
@@ -180,19 +182,19 @@ with `side = +1` for a buy. It already contains spread captured, adverse selecti
 
 ## Task 1: Multi-symbol recorder
 
-**Files:** modify `mm/recorder.py`; create `tests/test_recorder_multi.py`, `run_recorder_multi.bat`.
+**Files:** modify `mm/recorder.py`; create `tests/test_recorder_multi.py`, `scripts/windows/run_recorder_multi.bat`.
 
 **Produces:** `python -m mm.recorder --symbols ANKRUSDT,SKLUSDT,ARBUSDT,BTCUSDT`; files in the same
 per-symbol layout as today (`data/live/<SYMBOL>/book|trades/...parquet`). `--symbol X` keeps working.
 
 - [ ] Tests: `MultiRecorder(["ANKRUSDT","BTCUSDT"], out=tmp_path).handle(raw, recv_us)` with a combined-stream message `{"stream":"ankrusdt@bookTicker","data":{...}}` puts the row in ANKRUSDT's buffer only; an `aggTrade` for btcusdt goes to BTCUSDT; `flush()` writes one parquet per symbol per kind under the right folder; `load_live` reads them back with the existing column lists; an unknown stream is ignored without error.
 - [ ] Implement `class MultiRecorder` (one websocket, combined streams URL with every `<sym>@bookTicker/<sym>@aggTrade`, one `Recorder`-style buffer per symbol, same reconnect loop). Reuse `parse_book` / `parse_trade`.
-- [ ] `run_recorder_multi.bat`: starts it for every symbol in `config/candidates.txt` in its own window titled "v2 recorder - close this window to stop".
+- [ ] `scripts/windows/run_recorder_multi.bat`: starts it for every symbol in `config/candidates.txt` in its own window titled "v2 recorder - close this window to stop".
 - [ ] Report to the user: they must start the .bat and set Windows to never sleep while plugged in. Everything in Tasks 2-8 works without it; Task 9 needs at least 3 days of it.
 
 ## Task 2: History download and tick-constraint screener
 
-**Files:** create `mm/screen.py`, `scripts/download_history.py`, `scripts/screen_universe.py`, `tests/test_screen.py`, `run_download_history.bat`.
+**Files:** create `mm/screen.py`, `scripts/download_history.py`, `scripts/screen_universe.py`, `tests/test_screen.py`, `scripts/windows/run_download_history.bat`.
 
 **Produces:**
 - `screen_row(cals: list[dict]) -> dict` where `cals` are `mm.calibrate.calibrate` outputs for one symbol over several days. Returns `symbol, days, tick_bp_med, spread_ticks_med, usd_volume_med, trades_per_sec_med, constrained`.
@@ -392,7 +394,7 @@ The agent can change only: the table's numbers and which menu entry is live. It 
 
 ## Task 7: Queue baseline on history (does the micro-cap edge survive a queue?)
 
-**Files:** create `scripts/run_queue_baseline.py`, `run_queue_baseline.bat`.
+**Files:** create `scripts/run_queue_baseline.py`, `scripts/windows/run_queue_baseline.bat`.
 
 For every v2-universe symbol (Task 2) and every downloaded day: build `book_from_trades(trades, tick, default_level_qty(trades))`, run `JoinTouch` with `QSConfig()` defaults at `queue_mult` 0.5, 1.0, 2.0. Also run it with `queue_mult=0, latency_ms=100` as a bridge to v1's "touch" rule.
 
@@ -403,7 +405,7 @@ For every v2-universe symbol (Task 2) and every downloaded day: build `book_from
 
 ## Task 8: Agent walk-forward and Gate A
 
-**Files:** create `scripts/run_agent_walkforward.py`, `run_agent_walkforward.bat`.
+**Files:** create `scripts/run_agent_walkforward.py`, `scripts/windows/run_agent_walkforward.bat`.
 
 Per symbol: days in date order. Days 1-7 are warm-up (the agent runs and learns; results not counted).
 From day 8 on, results count. One `CalibrationAgent` per symbol lives across all days (`end_day` between
@@ -432,7 +434,7 @@ Needs at least 3 days of Task 1's recorder for at least one v2-universe symbol.
 
 ## Task 10: Paper trader
 
-**Files:** create `mm/paper.py`, `tests/test_paper.py`, `run_paper.bat`.
+**Files:** create `mm/paper.py`, `tests/test_paper.py`, `scripts/windows/run_paper.bat`.
 
 **Produces:** `python -m mm.paper --symbols <list> [--state data/paper/state]`. It opens the same public
 websocket as the recorder, and for each symbol feeds `on_book` / `on_trade` / a 1-second timer into a
@@ -442,11 +444,11 @@ websocket as the recorder, and for each symbol feeds `on_book` / `on_trade` / a 
 - [ ] Every 60 s write `<state>/<SYMBOL>_table.json` and append live fills and `history` rows to `data/paper/<SYMBOL>/fills_<date>.parquet` and `history_<date>.jsonl`. At UTC midnight call `end_day`.
 - [ ] Also record the raw feed exactly as the recorder does (reuse its buffers), so every paper day can be replayed.
 - [ ] Tests (no network): a `PaperSession` fed a scripted list of raw websocket messages produces the same live fills as `run_agent` on the equivalent tapes; state files round-trip; a message with an unknown stream is ignored; a restart with saved state resumes with the same `live_arm`.
-- [ ] `run_paper.bat` for the v2 universe. Report how to start and stop it.
+- [ ] `scripts/windows/run_paper.bat` for the v2 universe. Report how to start and stop it.
 
 ## Task 11: Daily supervisor report
 
-**Files:** create `scripts/daily_supervisor.py`, `run_supervisor.bat`.
+**Files:** create `scripts/daily_supervisor.py`, `scripts/windows/run_supervisor.bat`.
 
 For each paper symbol and the last completed UTC day:
 

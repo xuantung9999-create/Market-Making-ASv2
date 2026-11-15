@@ -166,7 +166,7 @@ class PaperSession:
         st = _read_json(self.state_dir / f"{sym}_agent.json") or {}
         t = st.get("tick") or latest_tick(sym, self.data_dir) or book_tick(sym, self.data_dir)
         if not t:
-            raise RuntimeError(f"{sym}: unknown tick size; download one day of trades first (run_download_history.bat)")
+            raise RuntimeError(f"{sym}: unknown tick size; download one day of trades first (scripts/windows/run_download_history.bat)")
         return float(t)
 
     def _build(self, sym: str, table: Optional[EdgeTable], state: Optional[dict], tick: float) -> CalibrationAgent:

@@ -3,7 +3,7 @@ rem R9: as run_recorder_multi.bat, plus the 10-level partial book depth (1 s sna
 rem over one websocket, in its own window. Close that window to stop.
 rem IMPORTANT: set Windows to never sleep while plugged in, or the recording has gaps.
 rem Log: results\recorder_multi_depth_log.txt
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\recorder_multi_depth_log.txt
 echo === v2 recorder start %date% %time% === >> "%LOG%"

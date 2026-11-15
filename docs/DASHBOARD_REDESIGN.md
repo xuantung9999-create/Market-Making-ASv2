@@ -224,7 +224,7 @@ unless `?demo=1`.
 
 **R2. Verdict data.** `mm/report.py`: `forest_rows(days)`, `compare_rows(days)`,
 `thin_curves(curves, keep_days=3)`, `thin_agent(rows)`, `takeaways(bundle)`, and
-`verdict_bundle(runs: list[dict]) -> dict`. `scripts/build_verdict.py` + `run_build_verdict.bat` read
+`verdict_bundle(runs: list[dict]) -> dict`. `scripts/build_verdict.py` + `scripts/windows/run_build_verdict.bat` read
 the `qb-*` and `wf-*` runs and write `pub-verdict.js`. Apply the diet in the three producer scripts.
 - Tests: for daily pnl `[10, -5, 20, 5, -10]` and notional 1,000 each, `net_bp == 40.0` and
   `net_se == pytest.approx(53.385, abs=1e-2)`; a variant with zero fills yields a row with `fills == 0`
@@ -259,7 +259,7 @@ book touch card.
 **R8. Data view.** Coverage grid (coin x date, colour = hours recorded), tape validation, tests
 passed, bundle ages; sub-tab "Sim vs live" (old D11).
 
-**R9. Depth (built; opt-in with `--depth` / `run_recorder_multi_depth.bat`; stream `<symbol>@depth10@1000ms`, checked against the Binance spot WebSocket docs).** The recorder stores only the best bid and ask. A ladder
+**R9. Depth (built; opt-in with `--depth` / `scripts/windows/run_recorder_multi_depth.bat`; stream `<symbol>@depth10@1000ms`, checked against the Binance spot WebSocket docs).** The recorder stores only the best bid and ask. A ladder
 or depth heatmap needs Binance's partial-depth stream (10 levels, 1 s snapshots; confirm the stream
 name and limits in the Binance spot WebSocket docs before coding). Adds `--depth` to the recorder, a
 `depth` section to the book bundle, and two panels: a 10-level ladder with cumulative size, and a

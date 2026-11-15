@@ -58,14 +58,14 @@ const Source = (() => {
     list, load, defaultRunId, variantsOf, symbolsOf,
     fire() { document.dispatchEvent(new CustomEvent("runchange")); },
     async loadVerdict() {
-      if (!list().some(r => r.run_id === VERDICT_ID)) { api.verdictError = "No verdict bundle yet. Run run_build_verdict.bat."; api.fire(); return; }
+      if (!list().some(r => r.run_id === VERDICT_ID)) { api.verdictError = "No verdict bundle yet. Run scripts/windows/run_build_verdict.bat."; api.fire(); return; }
       try { api.verdict = await load(VERDICT_ID); } catch (e) { api.verdictError = String(e.message || e); }
       api.fire();
     },
     /* The newest recorded-book bundle, if the index lists one. */
     async loadBook() {
       const entry = list().find(r => r.kind === "book");
-      if (!entry) { api.bookError = "No recorded book yet. Run the recorder for a few days, then run_build_book.bat."; api.fire(); return; }
+      if (!entry) { api.bookError = "No recorded book yet. Run the recorder for a few days, then scripts/windows/run_build_book.bat."; api.fire(); return; }
       try { api.book = await load(entry.run_id); } catch (e) { api.bookError = String(e.message || e); }
       api.fire();
     },

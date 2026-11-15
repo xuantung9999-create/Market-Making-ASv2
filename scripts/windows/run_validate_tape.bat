@@ -1,7 +1,7 @@
 @echo off
 rem v2 Task 9: compare the inferred book with the real recorded book (needs 3+ days of run_recorder_multi.bat).
 rem Log: results\validate_tape_log.txt   Output: results\tape_validation.csv
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\validate_tape_log.txt
 echo === validate tape %date% %time% === > "%LOG%"

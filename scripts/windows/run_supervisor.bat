@@ -2,7 +2,7 @@
 rem v2 Task 11: daily supervisor. Replays each closed paper day, checks the model against reality,
 rem updates data\paper\coin_state.json and writes results\paper_report_<date>.md. Run once a day.
 rem Log: results\supervisor_log.txt
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\supervisor_log.txt
 echo === supervisor %date% %time% === >> "%LOG%"

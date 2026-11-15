@@ -1,7 +1,7 @@
 @echo off
 rem Day 5: set up venv, run tests, download 2 days of BTCUSDT trades, chart them,
 rem then start the live recorder in its own window. Log: results\day5_run_log.txt
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\day5_run_log.txt
 echo === Day 5 run %date% %time% === > "%LOG%"

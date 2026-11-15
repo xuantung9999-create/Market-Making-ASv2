@@ -1,7 +1,7 @@
 @echo off
 rem v2 Task 7: Join touch through the queue engine on every downloaded day of the v2 universe.
 rem Log: results\queue_baseline_log.txt   Output: results\queue_baseline.csv
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\queue_baseline_log.txt
 echo === queue baseline %date% %time% === > "%LOG%"

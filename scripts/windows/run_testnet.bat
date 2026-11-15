@@ -5,7 +5,7 @@ rem First run: POLICY=join (always quotes) to test the plumbing. Then POLICY=age
 rem Press Ctrl+C to stop: every open order is cancelled on exit. (Closing the window skips that;
 rem the next start cancels any leftovers.)
 rem Log: results\testnet_log.txt   Orders/fills: data\testnet\<SYMBOL>\
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 if not exist .env (echo .env missing - copy .env.example to .env and paste your testnet keys & pause & exit /b 1)
 set VPY=.venv\Scripts\python.exe

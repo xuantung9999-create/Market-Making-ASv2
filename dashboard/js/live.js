@@ -83,7 +83,7 @@ if (typeof document !== "undefined") (function () {
     if (st === "waiting") { bar.innerHTML = '<span class="age na">Waiting</span> Reading the recorder heartbeat…'; host.innerHTML = ""; return; }
     const hb = heartbeat.data;
     if (st === "nofeed" && !hb) {
-      bar.innerHTML = '<span class="age red">No live feed</span> Nothing at data/live/heartbeat.json. Is the recorder running (run_recorder_multi.bat)?';
+      bar.innerHTML = '<span class="age red">No live feed</span> Nothing at data/live/heartbeat.json. Is the recorder running (scripts/windows/run_recorder_multi.bat)?';
       host.innerHTML = ""; return;
     }
     const age = ageSec(hb.ts_utc), cls = st === "nofeed" ? "red" : ageClass(age);

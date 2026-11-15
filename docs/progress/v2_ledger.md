@@ -6,7 +6,7 @@ Task 0: Ruling: the user's folder is not a git repo and Claude cannot run git on
 Task 0: complete (commit 35cfa51, tests: pytest -q → 92 passed)
 Task 1: Ruling: added --symbols-file flag so the .bat reads config/candidates.txt directly instead of parsing it in batch — additive, --symbol/--symbols unchanged — cost if wrong: none.
 Task 1: complete (commit 71604dd, tests: pytest -q → 97 passed)
-Task 2: Ruling: screen run on the 7 days already downloaded (4-10 Nov); the 60-day download needs the user's network (this workspace cannot reach data.binance.vision) — user runs run_download_history.bat — cost if wrong: screen re-run after download may change the universe.
+Task 2: Ruling: screen run on the 7 days already downloaded (4-10 Nov); the 60-day download needs the user's network (this workspace cannot reach data.binance.vision) — user runs scripts/windows/run_download_history.bat — cost if wrong: screen re-run after download may change the universe.
 Task 2: result: v2 universe = COTIUSDT, SKLUSDT, ANKRUSDT (ARBUSDT tick 6.0 bp < 10, excluded).
 Task 2: complete (commit 1bf1648, tests: pytest -q → 102 passed)
 Task 3: Ruling: QueueSim takes an extra keyword feed_features=True; the agent (Task 6) sets False so one shared FeatureEngine is fed once, not once per simulator — guide says "one FeatureEngine; every simulator receives the same events" and forbids forking QueueSim later — cost if wrong: none, default keeps the guide's signature.

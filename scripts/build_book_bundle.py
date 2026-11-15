@@ -32,7 +32,7 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root)
     syms = [s.strip() for s in args.symbols.split(",")] if args.symbols else find_symbols(root)
     if not syms:
-        print(f"no recorded books under {root}. Start the recorder first (run_recorder.bat).", file=sys.stderr)
+        print(f"no recorded books under {root}. Start the recorder first (scripts/windows/run_recorder_multi.bat).", file=sys.stderr)
         return 1
     frames = {}
     for s in syms:

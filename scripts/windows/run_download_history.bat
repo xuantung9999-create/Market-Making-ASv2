@@ -2,7 +2,7 @@
 rem v2 Task 2: download 60 days of trades for every coin in config\candidates.txt,
 rem then screen them for tick constraint. Takes a while (several GB for BTC/SOL/DOGE).
 rem Log: results\download_history_log.txt
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\download_history_log.txt
 echo === download_history %date% %time% === > "%LOG%"

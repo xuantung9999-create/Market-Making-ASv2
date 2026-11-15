@@ -16,7 +16,7 @@ function drawDataTiles() {
 
 function drawDataCoverage() {
   const cov = Source.book && Source.book.coverage;
-  if (!cov || !cov.length) return emptyPanel("dh-cov", Source.bookError || "No recorded book yet. Run the recorder, then run_build_book.bat.");
+  if (!cov || !cov.length) return emptyPanel("dh-cov", Source.bookError || "No recorded book yet. Run the recorder, then scripts/windows/run_build_book.bat.");
   const syms = [...new Set(cov.map(r => r.symbol))].sort(), dates = [...new Set(cov.map(r => r.date))].sort();
   const z = syms.map(s => dates.map(d => { const r = cov.find(x => x.symbol === s && x.date === d); return r ? r.hours : null; }));
   const text = syms.map(s => dates.map(d => { const r = cov.find(x => x.symbol === s && x.date === d); return r ? `${r.hours} clean hours, ${fmt(r.gap_minutes, 1)} min of gaps` : "no data"; }));
@@ -35,7 +35,7 @@ function drawDataBundles() {
 
 function drawDataTape() {
   const tv = Source.book && Source.book.tape_validation;
-  if (!tv) { $("dh-tape-verdict").innerHTML = ""; return emptyPanel("dh-tape", "No tape validation yet. Record at least 3 days, then run run_validate_tape.bat and run_build_book.bat."); }
+  if (!tv) { $("dh-tape-verdict").innerHTML = ""; return emptyPanel("dh-tape", "No tape validation yet. Record at least 3 days, then run scripts/windows/run_validate_tape.bat and scripts/windows/run_build_book.bat."); }
   const p = tv.pooled, line = `fills on the inferred book are ${fmt(p.fill_ratio, 2)}x the real book's, net edge ${sign(p.edge_diff_bp, 1)} bp apart, over ${fmt(p.days, 0)} recorded day${p.days === 1 ? "" : "s"}`;
   $("dh-tape-verdict").innerHTML = p.ok
     ? `<div class="verdict ok"><b>Inferred tape acceptable</b>: ${line} (rule: fills within ±30% and edge within 2 bp).</div>`

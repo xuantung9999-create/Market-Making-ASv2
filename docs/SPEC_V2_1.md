@@ -61,7 +61,7 @@ New in v2.1:
 Known today: `results/recorder_multi_log.txt` shows one 91-minute session on 12 Nov (18:23-19:54,
 12 symbols, best bid/ask and trades), stopped by hand. Whether it has run since is unverified.
 
-`scripts/audit_recorder.py` + `run_audit_recorder.bat`, reading with `mm.recorder.load_live`.
+`scripts/audit_recorder.py` + `scripts/windows/run_audit_recorder.bat`, reading with `mm.recorder.load_live`.
 Per symbol and UTC day it prints:
 
 - hours covered, after dropping any hour with a gap over 120 s (the guide's rule)
@@ -173,7 +173,7 @@ strategy that is already negative.
 | 14 | Queue chain, `cancel_model` | 12 | tests + calibration pass rule |
 | 15 | Regime | 12 | pass rule, or module deleted |
 | 16 | Edge table on book state, Gate A' | 13-15 | `results/gate_a_prime.json` with five booleans |
-| 17 | Hedge pre-check | BTC perp trades (`run_futures_download.bat`) | go / stop per coin |
+| 17 | Hedge pre-check | BTC perp trades (`scripts/windows/run_futures_download.bat`) | go / stop per coin |
 | 18 | Hedge simulation | 17 = go | A vs B table |
 
 Dashboard: each task writes a run bundle through `mm/report.py`, as in `docs/DASHBOARD_GUIDE.md`.

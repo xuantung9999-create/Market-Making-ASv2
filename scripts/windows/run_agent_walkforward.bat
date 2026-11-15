@@ -3,7 +3,7 @@ rem v2 Task 8: agent walk-forward (7 warm-up days, then counted days) at 3 queue
 rem baselines, Gate A. Needs at least 8 days per coin: run run_download_history.bat first.
 rem Also exports the final edge tables to data\paper\state for the paper trader.
 rem Log: results\agent_walkforward_log.txt   Output: results\agent_walkforward.csv, results\gate_a.json
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\agent_walkforward_log.txt
 echo === agent walk-forward %date% %time% === > "%LOG%"

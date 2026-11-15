@@ -4,7 +4,7 @@ rem Reads public Binance data, runs the self-calibrating agent, logs to data\pap
 rem Close the window it opens to stop. Set Windows to never sleep while plugged in.
 rem Before the first run, run_agent_walkforward.bat exports the learned tables to data\paper\state.
 rem Log: results\paper_log.txt
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\paper_log.txt
 echo === paper trader start %date% %time% === >> "%LOG%"

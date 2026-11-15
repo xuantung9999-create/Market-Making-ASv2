@@ -268,7 +268,7 @@ def main(argv=None) -> None:
     with pd.option_context("display.width", 160, "display.float_format", "{:,.2f}".format):
         if counted.empty:
             print(f"\nNo counted days: every coin has <= {args.warmup_days} usable days. Download more history "
-                  f"(run_download_history.bat) and re-run.")
+                  f"(scripts/windows/run_download_history.bat) and re-run.")
         else:
             tab = counted.groupby(["queue", "variant", "symbol"]).agg(
                 days=("day", "count"), fills_per_day=("fills", "mean"), net_usd_per_day=("net_10bp", "mean"),

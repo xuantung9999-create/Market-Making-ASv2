@@ -80,7 +80,7 @@ placed, replaced, filled, counted and cancelled correctly before any real money 
 
 1. Get keys: https://testnet.binance.vision → log in with GitHub → *Generate HMAC_SHA256 Key*.
 2. Copy `.env.example` to `.env` and paste the key and secret (`.env` is git-ignored).
-3. Run it: double-click `run_testnet.bat`, or
+3. Run it: double-click `scripts/windows/run_testnet.bat`, or
 
 ```bash
 python -m mm.testnet --symbols BTCUSDT --dry-run --hours 0.1   # testnet data, orders only logged

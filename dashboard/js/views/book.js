@@ -114,7 +114,7 @@ function drawBookSpread(b) {
            { showlegend: false, xaxis: axis("spread (ticks)", { type: "category" }), yaxis: axis("% of time") });
 }
 
-const NO_DEPTH = "No depth recorded. Start the recorder with --depth (run_recorder_multi_depth.bat), then run_build_book.bat.";
+const NO_DEPTH = "No depth recorded. Start the recorder with --depth (scripts/windows/run_recorder_multi_depth.bat), then scripts/windows/run_build_book.bat.";
 
 function drawBookDepth(b) {
   const d = b.depth && b.depth[BOOK.coin];

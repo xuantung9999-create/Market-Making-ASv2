@@ -106,7 +106,7 @@ def main(argv=None) -> None:
             print(f"done {sym} {day}", flush=True)
     if not rows:
         print(f"no recorded coin-days with >= {args.min_hours} usable hours in {args.live}. "
-              f"Run run_recorder_multi.bat for at least 3 days first.")
+              f"Run scripts/windows/run_recorder_multi.bat for at least 3 days first.")
         return
     df = pd.DataFrame(rows)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)

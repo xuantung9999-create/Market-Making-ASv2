@@ -3,7 +3,7 @@ rem v2 Task 1: record best bid/ask + trades for every coin in config\candidates.
 rem over one websocket, in its own window. Close that window to stop.
 rem IMPORTANT: set Windows to never sleep while plugged in, or the recording has gaps.
 rem Log: results\recorder_multi_log.txt
-cd /d "%~dp0"
+cd /d "%~dp0..\.."
 if not exist results mkdir results
 set LOG=results\recorder_multi_log.txt
 echo === v2 recorder start %date% %time% === >> "%LOG%"
