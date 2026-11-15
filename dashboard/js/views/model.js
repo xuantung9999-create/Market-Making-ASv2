@@ -57,5 +57,7 @@ function drawModelHealth() {
   const b = deskBundle("model-health");
   if (!b) return;
   drawModelEdge(b); drawModelCalib(b); drawModelArms(b);
+  const s = (((window.STORY || {}).sections || {}).agent || {}).sentence, h = $("ag-headline");
+  h.textContent = s || ""; h.hidden = !s;
 }
 register("model-health", drawModelHealth);

@@ -8,12 +8,12 @@ function openFill(b, f) { if (typeof Tape !== "undefined") Tape.open(b.meta.id, 
 
 function drawLvPnl() {
   const b = Sess.one();
-  if (!b) { ["lvp-waterfall", "lvp-time", "lvp-days", "lvp-worst", "lvp-best"].forEach(lvWaiting); return; }
-  const s = sumRange(b), tk = b.takeaways;
-  if (!b.fills.length) {
-    ["lvp-waterfall", "lvp-time", "lvp-days", "lvp-worst", "lvp-best"].forEach(id => lvEmpty(id, `No fills yet in ${b.meta.id}, so there is nothing to attribute. ${tk.cum_pnl}`));
-    ["lvp-wf-sub", "lvp-time-sub", "lvp-days-sub", "lvp-worst-sub"].forEach(id => setSub(id, tk.waterfall)); return;
-  }
+  if (!b) { $("lvp-none").hidden = true; $("lvp-body").hidden = false; ["lvp-waterfall", "lvp-time", "lvp-days", "lvp-worst", "lvp-best"].forEach(lvWaiting); return; }
+  const s = sumRange(b), tk = tkOf(b);
+  // spec 9.8: a page with nothing to show is one panel with one sentence, not five cards that each say so
+  const none = $("lvp-none"), body = $("lvp-body");
+  none.hidden = b.fills.length > 0; body.hidden = !b.fills.length;
+  if (!b.fills.length) { none.textContent = `${b.meta.id}: ${tk.cum_pnl}`; return; }
   // ---- waterfall (stacked bars with an invisible base so every bar can have its own colour)
   const notional = s.notional || b.attribution.total.notional || 1;
   let run = 0; const names = [], base = [], len = [], col = [], txt = [];

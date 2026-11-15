@@ -266,3 +266,14 @@ def test_the_committed_verdict_file_is_small_and_valid_and_says_what_the_readme_
     q1 = [r for r in v["forest"] if r["symbol"] == "ALL" and r["variant"] == "join_touch" and r["queue_mult"] == 1.0][0]
     assert q1["net_bp"] == pytest.approx(-18.24, abs=0.01) and q1["gross_bp"] == pytest.approx(-8.24, abs=0.01)
     assert q1["n_days"] == 60
+
+
+def test_cumulative_pnl_sentence_says_simulated_and_how_much_was_traded():
+    """Showcase C8: a loss on 100 USD lots must not read like real money; the notional traded is stated next to it."""
+    v = make_verdict()
+    s = v["takeaways"]["ov-cum"]
+    cmp_ = next(r for r in v["compare"] if r["symbol"] == "ALL" and r["variant"] == "join_touch" and r["queue_mult"] == 1.0)
+    base = next(r for r in v["forest"] if r["symbol"] == "ALL" and r["variant"] == "join_touch" and r["queue_mult"] == 1.0)
+    traded = abs(cmp_["pnl_total"] / (base["net_bp"] * 1e-4)) / 1e6
+    assert s.startswith("Simulated, not real money") and f"{abs(cmp_['pnl_total']):,.0f} USD on 100 USD lots" in s
+    assert f"about {traded:.0f} million USD traded" in s

@@ -82,11 +82,24 @@ function drawExecTable(b) {
     <th>Markout 1 s</th><th>10 s</th><th>60 s</th><th>300 s (bp)</th><th>Adverse selection 1→60 s (bp)</th><th>Median wait (s)</th></tr></thead><tbody>${rows}</tbody></table>`);
 }
 
+/* A variant that never traded leaves every fill graph empty: say so, once, above them (the numbers come from the days table). */
+function drawNoFillNote(b) {
+  const el = $("ex-nofill"), ds = filteredDays(b), f = Source.filter;
+  const none = ds.length > 0 && ds.every(d => !(d.fills > 0));
+  const who = f.symbol === "ALL" ? "in this run" : `on ${f.symbol.replace("USDT", "")} in this run`;
+  el.textContent = none ? `The ${f.variant.replace(/_/g, " ")} made no fills ${who}: it stayed out on all ${ds.length} counted coin-days, so the fill graphs below have nothing to draw. Pick another variant in the selector to see the fills of the baseline.` : "";
+  el.hidden = !none;
+}
+
 function drawExecution() {
   const b = deskBundle("execution");
   if (!b) return;
+  drawNoFillNote(b);
   drawMarkoutChart(b, "ex-side", "side", "side");
   drawMarkoutChart(b, "ex-action", "action", "");
   drawExecWait(b); drawExecRate(b); drawExecTable(b);
+  drawPnlWaterfall(b, "fe-wf");
+  const s = (((window.STORY || {}).sections || {}).waterfall || {}).sentence, h = $("fe-headline");
+  h.textContent = s || ""; h.hidden = !s;
 }
 register("execution", drawExecution);

@@ -1,9 +1,9 @@
 /* pnl.js: Desk > P&L (Dashboard Guide Task D5). Reads only: days, summary, hourly. */
 
 /* Attribution in bp per dollar traded, grouped by coin: spread captured, what inventory did, fees, net. */
-function drawPnlWaterfall(b) {
+function drawPnlWaterfall(b, id = "pnl-wf") {
   const f = Source.filter, all = filteredDays(b);
-  if (!all.length) return emptyPanel("pnl-wf");
+  if (!all.length) return emptyPanel(id);
   const syms = f.symbol === "ALL" ? Source.symbolsOf(b) : [f.symbol];
   const parts = [["spread_capture", "Spread capture", 1], ["inventory_pnl", "Inventory P&L", 1], ["fees", "Fees", -1], ["pnl", "Net", 1]];
   const bp = (ds, k, sg) => { const n = ds.reduce((a, d) => a + (d.notional || 0), 0); return n > 0 ? sg * ds.reduce((a, d) => a + (isNum(d[k]) ? d[k] : 0), 0) / n * 1e4 : null; };
@@ -12,7 +12,7 @@ function drawPnlWaterfall(b) {
   const tr = groups.map(([name, ds], i) => ({ type: "bar", name: name.replace("USDT", ""), x: parts.map(p => p[1]), y: parts.map(p => bp(ds, p[0], p[2])),
     marker: { color: name === "All coins" ? C.text : SERIES[i % SERIES.length] }, text: parts.map(p => { const v = bp(ds, p[0], p[2]); return isNum(v) ? fmt(v, 1) : ""; }),
     textposition: "outside", hovertemplate: `${name} %{x}: %{y:.1f} bp per $ traded<extra></extra>` }));
-  deskPlot("pnl-wf", tr, { barmode: "group", yaxis: axis("bp per dollar traded", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }), xaxis: axis("") });
+  deskPlot(id, tr, { barmode: "group", yaxis: axis("bp per dollar traded", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }), xaxis: axis("") });
 }
 
 /* Daily net P&L as small multiples: one row per coin, bars with the 7-day mean. Stacked signed bars cannot be read. */

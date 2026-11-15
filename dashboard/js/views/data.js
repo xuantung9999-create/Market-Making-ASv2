@@ -9,7 +9,7 @@ function drawDataTiles() {
     ["Days recorded", b ? fmt(days, 0) : "–", "", "UTC dates with any data"],
     ["Clean hours", b ? fmt(clean, 0) : "–", "", "all coins together"],
     ["Gap time", b ? fmt(gapMin / 60, 1) + " h" : "–", "", "book gaps over 120 s"],
-    ["Tests passing", isNum(SITE.testsPassed) ? fmt(SITE.testsPassed, 0) : "–", "", "set in js/core.js at build time"],
+    ["Tests passing", D && isNum(D.tests_passed) ? fmt(D.tests_passed, 0) : "–", "", "from the last full green run of the suite"],
   ];
   fillHtml("dh-tiles", tiles.map(t => `<div class="tile"><div class="k">${t[0]}</div><div class="v ${t[2]}">${t[1]}</div><div class="s">${t[3]}</div></div>`).join(""));
 }

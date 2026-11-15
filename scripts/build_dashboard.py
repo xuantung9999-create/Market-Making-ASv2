@@ -182,14 +182,9 @@ def _json_or_none(path: str):
 
 
 def tests_passed() -> int | None:
-    try:
-        out = subprocess.run([sys.executable, "-m", "pytest", "-q"], capture_output=True, text=True, timeout=300)
-        for tok in out.stdout.split():
-            if tok.isdigit():
-                last = int(tok)
-        return last if "passed" in out.stdout else None
-    except Exception:
-        return None
+    """The size of the last complete green run of the suite, written by conftest.py (never typed in)."""
+    rec = _json_or_none("results/tests_passed.json")
+    return int(rec["passed"]) if rec and rec.get("passed") else None
 
 
 def main() -> None:

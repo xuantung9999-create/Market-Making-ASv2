@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Avellaneda–Stoikov Market Maker</title>
+<title>Crypto market making: from Avellaneda–Stoikov to a queue-aware agent</title>
 <meta name="description" content="Avellaneda–Stoikov market-making model built from scratch: interactive simulator, paper replication and real Binance BTCUSDT data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -169,6 +169,13 @@ nav.tabs .nav-sep { width: 1px; background: var(--line); margin: 8px 10px; flex:
 .tile .v.pos { color: #22c55e; } .tile .v.neg { color: #ef4444; }
 .edge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
 .chart.small { height: 230px; }
+.sc-ctl { display: flex; align-items: center; gap: 12px; margin: 6px 0 12px; }
+.sc-slide { flex: 1; display: flex; flex-direction: column; font-size: 12px; color: var(--muted); }
+.sc-slide input[type=range] { margin-top: 2px; }
+.sc-readout { min-width: 120px; text-align: right; font-size: 13px; color: var(--text); }
+.sc-fig { width: 100%; }
+.sc-notes { margin: 6px 0 0; padding-left: 18px; }
+@media (max-width: 600px) { .sc-ctl { flex-wrap: wrap; } .sc-slide { flex-basis: 100%; order: 3; } .sc-readout { margin-left: auto; } }
 .pending { border: 1px dashed var(--line); border-radius: var(--r); padding: 18px; color: var(--muted); }
 .pending b { color: var(--text); font-weight: 500; }
 td.flag-on { color: var(--warn); }
@@ -184,7 +191,7 @@ header { padding: 0 max(16px, 4vw); background: #0c131d; }
 .bar-run { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
 .bar-run select { max-width: 280px; }
 .bar-verdict { margin: 0; flex: 1 1 320px; text-align: right; font: 500 13px var(--font-mono); color: var(--text); }
-body:not(.desk-mode) .bar-run, body:not(.desk-mode) .runbar, body:not(.desk-mode) #run-badge { display: none !important; }
+body:not(.desk-mode) .runtop, body:not(.desk-mode) .runbar, body:not(.desk-mode) #run-badge { display: none !important; }
 body.verdict-mode #bar-verdict { display: none !important; }
 @media (max-width: 600px) {
   .bar-run, .runbar label { width: 100%; }
@@ -201,6 +208,7 @@ body.verdict-mode #bar-verdict { display: none !important; }
 .subtabs a:first-child { border-radius: 8px 0 0 8px; } .subtabs a:last-child { border-radius: 0 8px 8px 0; } .subtabs a + a { border-left: 0; }
 .subtabs a[aria-current="page"] { color: var(--accent); border-color: var(--accent); background: #0c2433; }
 .about-head { max-width: 78ch; margin-bottom: 14px; }
+.page-title { font-size: 20px; line-height: 1.3; margin: 4px 0 8px; }
 .verdict-line { font-size: 17px; margin: 0 0 16px; max-width: 90ch; }
 .chart.forest { height: 460px; }
 .book-grid { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -227,15 +235,9 @@ table.mini { font-size: 12px; } table.mini td { padding: 2px 8px; border: 0; }
 .note.cap { margin: 4px 0 8px; }
 
 /* ---------- Live tabs (live spec): session bar, research bar, state strip, tables ---------- */
-.livebar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 2px 0 8px; font-size: 13px; color: var(--muted); }
+.livebar { display: none; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 2px 0 8px; font-size: 13px; color: var(--muted); }
 .live-headline { margin: 0; flex: 1 1 360px; font: 500 13px var(--font-mono); color: var(--text); }
 .sess-label { font: 600 11px var(--font-mono); padding: 2px 10px; border-radius: 999px; border: 1px solid var(--c, var(--line)); color: var(--c, var(--muted)); }
-body.research-mode .livebar, body.live-mode .research-bar, body.live-mode .bar-verdict { display: none !important; }
-body.live-mode .bar-run, body.live-mode .runbar, body.live-mode #run-badge { display: none !important; }
-.research-bar { display: flex; flex-wrap: wrap; gap: 0; margin: 0 0 8px; }
-.research-bar a { padding: 5px 12px; border: 1px solid var(--line); color: var(--muted); text-decoration: none; font-size: 13px; background: var(--panel); }
-.research-bar a:first-child { border-radius: 8px 0 0 8px; } .research-bar a:last-child { border-radius: 0 8px 8px 0; } .research-bar a + a { border-left: 0; }
-.research-bar a[aria-current="page"] { color: var(--accent); border-color: var(--accent); background: #0c2433; }
 .lv-gap { margin-top: 16px; }
 .chart.short2 { height: 280px; } .chart.short3 { height: 200px; } .chart.lv-cum { height: 360px; } .chart.lv-strip { height: 130px; }
 .state-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; margin-bottom: 16px; }
@@ -265,12 +267,113 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
 .legend-note { font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
 .dot-art { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #a78bfa; margin-right: 4px; }
 @media (max-width: 900px) { .state-strip { grid-template-columns: 1fr; } .chart.lv-cum { height: 320px; } }
+/* ---------- Showcase shell (spec section 5): header = name + one nav row; controls live in the page ---------- */
+.bar { min-height: 40px; }
+a.brand { color: var(--text); text-decoration: none; }
+.pagebar { margin: 0 0 8px; }
+.runtop { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+body.live-view .livebar { display: flex; }
+nav.tabs { align-items: stretch; }
+nav.tabs details.appendix { position: relative; align-self: stretch; display: flex; }
+nav.tabs details.appendix summary { list-style: none; cursor: pointer; padding: 10px 14px; color: var(--muted); font-weight: 500; white-space: nowrap; border-bottom: 2px solid transparent; }
+nav.tabs details.appendix summary::-webkit-details-marker { display: none; }
+nav.tabs details.appendix summary:hover, nav.tabs details.appendix[open] summary { color: var(--text); }
+nav.tabs details.appendix summary[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent); }
+nav.tabs details.appendix .menu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 190px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); box-shadow: 0 12px 32px rgba(0, 0, 0, .45); }
+nav.tabs details.appendix .menu a { padding: 7px 12px; border: 0; border-radius: 6px; }
+nav.tabs details.appendix .menu a:hover { background: var(--panel-2); }
+nav.tabs details.appendix .menu a[aria-current="page"] { color: var(--accent); }
+.story-title { font-size: 28px; line-height: 1.2; max-width: 30ch; margin: 8px 0 16px; }
+@media (max-width: 640px) { nav.tabs { padding-bottom: 2px; } }
+.xt-caught td { vertical-align: top; }
+.xt-caught td:first-child { min-width: 200px; }
+.xt-status { font: 600 11px var(--font-mono); padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); white-space: nowrap; }
+.xt-status[data-s="fixed"] { color: var(--accent); background: #0c2433; }
+.xt-status[data-s="open"] { color: #f5a524; background: #2b2110; }
+.snapshot-banner { margin: 0 0 14px; padding: 8px 14px; border-radius: 8px; font: 600 13px var(--font-mono); color: #f5a524; background: #2b2110; border: 1px solid #5a4416; }
+.snapshot-banner[hidden] { display: none; }
+.pnl-fold > summary { cursor: pointer; padding: 10px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); color: var(--text); font-weight: 500; list-style: none; }
+.pnl-fold > summary::-webkit-details-marker { display: none; }
+.pnl-fold > summary::before { content: "▸ "; color: var(--muted); }
+.pnl-fold[open] > summary::before { content: "▾ "; }
+.pnl-fold[open] > summary { margin-bottom: 16px; }
+.tab-wrap[data-tab="exec-test"] > .subtabs { display: none !important; }
+/* ---------- Story page (spec section 6): one column, 64 px between sections ---------- */
+#view-story { max-width: 960px; margin: 0 auto; }
+.story-body { max-width: 960px; }
+.story-hero { margin-bottom: 64px; }
+.story-lede { font-size: 18px; line-height: 1.5; max-width: 72ch; margin: 0 0 24px; }
+.story-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.story-facts { font: 13px var(--font-mono); color: var(--muted); margin: 0; }
+.story-sec { margin-bottom: 64px; }
+.story-sec h2 { font-size: 22px; line-height: 1.25; margin-bottom: 8px; }
+.story-text { max-width: 72ch; margin: 0 0 16px; }
+.story-missing { color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); padding: 12px 14px; }
+.story-link { margin: 8px 0 0; font-size: 14px; }
+.story-label { margin: 0 0 8px; }
+.story-badge { font: 600 11px var(--font-mono); letter-spacing: .06em; padding: 3px 9px; border-radius: 999px; color: #f5a524; background: #2b2110; border: 1px solid #5a4416; }
+.story-chart { max-width: 960px; }
+.stack-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px 20px; }
+.stack-box { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); color: var(--text); text-decoration: none; }
+.stack-box:hover { border-color: var(--accent); }
+.stack-box h3 { font-size: 15px; }
+.stack-box p { margin: 0; font-size: 13px; color: var(--muted); }
+.stack-box .stack-n { font-size: 12px; color: var(--muted); }
+.stack-box .stack-n .num { color: var(--text); font-size: 15px; }
+.stack-box code { font: 12px var(--font-mono); color: var(--accent); margin-top: auto; overflow-wrap: anywhere; }
+.stack-box:not(:last-child)::after { content: "→"; position: absolute; right: -17px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.story-caption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.story-gates td, .story-gates th { vertical-align: top; }
+.story-exec { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 24px; margin-bottom: 8px; }
+.story-exec .story-tiles { grid-template-columns: 1fr; margin-bottom: 0; }
+.story-caught-wrap h3 { font-size: 15px; margin-bottom: 8px; }
+.story-caught, .story-limits { margin: 0 0 16px; padding-left: 20px; max-width: 72ch; }
+.story-caught li, .story-limits li { margin-bottom: 6px; }
+@media (max-width: 900px) {
+  .stack-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stack-box:nth-child(3n)::after { content: none; }
+  .story-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .story-exec { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .stack-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stack-box:nth-child(3n)::after { content: "→"; }
+  .stack-box:nth-child(2n)::after { content: none; }
+}
 </style>
 </head>
 <body>
 <header>
-  <div class="bar">
-    <div class="brand">MM-AS</div>
+  <div class="bar"><a class="brand" href="#story" title="Crypto market making: from Avellaneda–Stoikov to a queue-aware agent">MM-AS</a></div>
+  <nav class="tabs" aria-label="Sections">
+    <a href="#story" data-tab="story">Story</a>
+    <span class="nav-sep" aria-hidden="true"></span><span class="nav-group">Evidence</span>
+    <a href="#verdict" data-tab="verdict">Verdict</a>
+    <a href="#fills" data-tab="fills">Fill economics</a>
+    <a href="#agent" data-tab="agent">Agent</a>
+    <a href="#exec-test" data-tab="exec-test">Execution test</a>
+    <span class="nav-sep" aria-hidden="true"></span>
+    <details class="appendix" id="appendix-menu">
+      <summary data-tab="appendix">Appendix <span aria-hidden="true">▾</span></summary>
+      <div class="menu" role="menu">
+        <a href="#pnl" data-tab="pnl" role="menuitem">Backtest P&amp;L</a>
+        <a href="#risk" data-tab="risk" role="menuitem">Risk</a>
+        <a href="#book" data-tab="book" role="menuitem">Market book</a>
+        <a href="#book/market" data-tab="book" role="menuitem">Universe</a>
+        <a href="#data/health" data-tab="data" role="menuitem">Data</a>
+        <a href="#data/simlive" data-tab="data" role="menuitem">Sim vs live</a>
+        <a href="#simulator" data-tab="simulator" role="menuitem">Simulator</a>
+        <a href="#archive" data-tab="archive" role="menuitem">v1 archive</a>
+        <a href="#about" data-tab="about" role="menuitem">Method and limits</a>
+        <a href="#l-health" data-tab="l-health" role="menuitem" data-local-only>Operations</a>
+      </div>
+    </details>
+  </nav>
+</header>
+
+<main>
+  <div class="pagebar" id="pagebar">
+  <div class="runtop">
     <label class="bar-run">Run <select id="run-select"></select></label>
     <span id="run-badge"></span>
     <label class="bar-run">Symbol <select id="f-symbol"></select></label>
@@ -291,92 +394,68 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
     </span>
     <p class="live-headline" id="live-headline" aria-live="polite"></p>
   </div>
+  <div class="snapshot-banner" id="snapshot-banner" hidden></div>
   <div class="demo-banner" id="demo-banner" hidden>DEMO DATA, NOT RESULTS · synthetic numbers for building and checking the page</div>
-  <nav class="tabs" aria-label="Sections">
-    <a href="#l-overview" data-view="l-overview">Overview</a>
-    <a href="#l-pnl" data-view="l-pnl">P&amp;L</a>
-    <a href="#l-exec" data-view="l-exec">Execution</a>
-    <a href="#l-model" data-view="l-model">Model</a>
-    <a href="#l-health" data-view="l-health">Market &amp; health</a>
-    <a href="#overview" data-view="research">Research</a>
-  </nav>
-  <nav class="research-bar" id="research-bar" aria-label="Research sections">
-    <a href="#overview" data-tab="overview">Verdict</a>
-    <a href="#pnl" data-tab="pnl">P&amp;L</a>
-    <a href="#execution" data-tab="execution">Execution</a>
-    <a href="#risk" data-tab="risk">Risk</a>
-    <a href="#model-health" data-tab="model-health">Model</a>
-    <a href="#book" data-tab="book">Market book</a>
-    <a href="#data" data-tab="data">Data</a>
-    <a href="#simulator" data-tab="simulator">Simulator</a>
-    <a href="#archive" data-tab="archive">Archive</a>
-    <a href="#about" data-tab="about">About</a>
-  </nav>
-</header>
+  </div>
+  <div class="tab-wrap" data-tab="story">
+  <section class="view" id="view-story">
+    <h1 class="story-title">Crypto market making: from Avellaneda–Stoikov to a queue-aware agent</h1>
+    <div id="story-body" class="story-body"></div>
+  </section>
+  </div>
 
-<main>
-  <div class="tab-wrap" data-tab="l-overview">
+  <div class="tab-wrap" data-tab="exec-test">
+  <div class="subtabs" id="sub-exec-test" role="tablist"></div>
   <section class="view" id="view-lv-overview">
-    <p class="view-intro">Is each bot healthy right now, and if not, what went wrong? Incidents and state first, the money below.</p>
-    <div class="state-strip" id="ov2-state"></div>
-    <div class="tiles" id="ov2-tiles"></div>
-    <div class="card"><h2>Incident timeline</h2><p class="sub" id="ov2-tl-sub"></p><div class="chart short" id="ov2-timeline"></div></div>
-    <div class="card lv-gap"><h2>Incidents</h2><p class="sub" id="ov2-inc-sub"></p><div class="table-wrap" id="ov2-incidents"></div></div>
-    <div class="card lv-gap"><h2>Cumulative P&amp;L</h2><p class="sub" id="ov2-cum-sub"></p><div class="chart lv-cum" id="ov2-cum"></div></div>
-  </section>
-  </div>
-
-  <div class="tab-wrap" data-tab="l-pnl">
-  <section class="view" id="view-lv-pnl">
-    <p class="view-intro">Where did the money go? Five terms that add up to net exactly, with testnet artifacts in a bucket of their own. USDT on 100 USDT lots, bp of notional traded; all times UTC.</p>
-    <div class="grid g2">
-      <div class="card"><h2>Attribution waterfall</h2><p class="sub" id="lvp-wf-sub"></p><div class="chart" id="lvp-waterfall"></div><p class="note" id="lvp-thresholds"></p></div>
-      <div class="card"><h2>Attribution over time</h2><p class="sub" id="lvp-time-sub"></p><div class="chart" id="lvp-time"></div></div>
-    </div>
-    <div class="card lv-gap"><h2>Per day</h2><p class="sub" id="lvp-days-sub"></p><div class="table-wrap" id="lvp-days"></div></div>
-    <div class="grid g2 lv-gap">
-      <div class="card"><h2>Worst 20 fills</h2><p class="sub" id="lvp-worst-sub"></p><div class="table-wrap" id="lvp-worst"></div></div>
-      <div class="card"><h2>Best 20 fills</h2><p class="sub">Ranked by edge plus the 60 s markout, in bp. Click a row to open the tape.</p><div class="table-wrap" id="lvp-best"></div></div>
-    </div>
-  </section>
-  </div>
-
-  <div class="tab-wrap" data-tab="l-exec">
-  <section class="view" id="view-lv-exec">
-    <p class="view-intro">How did it execute? Was it quoting, how long orders waited, and what happened after each fill.</p>
+    <h1 class="page-title">The execution test</h1>
+    <p class="story-label"><span class="story-badge" id="xt-badge" hidden></span></p>
+    <p class="verdict-line" id="xt-purpose" hidden></p>
+    <div class="card"><h2>What the test caught</h2><p class="sub" id="xt-caught-sub"></p><div class="table-wrap" id="xt-caught"></div></div>
+    <div class="card" id="lvc-exec"></div>
+    <div class="state-strip lv-gap" id="ov2-state"></div>
     <div class="card"><h2>Quote state</h2><p class="sub" id="lvx-state-sub"></p><div class="chart lv-strip" id="lvx-state"></div><div class="table-wrap" id="lvx-uptime"></div></div>
+    <div class="grid g2 lv-gap">
+      <div class="card"><h2>Order funnel</h2><p class="sub" id="lvx-fun-sub"></p><div class="table-wrap" id="lvx-funnel"></div><div class="chart short3" id="lvx-activity"></div></div>
+      <div class="card"><h2>Order age at fill</h2><p class="sub" id="lvx-wait-sub"></p><div class="chart short2" id="lvx-wait"></div><div class="table-wrap" id="lvx-wait-table"></div></div>
+    </div>
     <div class="grid g2 lv-gap">
       <div class="card"><h2>Markout after fill</h2><p class="sub" id="lvx-mk-sub"></p><div class="chart short2" id="lvx-markout"></div></div>
       <div class="card"><h2>Edge at fill</h2><p class="sub" id="lvx-edge-sub"></p><div class="chart short2" id="lvx-edge"></div></div>
     </div>
-    <div class="grid g2 lv-gap">
-      <div class="card"><h2>Queue wait</h2><p class="sub" id="lvx-wait-sub"></p><div class="chart short2" id="lvx-wait"></div><div class="table-wrap" id="lvx-wait-table"></div></div>
-      <div class="card"><h2>Order funnel</h2><p class="sub" id="lvx-fun-sub"></p><div class="table-wrap" id="lvx-funnel"></div><div class="chart short3" id="lvx-activity"></div></div>
+    <div class="card lv-gap"><h2>Incident timeline</h2><p class="sub" id="ov2-tl-sub"></p><div class="chart short" id="ov2-timeline"></div></div>
+    <div class="card lv-gap"><h2>Incidents</h2><p class="sub" id="ov2-inc-sub"></p><div class="table-wrap" id="ov2-incidents"></div></div>
+    <div id="sec-tape">
+      <div class="card lv-gap" id="lvx-tape-card" hidden><div class="card-head"><h2>Tape around the fill</h2><button type="button" id="lvx-tape-close">Close</button></div><p class="sub" id="lvx-tape-sub"></p><div class="chart" id="lvx-tape"></div></div>
+      <div class="card lv-gap"><h2>Fills</h2><p class="sub" id="lvx-fills-sub"></p><div class="lv-filters" id="lvx-fills-filter"></div><div class="table-wrap" id="lvx-fills"></div><div class="lv-pager" id="lvx-fills-pager"></div></div>
     </div>
-    <div class="card lv-gap" id="lvx-tape-card" hidden><div class="card-head"><h2>Tape around the fill</h2><button type="button" id="lvx-tape-close">Close</button></div><p class="sub" id="lvx-tape-sub"></p><div class="chart" id="lvx-tape"></div></div>
-    <div class="card lv-gap"><h2>Fills</h2><p class="sub" id="lvx-fills-sub"></p><div class="lv-filters" id="lvx-fills-filter"></div><div class="table-wrap" id="lvx-fills"></div><div class="lv-pager" id="lvx-fills-pager"></div></div>
-  </section>
-  </div>
-
-  <div class="tab-wrap" data-tab="l-model">
-  <section class="view" id="view-lv-model">
-    <p class="view-intro">What was the model thinking? Which arm was live, what edge it predicted, and why it stayed out.</p>
-    <p class="verdict" id="lvm-fixed" hidden></p>
-    <div id="lvm-body">
-      <div class="card"><h2>Live arm</h2><p class="sub" id="lvm-strip-sub"></p><div class="chart lv-strip" id="lvm-strip"></div><div class="table-wrap" id="lvm-arms"></div></div>
+    <details class="pnl-fold lv-gap" id="sec-pnl">
+      <summary id="xt-pnl-summary">P&amp;L, for reconciliation only</summary>
+      <div class="tiles" id="ov2-tiles"></div>
+      <div class="card"><h2>Cumulative P&amp;L</h2><p class="sub" id="ov2-cum-sub"></p><div class="chart lv-cum" id="ov2-cum"></div></div>
+      <p class="verdict amber" id="lvp-none" hidden></p>
+      <div id="lvp-body">
       <div class="grid g2 lv-gap">
-        <div class="card"><h2>Arm scores over time</h2><p class="sub" id="lvm-scores-sub"></p><div class="chart short2" id="lvm-scores"></div></div>
-        <div class="card"><h2>Predicted against realised edge</h2><p class="sub" id="lvm-calib-sub"></p><div class="chart short2" id="lvm-calib"></div></div>
+        <div class="card"><h2>Attribution waterfall</h2><p class="sub" id="lvp-wf-sub"></p><div class="chart" id="lvp-waterfall"></div><p class="note" id="lvp-thresholds"></p></div>
+        <div class="card"><h2>Attribution over time</h2><p class="sub" id="lvp-time-sub"></p><div class="chart" id="lvp-time"></div></div>
       </div>
-      <div class="card lv-gap"><h2>Why it stayed out</h2><p class="sub" id="lvm-why"></p></div>
-    </div>
+      <div class="card lv-gap"><h2>Per day</h2><p class="sub" id="lvp-days-sub"></p><div class="table-wrap" id="lvp-days"></div></div>
+      <div class="grid g2 lv-gap">
+        <div class="card"><h2>Worst 20 fills</h2><p class="sub" id="lvp-worst-sub"></p><div class="table-wrap" id="lvp-worst"></div></div>
+        <div class="card"><h2>Best 20 fills</h2><p class="sub">Ranked by edge plus the 60 s markout, in bp. Click a row to open the tape.</p><div class="table-wrap" id="lvp-best"></div></div>
+      </div>
+      </div>
+    </details>
   </section>
+  <!-- the old P&L and Execution pages are now sections of the page above; the ids stay so every old link and test still resolves -->
+  <section class="view" id="view-lv-pnl" aria-hidden="true"></section>
+  <section class="view" id="view-lv-exec" aria-hidden="true"></section>
   </div>
 
-  <div class="tab-wrap" data-tab="overview">
+  <div class="tab-wrap" data-tab="verdict">
   <section class="view" id="view-overview">
     <p class="desk-msg" id="desk-msg-overview" hidden></p>
     <div id="desk-body-overview">
+      <h1 class="page-title">The 60-day verdict</h1>
       <p class="verdict-line" id="ov-headline" hidden></p>
       <div class="tiles" id="ov-tiles"></div>
       <div class="grid g2" style="margin-bottom:16px">
@@ -464,15 +543,19 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
   </section>
   </div>
 
-  <div class="tab-wrap" data-tab="execution">
+  <div class="tab-wrap" data-tab="fills">
   <section class="view" id="view-execution">
     <p class="desk-msg" id="desk-msg-execution" hidden></p>
     <div id="desk-body-execution">
+      <h1 class="page-title">What a fill is worth</h1>
+      <p class="verdict-line" id="fe-headline" hidden></p>
+      <p class="callout amber" id="ex-nofill" hidden></p>
       <p class="view-intro">Are my fills good fills? A markout is how far the mid moved in your favour after a fill. If it falls below zero within seconds, the people trading with you knew where the price was going: adverse selection.</p>
       <div class="grid g2">
         <div class="card"><h2>Markouts by side</h2><p class="sub">bp before fees, ± 1 standard error, pooled over the selected coins by number of fills (pick one coin to see it alone); the dashed line is the fee a fill must clear</p><div class="chart" id="ex-side"></div></div>
         <div class="card"><h2>Markouts by action</h2><p class="sub">JOIN = resting at the best price, BACK = one tick behind</p><div class="chart" id="ex-action"></div></div>
       </div>
+      <div class="card" style="margin-top:16px"><h2>Where a fill's money goes</h2><p class="sub" id="fe-wf-sub">Per dollar traded, by coin and for all coins together, from the selected run</p><div class="chart" id="fe-wf"></div></div>
       <div class="card" style="margin-top:16px"><h2>Fill rate</h2><p class="sub">Fills per hour while an order was resting; the label is the share of the day with one resting (uptime)</p><div class="chart short" id="ex-rate"></div></div>
       <div class="card" style="margin-top:16px"><h2>Queue wait</h2><p class="sub">Seconds from an order going live to its fill</p><div class="chart" id="ex-wait"></div></div>
       <div class="card" style="margin-top:16px"><h2>Fill quality per coin</h2><p class="sub">Fill-weighted over the selected days</p><div class="table-wrap" id="ex-table"></div></div>
@@ -496,11 +579,13 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
   </section>
   </div>
 
-  <div class="tab-wrap" data-tab="model-health">
-  <div class="subtabs" id="sub-model-health" role="tablist"></div>
+  <div class="tab-wrap" data-tab="agent">
+  <div class="subtabs" id="sub-agent" role="tablist"></div>
   <section class="view" id="view-model-health">
     <p class="desk-msg" id="desk-msg-model-health" hidden></p>
     <div id="desk-body-model-health">
+      <h1 class="page-title">The agent</h1>
+      <p class="verdict-line" id="ag-headline" hidden></p>
       <p class="view-intro">Is the model still right about itself? What the agent learned a fill is worth in each market state, whether its predictions come true, and which setting it ran.</p>
       <div class="card"><h2>Edge table</h2><p class="sub">Learned net edge per fill (bp, after fee) by book imbalance (rows) and volatility (columns). * = fewer than 30 fills. Red means quoting there loses money. Colour scale fixed at ±20 bp.</p><div class="edge-grid" id="md-edge"></div></div>
       <div class="grid g2" style="margin-top:16px">
@@ -518,6 +603,19 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
         <div class="card"><h2>By book imbalance</h2><p class="sub">Net edge per fill (bp, after fee), ±1.96 se; hollow = fewer than 30 fills</p><div class="chart short" id="sg-imb"></div></div>
         <div class="card"><h2>By volatility</h2><p class="sub">Net edge per fill (bp, after fee), ±1.96 se; hollow = fewer than 30 fills</p><div class="chart short" id="sg-vol"></div></div>
       </div>
+    </div>
+  </section>
+  <section class="view" id="view-lv-model">
+    <p class="view-intro">What was the model thinking? Which arm was live, what edge it predicted, and why it stayed out.</p>
+    <p class="verdict" id="lvm-fixed" hidden></p>
+    <div id="lvm-body">
+      <div class="card" id="lvc-agent"></div>
+      <div class="card"><h2>Live arm</h2><p class="sub" id="lvm-strip-sub"></p><div class="chart lv-strip" id="lvm-strip"></div><div class="table-wrap" id="lvm-arms"></div></div>
+      <div class="grid g2 lv-gap">
+        <div class="card"><h2>Arm scores over time</h2><p class="sub" id="lvm-scores-sub"></p><div class="chart short2" id="lvm-scores"></div></div>
+        <div class="card"><h2>Predicted against realised edge</h2><p class="sub" id="lvm-calib-sub"></p><div class="chart short2" id="lvm-calib"></div></div>
+      </div>
+      <div class="card lv-gap"><h2>Why it stayed out</h2><p class="sub" id="lvm-why"></p></div>
     </div>
   </section>
   </div>
@@ -579,18 +677,8 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
       <div>
         <div class="kpis" id="sim-kpis"></div>
         <div class="grid">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>One trading session, A-S strategy</h2>
-                <p class="sub">Mid price, the reservation price r, the quoted band, and every fill. Long inventory pushes r below the mid; short pushes it above.</p></div>
-              <button id="btn-replay" type="button">▶ Replay session</button>
-            </div>
-            <div class="chart tall" id="ch-path"></div>
-          </div>
-          <div class="grid g2">
-            <div class="card"><h2>Inventory on the same path</h2><p class="sub">The skew pulls A-S back toward zero; the benchmark drifts like a random walk.</p><div class="chart short" id="ch-inv"></div></div>
-            <div class="card"><h2>Terminal profit distribution</h2><p class="sub">Profit at T (cash + inventory × mid) across all paths.</p><div class="chart short" id="ch-hist"></div></div>
-          </div>
+          <div class="card" id="ch-session"></div>
+          <div class="card"><h2>Terminal profit distribution</h2><p class="sub">Profit at T (cash + inventory × mid) across all paths.</p><div class="chart short" id="ch-hist"></div></div>
           <div class="card"><h2>Profit paths</h2><p class="sub">40 sample paths per strategy (thin) and the average over all paths (bold). Similar slope, very different spread of outcomes.</p><div class="chart" id="ch-fan"></div></div>
         </div>
       </div>
@@ -615,6 +703,8 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
   </section>
   <section class="view" id="view-replication">
     <p class="view-intro">Monte Carlo replication of section 4 of Avellaneda &amp; Stoikov (2008), computed in Python (<span class="mono">mm/simulator.py</span>), 1,000 paths per cell, both strategies on identical random numbers.</p>
+    <div class="headline" id="rep-tiles"></div>
+    <p class="note" id="rep-caveat">These numbers come from the simulated market of the paper. It has no adverse selection, fees, tick size or latency, so its Sharpe ratios are far higher than anything achievable live, and the R² only says the simulator's fill curve matches one day of BTC trades. The result that counts is the 60-day queue-aware test on the Story page.</p>
     <div class="callout" id="rep-callout"></div>
     <div class="grid g2">
       <div class="card"><h2>Profit volatility by risk aversion</h2><p class="sub">Standard deviation of terminal profit. A-S roughly halves it at every γ.</p><div class="chart short" id="ch-rep-std"></div></div>
@@ -716,7 +806,7 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
   <div class="tab-wrap" data-tab="about">
   <section class="view" id="view-about">
     <div class="about-head"><div class="eyebrow">Quant research project · crypto market making</div>
-      <h1>Avellaneda–Stoikov Market Maker</h1>
+      <h1>Crypto market making: from Avellaneda–Stoikov to a queue-aware agent</h1>
       <p class="lede">The 2008 Avellaneda–Stoikov model built from scratch in Python: an optimal quoting rule for a market maker who earns the spread but must control inventory risk. Replicated on simulated markets, then calibrated and backtested on real Binance trade data for twelve coins, from BTC to micro caps.</p></div>
     <div class="chips" id="chips"></div>
     <div class="headline" id="headline"></div>
@@ -763,7 +853,9 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <script src="data.js"></script>
 <script src="runs/index.js"></script>
+<script src="runs/pub-story.js"></script>
 <script src="js/core.js"></script>
+<script src="js/session_chart.js"></script>
 <script src="js/source.js"></script>
 <script src="js/views/research.js"></script>
 <script src="js/views/overview.js"></script>
@@ -772,9 +864,11 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
 <script src="js/views/risk.js"></script>
 <script src="js/views/model.js"></script>
 <script src="js/views/book.js"></script>
+<script src="js/views/story.js"></script>
 <script src="js/live.js"></script>
 <script src="js/live_sessions.js"></script>
 <script src="js/views/lv_overview.js"></script>
+<script src="js/views/lv_chart.js"></script>
 <script src="js/views/lv_pnl.js"></script>
 <script src="js/views/lv_exec.js"></script>
 <script src="js/views/lv_model.js"></script>

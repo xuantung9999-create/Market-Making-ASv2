@@ -3,13 +3,16 @@
    script tag (no fetch): live/sessions.js -> window.SESSIONS, live/session-<id>.js -> window.SESSION_DATA[id].
    Python computes every number and sentence; this file only formats and draws. */
 
+/* The public copy reads the frozen snapshot/ folder (written by publish_dashboard --live-snapshot); the owner's page reads live/. */
+const LIVE_DIR = window.PUBLIC_SITE ? "snapshot" : "live";
 const RANGE_H = { "6h": 6, "24h": 24, "3d": 72, all: null };
 const Sess = (() => {
-  const S = { list: [], sel: null, last: null, range: "all", loading: {}, errors: {}, tab: null, timer: null };
+  const S = { list: [], sel: null, last: null, range: "all", loading: {}, errors: {}, charts: {}, view: null, timer: null };
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private window: the page still works */ } },
   };
+  const groupOf = v => v === "lv-model" ? "paper" : "testnet";      // Agent page: paper sessions; Execution test: testnet sessions
   const dirtyLive = () => ["lv-overview", "lv-pnl", "lv-exec", "lv-model", "live"].forEach(markDirty);
 
   function loadScript(src, ok, fail) {
@@ -21,7 +24,7 @@ const Sess = (() => {
     document.head.appendChild(s);
   }
   function loadSessions() {
-    loadScript("live/sessions.js", () => {
+    loadScript(`${LIVE_DIR}/sessions.js`, () => {
       S.list = window.SESSIONS || [];
       fillSelect();
       S.list.forEach(s => ensure(s.id));
@@ -30,12 +33,14 @@ const Sess = (() => {
   function ensure(id) {
     if (S.loading[id] === "loading") return;
     S.loading[id] = "loading";
-    loadScript(`live/session-${id}.js`, () => { S.loading[id] = "done"; delete S.errors[id]; updateHeader(); dirtyLive(); },
+    loadScript(`${LIVE_DIR}/session-${id}.js`, () => { S.loading[id] = "done"; delete S.errors[id]; updateHeader(); dirtyLive(); },
                () => { S.loading[id] = "error"; S.errors[id] = true; dirtyLive(); });
+    loadScript(`${LIVE_DIR}/chart-${id}.js`, () => { S.charts[id] = "done"; dirtyLive(); },      // the session chart file, same refresh as the bundle
+               () => { S.charts[id] = "error"; dirtyLive(); });
   }
   function refresh() {                       // new bundles land every 5 minutes: re-read the list and the loaded bundles
     if (window.PUBLIC_SITE) return;
-    loadScript("live/sessions.js", () => {
+    loadScript(`${LIVE_DIR}/sessions.js`, () => {
       S.list = window.SESSIONS || S.list;
       S.list.forEach(s => { S.loading[s.id] = null; ensure(s.id); });
       fillSelect();
@@ -44,14 +49,17 @@ const Sess = (() => {
   function fillSelect() {
     const sel = $("sess-select");
     if (!sel) return;
-    const opts = S.list.map(s => `<option value="${esc(s.id)}">${esc(s.source)} · ${esc(s.symbol)} · ${esc(s.policy)}</option>`);
-    const all = S.tab === "l-overview" ? '<option value="ALL">All sessions</option>' : "";      // Overview only
+    const grp = groupOf(S.view), mine = S.list.filter(s => s.source === grp);
+    const opts = mine.map(s => `<option value="${esc(s.id)}">${esc(s.source)} · ${esc(s.symbol)} · ${esc(s.policy)}</option>`);
+    const all = "";      // the Execution test page shows one session at a time (spec section 7)
     sel.innerHTML = (S.list.length ? all + opts.join("") : '<option value="">No sessions yet</option>');
-    if (!S.sel || (S.sel !== "ALL" && !S.list.some(s => s.id === S.sel))) {
-      const saved = store.get("lv-session");
-      S.sel = S.list.some(s => s.id === saved) ? saved : (S.list.find(s => s.n_fills > 0) || S.list[0] || {}).id || null;
+    if (!S.sel || (S.sel !== "ALL" && !mine.some(s => s.id === S.sel))) {
+      const saved = store.get("lv-session-" + grp);
+      S.sel = mine.some(s => s.id === saved) ? saved : (mine.find(s => s.n_fills > 0) || mine[0] || {}).id || null;
     }
-    if (S.sel === "ALL" && !all) S.sel = S.last || (S.list[0] || {}).id || null;
+    if (S.sel === "ALL" && !all) S.sel = null;
+    if (S.sel && S.sel !== "ALL" && !mine.some(s => s.id === S.sel)) S.sel = null;
+    if (!S.sel) { const saved2 = store.get("lv-session-" + grp); S.sel = (mine.find(s => s.id === saved2) || mine.find(s => s.n_fills > 0) || mine[0] || {}).id || null; }
     sel.value = S.sel || "";
     if (S.sel && S.sel !== "ALL") S.last = S.sel;
     updateHeader();
@@ -59,7 +67,7 @@ const Sess = (() => {
   /* The session(s) a view should draw: one bundle, or all of them on Overview. */
   function active() {
     const data = window.SESSION_DATA || {};
-    if (S.sel === "ALL" && S.tab === "l-overview") return S.list.map(s => data[s.id]).filter(Boolean);
+    if (S.sel === "ALL" && S.view === "lv-overview") return S.list.filter(s => s.source === groupOf(S.view)).map(s => data[s.id]).filter(Boolean);
     const id = S.sel === "ALL" ? S.last : S.sel;
     return data[id] ? [data[id]] : [];
   }
@@ -77,31 +85,38 @@ const Sess = (() => {
     $("live-headline").textContent = S.error && !S.list.length ? S.error
       : !S.list.length ? "No sessions yet: the supervisor writes the session files every 5 minutes."
       : !heads.length ? "Loading the session…"
-      : heads.length === 1 ? heads[0].headline : heads.map(b => b.headline.split(". ")[0]).join(" · ");
+      : heads.length === 1 ? headlineOf(heads[0]) : heads.map(b => headlineOf(b).split(". ")[0]).join(" · ");
     const b = one(), lab = $("sess-label");
-    lab.textContent = b && S.sel !== "ALL" ? b.meta.label : "";
+    lab.textContent = b && S.sel !== "ALL" && S.view !== "lv-overview" ? b.meta.label : "";      // the Execution test page carries its label by the title
     lab.hidden = !lab.textContent;
     lab.style.setProperty("--c", b && b.meta.source === "paper" ? "#2dd4bf" : "#f5a524");
+    if (typeof drawFooter === "function") drawFooter();
   }
-  function onShow(tab) {
-    const was = S.tab; S.tab = tab;
-    if (RESEARCH_TABS.includes(tab) || was === tab) return;
-    if (was === null || was === "l-overview" || tab === "l-overview" || (RESEARCH_TABS.includes(was))) fillSelect();
+  /* Newest build time among the loaded bundles: the live part of the page footer. */
+  function builtMs() {
+    const ts = Object.values(window.SESSION_DATA || {}).map(b => b && b.meta && b.meta.built_ms).filter(Number.isFinite);
+    return ts.length ? Math.max(...ts) : null;
+  }
+  /* The selector and range buttons exist only on the views that use them; the "All sessions" choice only on Overview. */
+  function onShow(view) {
+    const was = S.view; S.view = view;
+    if (!LIVE_VIEWS.includes(view) || was === view) return;
+    fillSelect();
     updateHeader();
-  }
-  function init() {
+  }  function init() {
     const sel = $("sess-select");
-    sel.addEventListener("change", () => { S.sel = sel.value; if (S.sel !== "ALL") { S.last = S.sel; store.set("lv-session", S.sel); } updateHeader(); dirtyLive(); });
+    sel.addEventListener("change", () => { S.sel = sel.value; if (S.sel !== "ALL") { S.last = S.sel; store.set("lv-session-" + groupOf(S.view), S.sel); } updateHeader(); dirtyLive(); });
     S.range = store.get("lv-range") && RANGE_H.hasOwnProperty(store.get("lv-range")) ? store.get("lv-range") : "all";
     const setBtns = () => $("live-range").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.r === S.range)));
     setBtns();
     $("live-range").addEventListener("click", e => {
       const r = e.target.dataset && e.target.dataset.r;
       if (!r) return;
-      S.range = r; store.set("lv-range", r); setBtns(); dirtyLive();
+      S.range = r; store.set("lv-range", r); setBtns(); updateHeader(); dirtyLive();      // the headline follows the range (B1)
     });
-    if (window.PUBLIC_SITE) {
-      $("live-headline").textContent = "The live sessions are not published. This copy shows the recorded backtest results under Research.";
+    if (window.PUBLIC_SITE) {                                  // frozen: read the snapshot once, no polling, no live status
+      if (window.SNAPSHOT_AT) loadSessions();
+      else $("live-headline").textContent = "The live sessions are not published on this copy. The Story and the evidence pages show the recorded results.";
       return;
     }
     loadSessions();
@@ -111,12 +126,19 @@ const Sess = (() => {
   /* Programmatic choice of a session (from a click on an incident or fill): same effects as the selector. */
   function select(id) {
     if (S.sel === id) return;
-    S.sel = id; S.last = id; store.set("lv-session", id);
+    S.sel = id; S.last = id; store.set("lv-session-" + groupOf(S.view), id);
     const sel = $("sess-select"); if (sel) sel.value = id;
     updateHeader(); dirtyLive();
   }
-  return { init, onShow, active, one, windowOf, inWin, state: S, ensure, refresh, select };
+  return { init, onShow, active, one, windowOf, inWin, state: S, ensure, refresh, select, builtMs };
 })();
+
+/* Python builds every range-dependent number and sentence once per range (bundle.by_range, spec section 9 rule 1):
+   tiles, counts, takeaways and headline. These helpers only pick the entry of the selected range. */
+const rangeEntry = b => (b && b.by_range && b.by_range[Sess.state.range]) || null;
+const tkOf = b => ({ ...(b.takeaways || {}), ...((rangeEntry(b) || {}).takeaways || {}) });
+const headlineOf = b => (rangeEntry(b) || b).headline;
+const rangeLabel = b => (rangeEntry(b) || {}).label || "";
 
 /* ======================= shared helpers for the live views ======================= */
 const isoT = ms => new Date(ms).toISOString();
@@ -174,11 +196,12 @@ const utcStamp = ms => isNum(ms) ? new Date(ms).toISOString().slice(5, 16).repla
 /* The reason behind a state, from its logged detail (formatting only). */
 function reasonText(st, lots, qMax) {
   if (!st) return "";
+  if (st.reason) return st.reason;                     // a sentence Python wrote (loss stop): shown as written
   const d = st.detail;
   switch (st.state) {
     case "INV_CAP": return `at inventory cap (${isNum(lots) ? lots : (d && d.lots)} of ${qMax} lots)`;
     case "NO_BALANCE": return d && typeof d === "object" ? `blocked by balance: need ${fmtP(d.need)}, free ${fmtP(d.free)} ${d.asset || ""}` : "blocked by balance";
-    case "LOSS_STOP": return d && isNum(d.pnl_day) ? `daily loss stop (day ${sign(d.pnl_day)} of −${d.max_loss} USDT)` : "daily loss stop";
+    case "LOSS_STOP": return "daily loss stop, holds until the next UTC day";   // the figures come from the bundle's reason
     case "POLICY_OUT": return "the policy stays out" + (d && d.live_arm !== undefined && d.live_arm !== null ? ` (arm ${d.live_arm}${isNum(d.score_bp) ? `, score ${sign(d.score_bp)} bp` : ""})` : "");
     case "REJECTED": return "last order rejected: " + esc(String(d || "").slice(0, 80));
     case "WARMUP": return "warming up";

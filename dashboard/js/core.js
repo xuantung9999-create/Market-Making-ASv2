@@ -3,7 +3,6 @@
 /* ---------- Edit these for your CV / website ---------- */
 const SITE = {
   stage: "v2 · Gate A evaluated",
-  testsPassed: 331,
   author: "Xuân Tùng",
   github: "https://github.com/xuantung9999-create/Market-Making-ASv2",
   linkedin: "https://www.linkedin.com/in/tungtea-nguyen",
@@ -75,34 +74,37 @@ const plot = (id, data, lay) => Plotly.react(id, data, layout(lay), CONFIG);
 const VIEWS = [];
 const dirty = {};
 const draw = {};
-/* Six top-level tabs (live spec 4): five about the live sessions, then Research. The old tab keys below stay as
-   they were and are the Research tab's content, so every old hash (#pnl, #risk, #simulator ...) still resolves.
-   "live" and "pcstatus" (the old Live tab) moved into Market & health. */
+/* Showcase shell (spec section 5): Story, then Evidence (Verdict, Fill economics, Agent, Execution test), then an
+   Appendix menu. Every view id stays; the old tab keys that disappeared resolve through ALIASES, so every old hash works.
+   "live" and "pcstatus" are Operations (localhost only on the public copy). */
 const TABS = {
-  "l-overview":   { label: "Overview", views: ["lv-overview"] },
-  "l-pnl":        { label: "P&L", views: ["lv-pnl"] },
-  "l-exec":       { label: "Execution", views: ["lv-exec"] },
-  "l-model":      { label: "Model", views: ["lv-model"] },
-  "l-health":     { label: "Market & health", views: [["live", "Market feed"], ["pcstatus", "PC status"]] },
-  "overview":     { label: "Verdict", views: ["overview"] },
+  "story":        { label: "Story", views: ["story"] },
+  "verdict":      { label: "Verdict", views: ["overview"] },
+  "fills":        { label: "Fill economics", views: ["execution"] },
+  "agent":        { label: "Agent", views: [["model-health", "Edge table"], ["signals", "Signals"], ["lv-model", "Live on real data"]] },
+  "exec-test":    { label: "Execution test", views: ["lv-overview"] },       // one page; its P&L and tape are sections (#exec-test/pnl, #exec-test/tape)
+  "l-health":     { label: "Operations", views: [["live", "Market feed"], ["pcstatus", "PC status"]] },
   "book":         { label: "Market book", views: [["book", "Order book"], ["market", "Universe"]] },
-  "pnl":          { label: "P&L", views: ["pnl"] },
-  "execution":    { label: "Execution", views: ["execution"] },
+  "pnl":          { label: "Backtest P&L", views: ["pnl"] },
   "risk":         { label: "Risk", views: ["risk"] },
-  "model-health": { label: "Model", views: [["model-health", "Edge table"], ["signals", "Signals"]] },
   "data":         { label: "Data", views: [["health", "Recorder health"], ["simlive", "Sim vs live"]] },
   "simulator":    { label: "Simulator", views: [["simulator", "Playground"], ["model", "How it quotes"], ["replication", "Paper replication"]] },
   "archive":      { label: "Research archive", views: [["real-data", "Real data"], ["backtest", "Backtest"], ["universe", "BTC to micro caps"],
                                                        ["informed", "Informed traders"], ["tuning", "Tuning and signals"]] },
-  "about":        { label: "About", views: ["about"] },
+  "about":        { label: "Method and limits", views: ["about"] },
+};
+/* Old first hash segments that are no longer a tab key -> "tab" or "tab/view". */
+const ALIASES = {
+  "overview": "verdict", "execution": "fills", "model-health": "agent",
+  "l-overview": "exec-test", "l-pnl": "exec-test/pnl", "l-exec": "exec-test/tape", "l-model": "agent/lv-model",
 };
 const viewIds = t => TABS[t].views.map(v => Array.isArray(v) ? v[0] : v);
 const VIEW_TAB = {};
 Object.keys(TABS).forEach(t => viewIds(t).forEach(v => { VIEW_TAB[v] = t; }));
-const RESEARCH_TABS = ["overview", "book", "pnl", "execution", "risk", "model-health", "data", "simulator", "archive", "about"];
-const navKey = tab => RESEARCH_TABS.includes(tab) ? "research" : tab;
-const DEFAULT_VIEW = { tab: "l-overview", view: "lv-overview" };
-/* Quote-state palette, defined once. Green and red are reserved for profit and loss, bid blue and ask amber for
+const EVIDENCE_TABS = ["verdict", "fills", "agent", "exec-test"];
+const APPENDIX_TABS = ["pnl", "risk", "book", "data", "simulator", "archive", "about", "l-health"];
+const LIVE_VIEWS = ["lv-overview", "lv-pnl", "lv-exec", "lv-model"];     // the views that use the session selector and range buttons
+const DEFAULT_VIEW = { tab: "story", view: "story" };/* Quote-state palette, defined once. Green and red are reserved for profit and loss, bid blue and ask amber for
    the two sides, purple for artifacts only. */
 const BID_C = "#38bdf8", ASK_C = "#f5a524", ART_C = "#a78bfa";
 const STATE_COLOR = { QUOTING: "#475569", WARMUP: "#94a3b8", POLICY_OUT: "#2dd4bf", LOSS_STOP: "#fb923c", INV_CAP: "#818cf8",
@@ -116,15 +118,19 @@ function register(name, fn, initiallyDirty = true) {
 function markDirty(name) { dirty[name] = true; if (name === current) renderVisible(); }
 let current = null, currentTab = null;
 function renderVisible() { if (current && dirty[current]) { dirty[current] = false; draw[current](); } }
-/* "#simulator/replication" | "#replication" | "#simulator" -> {tab, view} */
+/* "#simulator/replication" | "#replication" | "#simulator" | "#l-exec" -> {tab, view, section}. A second segment that is not
+   a view of the tab is a section anchor ("#exec-test/tape"): the page scrolls to it instead of to the top. */
 function resolveHash(h) {
-  const [a, b] = String(h || "").replace(/^#/, "").split("/");
-  let tab = TABS[a] ? a : VIEW_TAB[a], view = null;
-  if (!tab) return { tab: DEFAULT_VIEW.tab, view: DEFAULT_VIEW.view };
+  let [a, b] = String(h || "").replace(/^#/, "").split("/");
+  if (ALIASES[a]) { const [a2, b2] = ALIASES[a].split("/"); a = a2; b = b || b2; }
+  const tab = TABS[a] ? a : VIEW_TAB[a];
+  if (!tab || (typeof window !== "undefined" && window.PUBLIC_SITE && tab === "l-health")) return { tab: DEFAULT_VIEW.tab, view: DEFAULT_VIEW.view, section: null };
   const ids = viewIds(tab);
+  let view = null, section = null;
   if (!TABS[a]) view = a;
   else if (b && ids.includes(b)) view = b;
-  return { tab, view: view || ids[0] };
+  else if (b) section = b;
+  return { tab, view: view || ids[0], section };
 }
 /* Segmented control that shows one nested view of a tab; the choice lives in the hash. */
 function subtabs(hostId, items, tab) {
@@ -132,30 +138,97 @@ function subtabs(hostId, items, tab) {
   if (!host) return;
   host.innerHTML = items.map(([id, label]) => `<a href="#${tab}/${id}" data-sub="${id}" role="tab">${esc(label)}</a>`).join("");
 }
+/* One provenance line, and only the parts that apply to the page (spec section 6, B11): the backtest build for the
+   backtest pages, the live data (or the frozen snapshot on the public copy) for the live ones, both on the Story. */
+function drawFooter() {
+  const el = $("foot-built");
+  if (!el) return;
+  const live = LIVE_VIEWS.includes(current) || ["live", "pcstatus"].includes(current), story = current === "story";
+  const stamp = ms => new Date(ms).toISOString().slice(0, 16).replace("T", " ") + " UTC";
+  const parts = [];
+  if (story || !live) parts.push(D ? `Backtest built ${D.built}` : "data.js not found: run python -m scripts.build_dashboard");
+  if (story || live) {
+    const ms = (typeof Sess !== "undefined" && Sess.builtMs()) || (window.LIVE && window.LIVE.built_ms) || null;
+    if (ms) parts.push((window.PUBLIC_SITE ? "Live snapshot frozen " : "Live data built ") + stamp(ms));
+  }
+  el.textContent = parts.join(" · ");
+}
+/* Every page that shows snapshot data says so (spec section 8); the owner's page, served live, shows no banner. */
+function drawSnapshotBanner(tab, view) {
+  const el = $("snapshot-banner");
+  if (!el) return;
+  const at = window.PUBLIC_SITE && window.SNAPSHOT_AT;
+  const on = !!at && (tab === "story" || tab === "exec-test" || view === "lv-model");
+  el.hidden = !on;
+  if (on) el.textContent = `Snapshot frozen ${at} UTC. Not live.`;
+}
+/* The Agent pages show the agent's edge table, which only a walk-forward run carries: open on the headline queue run rather than
+   on the baseline, so a visitor never lands on "Not in this run". */
+const AGENT_VIEWS = ["model-health", "signals"];
+function ensureAgentRun() {
+  if (!AGENT_VIEWS.includes(current) || typeof Source === "undefined" || !Source.current || Source.current.kind === "walkforward") return;
+  const wf = selectableRuns().filter(r => r.kind === "walkforward");
+  const pick = wf.find(r => /-q1$/.test(r.run_id)) || wf[0];
+  if (!pick) return;
+  const sel = $("run-select");
+  if (sel) sel.value = pick.run_id;
+  Source.select(pick.run_id);
+}
+function closeAppendix() { const d = $("appendix-menu"); if (d) d.open = false; }
+function placeAppendixMenu() {              // the nav scrolls sideways, so the menu is fixed under its summary
+  const d = $("appendix-menu"), m = d && d.querySelector(".menu");
+  if (!d || !d.open || !m) return;
+  const r = d.querySelector("summary").getBoundingClientRect();
+  m.style.top = r.bottom + 4 + "px"; m.style.left = Math.max(8, Math.min(r.left, innerWidth - m.offsetWidth - 8)) + "px";
+}
+function initAppendixMenu() {
+  const d = $("appendix-menu");
+  if (!d) return;
+  if (window.PUBLIC_SITE) d.querySelectorAll("[data-local-only]").forEach(a => a.remove());      // no Operations on the public copy
+  d.addEventListener("toggle", placeAppendixMenu);
+  d.querySelectorAll(".menu a").forEach(a => a.addEventListener("click", closeAppendix));
+  document.addEventListener("click", e => { if (!d.contains(e.target)) closeAppendix(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeAppendix(); });
+  window.addEventListener("resize", placeAppendixMenu);
+}
+let shownView = null;
 function show(hash) {
-  const { tab, view } = resolveHash(hash);
-  current = view; currentTab = tab;
+  const { tab, view, section } = resolveHash(hash);
+  const changed = view !== shownView;
+  shownView = view; current = view; currentTab = tab;
   document.body.classList.toggle("desk-mode", DESK_VIEWS.includes(view));
-  document.body.classList.toggle("verdict-mode", tab === "overview");
-  document.body.classList.toggle("research-mode", RESEARCH_TABS.includes(tab));
-  document.body.classList.toggle("live-mode", !RESEARCH_TABS.includes(tab));
+  document.body.classList.toggle("verdict-mode", tab === "verdict");
+  document.body.classList.toggle("live-view", LIVE_VIEWS.includes(view));
   document.querySelectorAll("div.tab-wrap").forEach(w => w.classList.toggle("active", w.dataset.tab === tab));
   document.querySelectorAll("section.view").forEach(s => s.classList.toggle("active", s.id === "view-" + view));
-  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.view === navKey(tab)) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-  document.querySelectorAll("#research-bar a").forEach(a => { if (a.dataset.tab === tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-  if (typeof Sess !== "undefined") Sess.onShow(tab);
+  document.querySelectorAll("nav.tabs > a").forEach(a => { if (a.dataset.tab === tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  const sum = document.querySelector("#appendix-menu summary");
+  if (sum) { if (APPENDIX_TABS.includes(tab)) sum.setAttribute("aria-current", "page"); else sum.removeAttribute("aria-current"); }
+  document.querySelectorAll("#appendix-menu .menu a").forEach(a => {
+    const [t2, v2] = a.getAttribute("href").slice(1).split("/");
+    if (t2 === tab && (v2 ? v2 === view : view === viewIds(tab)[0])) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  closeAppendix();
+  if (typeof Sess !== "undefined") Sess.onShow(view);
   document.querySelectorAll(`#sub-${tab} a`).forEach(a => { if (a.dataset.sub === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   if (dirty[view]) renderVisible();
   else document.querySelectorAll(`#view-${view} .chart`).forEach(el => el.data && Plotly.Plots.resize(el));
+  drawFooter();
+  drawSnapshotBanner(tab, view);
+  ensureAgentRun();
+  const target = section && ($("sec-" + section) || $(section));       // a deep link scrolls to its section, a new page to the top
+  if (target && target.tagName === "DETAILS") target.open = true;
+  if (target) target.scrollIntoView({ block: "start" });
+  else if (changed) window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", () => show(location.hash));
 function boot() {
   Object.keys(TABS).forEach(t => { if (TABS[t].views.some(Array.isArray)) subtabs("sub-" + t, TABS[t].views.map(v => Array.isArray(v) ? v : [v, TABS[t].label]), t); });
+  initAppendixMenu();
   initShell();
   if (typeof Sess !== "undefined") Sess.init();
   show(location.hash || "#" + DEFAULT_VIEW.tab);
 }
-
 /* ======================= Desk helpers =======================
    Shared by every Desk view. Profit green and loss red are used for nothing else on Desk views. */
 const DESK_VIEWS = ["pnl", "execution", "risk", "model-health", "signals", "simlive", "market"];   // views that read the selected run
@@ -281,6 +354,7 @@ function initShell() {
 }
 function onRunChange() {
   const b = Source.current;
+  if (b && AGENT_VIEWS.includes(current) && b.kind !== "walkforward") { ensureAgentRun(); return; }
   $("run-badge").innerHTML = b ? badge(b.kind) : "";
   $("run-meta").textContent = b ? `${b.built_utc} UTC · ${ago(b.built_utc)} · ${Source.symbolsOf(b).length} symbols · ${new Set(b.days.map(d => d.date)).size} days` : "";
   $("demo-banner").hidden = !(b && b.kind === "demo");

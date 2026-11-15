@@ -40,6 +40,33 @@ simulation against live. Those are also the things a trading interviewer will as
   Overview, P&L, Execution, Model, Market & health (all about the live sessions), then Research (everything below
   in this guide, unchanged). See "Live tabs" at the end of this file.
 
+- **Showcase, 15 Nov 2026: `docs/DASHBOARD_SHOWCASE_SPEC.md` wins over everything above.** The reader is now an
+  interviewer on the public copy: a Story landing page, four Evidence pages, an Appendix menu, and a frozen
+  live snapshot in the public copy. **Built 15 Nov 2026, tasks S0-S8** (all pages, bundles, tests and screenshots):
+  - S1 `by_range` numbers and sentences per range in the session bundle (`scripts/build_session.py`).
+  - S2 one nav row, Appendix menu, hash aliases, scroll to top, provenance footer.
+  - S3 `scripts/build_story.py` writes `dashboard/runs/pub-story.js` (called by `build_verdict`).
+  - S4 `js/views/story.js` draws the Story; it types no digit-bearing text (static test).
+  - S5 Verdict gate values, Fill economics waterfall, Agent pages open on a walk-forward run; paper sessions only on the Agent selector.
+  - S6 the Execution test is one page (`#exec-test`, sections `#exec-test/tape` and `#exec-test/pnl`); `caught` rows in the session
+    bundle; `story.tape_example` opens the tape on a curated fill.
+  - S7 `python -m scripts.publish_dashboard --live-snapshot`: allow-listed `snapshot/`, Operations removed, leak scan, banner.
+  - S8 About leads with the real result; simulated Sharpe, volatility cut and fill-curve R2 moved to Paper replication.
+  - Running the supervisor keeps rewriting `dashboard/live/*` with the code it started with: restart it once to pick up S1/S6, or run
+    `python -m scripts.build_session && python -m scripts.build_story` right before publishing.
+
+- **Session chart, 15 Nov 2026: `docs/DASHBOARD_SESSION_CHART_SPEC.md` wins over the Showcase, Live and Redesign specs, for that chart only.**
+  **Built 15 Nov 2026, tasks C1-C4.**
+  - C1 `js/session_chart.js` (one component: `SessionChart.mount(rootId, model)`, `frameIndex`, `check`), the simulator adapter
+    `simModel()` in `js/views/research.js`, one `ch-session` card on the Playground. `simulateBoth` is untouched (a test holds its hash).
+  - C2 `mm/livestats.py::chart_series` and `scripts/build_session.py::build_chart_file` write `dashboard/live/chart-<id>.js`
+    (4 ranges, at most 500 buckets, every title and event sentence from Python); the session bundle fills gain `dist_bp`.
+  - C3 `js/views/lv_chart.js` draws it on the Execution test (`lvc-exec`, after "What the test caught") and on Agent > Live on real data
+    (`lvc-agent`); a testnet session has no P&L panel and no P&L tile.
+  - C4 `--live-snapshot` also copies the chart files (`CHART_ALLOW`) and `dist_bp` is on the fills allow-list.
+  - As with S1/S6, a running supervisor keeps rewriting the session bundles with the code it started with (no `dist_bp`, so the quote strip
+    shows no fill markers) until it is restarted; run `python -m scripts.build_session` before publishing. Screenshots: `docs/img/session-chart-*`.
+
 ## Live tabs (added 14 Nov 2026)
 
 - **Producers.** The traders (`mm/testnet.py`, `mm/paper.py`) log quote states (`state_<date>.jsonl`), richer place and

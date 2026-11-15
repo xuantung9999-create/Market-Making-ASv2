@@ -94,7 +94,8 @@ class CalibrationAgent:
         self.shadows = [mk(Fixed(Action.JOIN, Action.JOIN, name="Shadow JOIN"), shadow_cfg),
                         mk(Fixed(Action.BACK, Action.BACK, name="Shadow BACK"), shadow_cfg)]
         self.arms = [mk(EdgePolicy(self.table, s.e_min_bp, s.z, s.gamma_bp,
-                                   name=f"Arm {i} (e={s.e_min_bp:g}, z={s.z:g}, g={s.gamma_bp:g})"), sim_cfg)
+                                   name=f"Arm {i} (e={s.e_min_bp:g}, z={s.z:g}, g={s.gamma_bp:g})",
+                                   q_max=sim_cfg.q_max), sim_cfg)
                      for i, s in enumerate(MENU)]
         self.live = mk(_LivePolicy(self), sim_cfg)
         self._sims = self.shadows + self.arms + [self.live]

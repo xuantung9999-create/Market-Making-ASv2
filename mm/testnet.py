@@ -57,7 +57,7 @@ from pathlib import Path
 from typing import Optional
 
 from mm.agent import AgentConfig
-from mm.paper import DAY_US, PaperSession, StateLogger, day_str, sim_info
+from mm.paper import DAY_US, PaperSession, StateLogger, day_str, install_break_handler, sim_info
 from mm.queue_sim import Action, Fixed, QSConfig
 from mm.recorder import now_us, read_symbols_file
 
@@ -229,6 +229,8 @@ class Executor:
     stopped: bool = False
     day_start_pnl: float = 0.0
     day: Optional[int] = None
+    day_start_pos: Optional[float] = None          # position and mid when the UTC day began: that inventory's price move is not a loss of the day
+    day_start_mid: Optional[float] = None
     _seq: int = 0
     session_start_us: int = field(default_factory=now_us)
     _info: dict = field(default_factory=dict)      # the sim's view of its decision (logging only)
@@ -253,14 +255,36 @@ class Executor:
         p = self.exec_state_path
         p.parent.mkdir(parents=True, exist_ok=True)
         tmp = p.with_name(p.name + ".tmp")
-        tmp.write_text(json.dumps({"pos": self.pos, "cash": self.cash, "fees": self.fees, "day": self.day,
-                                   "day_start_pnl": self.day_start_pnl, "stopped": self.stopped,
-                                   "ts_us": int(now if now is not None else now_us())}))
+        d = {"pos": self.pos, "cash": self.cash, "fees": self.fees, "day": self.day,
+             "day_start_pnl": self.day_start_pnl, "stopped": self.stopped,
+             "ts_us": int(now if now is not None else now_us())}
+        if self.day_start_pos is not None and self.day_start_mid:
+            d["day_start_pos"], d["day_start_mid"] = self.day_start_pos, self.day_start_mid
+        tmp.write_text(json.dumps(d))
         os.replace(tmp, p)
 
+    # ---------------- the ledger: one genesis + every fill since, never reset by a restart
+    # Before carry (L1b) every restart began at pos 0 while the account kept its coins, so each session saw
+    # only its own inventory and the account drifted past q_max across sessions (BTC reached -24 lots by
+    # 2026-11-14). The true position at any moment is genesis + all fills up to then.
+    @property
+    def genesis_path(self) -> Path:
+        return self.out_dir / self.symbol / "ledger_genesis.json"
+
+    def genesis(self) -> dict:
+        """Where the clean ledger starts: ``{ts_us, pos, cash, fees, base_balance}``. Without a file: flat at the
+        start of the data, base balance unknown. Written once by ``scripts/rebuild_ledger.py``."""
+        g = {"ts_us": 0, "pos": 0.0, "cash": 0.0, "fees": 0.0, "base_balance": None}
+        try:
+            g.update(json.loads(self.genesis_path.read_text()))
+        except (OSError, ValueError):
+            pass
+        return g
+
     def _fill_totals(self, until_us: Optional[int] = None) -> dict:
-        """What the fill files add up to: pos, cash, fees, the last mid seen, and the continuous pnl at the
-        last fill before ``until_us`` (the loss stop's day-start value)."""
+        """What the ledger adds up to: genesis plus every fill at or after it. Returns pos, cash, fees, the last
+        mid seen, the continuous pnl at the last fill before ``until_us`` (the loss stop's day-start value),
+        ``n`` fills used and ``ignored`` fills that predate the genesis."""
         rows = []
         for f in sorted((self.out_dir / self.symbol).glob("fills_*.jsonl")):
             for line in f.read_text().splitlines():
@@ -269,8 +293,12 @@ class Executor:
                 except json.JSONDecodeError:
                     continue
         rows.sort(key=lambda r: r.get("ts_us", 0))
-        pos = cash = fees = 0.0
-        last_mid, before = None, 0.0
+        g = self.genesis()
+        t0 = int(g["ts_us"])
+        ignored = sum(1 for r in rows if r.get("ts_us", 0) < t0)
+        rows = [r for r in rows if r.get("ts_us", 0) >= t0]
+        pos, cash, fees = float(g["pos"]), float(g["cash"]), float(g["fees"])
+        last_mid, before = None, None
         for r in rows:
             q, px, side = float(r["qty"]), float(r["price"]), int(r["side"])
             pos += side * q
@@ -279,7 +307,11 @@ class Executor:
             last_mid = float(r.get("mid") or px)
             if until_us is not None and r.get("ts_us", 0) < until_us:
                 before = cash + pos * last_mid - fees
-        return {"pos": pos, "cash": cash, "fees": fees, "mid": last_mid, "day_start_pnl": before, "n": len(rows)}
+        if before is None:                           # no fill before today: the genesis valued at the first mid
+            first_mid = next((float(r.get("mid") or r["price"]) for r in rows), None)
+            before = float(g["cash"]) + float(g["pos"]) * first_mid - float(g["fees"]) if first_mid else 0.0
+        return {"pos": pos, "cash": cash, "fees": fees, "mid": last_mid, "day_start_pnl": before, "n": len(rows),
+                "ignored": ignored}
 
     def load_exec_state(self, now: Optional[int] = None) -> str:
         """Restore the executor at start. Returns loaded | missing | corrupt | mismatch | rebuilt."""
@@ -299,6 +331,7 @@ class Executor:
         if d is not None:
             self.pos, self.cash, self.fees = pos, cash, fees
             self.day, self.day_start_pnl, self.stopped = day, dsp, stopped
+            self.day_start_pos, self.day_start_mid = d.get("day_start_pos"), d.get("day_start_mid")
             mid = tot["mid"] or 0.0
             if mid > 0 and abs(pos - tot["pos"]) * mid / self.lot_usd > 1.0:
                 self._log("orders", {"op": "state-mismatch", "file_pos": pos, "fills_pos": tot["pos"], "mid": mid,
@@ -306,18 +339,56 @@ class Executor:
                 self.pos, self.cash, self.fees = tot["pos"], tot["cash"], tot["fees"]
                 if self.day == now // DAY_US:            # keep the loss-stop baseline on the same footing as pos/cash
                     self.day_start_pnl = tot["day_start_pnl"]
+                self.day_start_pos = self.day_start_mid = None      # the old start-of-day position no longer fits the ledger
                 status = "mismatch"
             self._log("orders", {"op": "exec-state-loaded", "pos": self.pos, "cash": self.cash, "day": self.day,
                                  "stopped": self.stopped})
+            self._check_restored_cap(tot["mid"])
             return status
         self._log("orders", {"op": f"exec-state-{status}", "path": str(p)})
         if tot["n"] and tot["mid"]:
             self.pos, self.cash, self.fees = tot["pos"], tot["cash"], tot["fees"]
             self.day, self.day_start_pnl = now // DAY_US, tot["day_start_pnl"]
             self._log("orders", {"op": "state-rebuilt-from-fills", "pos": self.pos, "cash": self.cash,
-                                 "fees": self.fees, "fills": tot["n"], "day_start_pnl": self.day_start_pnl})
+                                 "fees": self.fees, "fills": tot["n"], "ignored": tot["ignored"],
+                                 "day_start_pnl": self.day_start_pnl})
+            self._check_restored_cap(tot["mid"])
             return "rebuilt"
         return status
+
+    def _check_restored_cap(self, mid: Optional[float]) -> None:
+        """A restored position beyond q_max cannot come from one capped session; it means inventory piled up
+        while the ledger was being reset (pre-carry restarts) or fills were missed. Say so loudly; the
+        reduce-only rule at the cap will work it back down."""
+        self._restore_mid = mid
+        if not mid or mid <= 0:
+            return
+        q = self.lots(mid)
+        if abs(q) > self.q_max:
+            self._log("orders", {"op": "restore-over-cap", "lots": q, "q_max": self.q_max, "pos": self.pos,
+                                 "mid": mid})
+            print(f"{self.symbol}: WARNING restored inventory {q} lots exceeds q_max {self.q_max}; "
+                  f"the reduce-only rule will unwind it", flush=True)
+
+    def reconcile_balance(self, base_total: float, mid: Optional[float] = None) -> Optional[dict]:
+        """Compare the ledger with the exchange: ``base_total - genesis.base_balance`` is what the account
+        really gained or lost since the genesis. Logs ``balance-check`` and, when the two disagree by more
+        than one lot (missed fills, e.g. orders that filled while the bot was down), ``balance-mismatch``.
+        Never changes ``pos``: the cause has to be found first. None if the genesis balance is unknown."""
+        g = self.genesis()
+        mid = mid or getattr(self, "_restore_mid", None)
+        if g.get("base_balance") is None or not mid:
+            return None
+        implied = float(base_total) - float(g["base_balance"])
+        lots_apart = (implied - self.pos) * mid / self.lot_usd
+        rec = {"op": "balance-check", "base_total": base_total, "genesis_base": g["base_balance"],
+               "exchange_pos": implied, "ledger_pos": self.pos, "lots_apart": lots_apart, "mid": mid}
+        self._log("orders", rec)
+        if abs(lots_apart) > 1.0:
+            self._log("orders", {**rec, "op": "balance-mismatch"})
+            print(f"{self.symbol}: WARNING exchange balance implies pos {implied:g} but the ledger says "
+                  f"{self.pos:g} ({lots_apart:+.1f} lots); fills may be missing", flush=True)
+        return rec
 
     def _release(self, o: "LiveOrder") -> None:
         """An order has left the book: give back the balance reserved for what it did not trade."""
@@ -346,14 +417,27 @@ class Executor:
         folder = self.out_dir / self.symbol
         folder.mkdir(parents=True, exist_ok=True)
         rec = {"ts_us": now_us(), "op": op, "pid": os.getpid(), "args": args, **extra}
-        if op == "start":
+        if op == "start":                            # the ledger anchor that _fill_totals rebuilds from
             rec.setdefault("pos_at_start", self.pos)
+            rec.setdefault("cash_at_start", self.cash)
+            rec.setdefault("fees_at_start", self.fees)
+            rec.setdefault("day", self.day)
+            rec.setdefault("day_start_pnl_at_start", self.day_start_pnl)
         with open(folder / "session.jsonl", "a") as fh:
             fh.write(json.dumps(rec, default=str) + "\n")
 
     # ---------------- accounting
     def pnl(self, mid: float) -> float:
         return self.cash + self.pos * mid - self.fees
+
+    def day_pnl(self, mid: float) -> float:
+        """P&L of the UTC day for the loss stop: what trading and the price did since the day began, without the price
+        move of the inventory carried in (a position held overnight is limited by the cap and is worked off, not a
+        loss that the stop should answer by freezing)."""
+        p = self.pnl(mid) - self.day_start_pnl
+        if self.day_start_pos is not None and self.day_start_mid:
+            p -= self.day_start_pos * (mid - self.day_start_mid)
+        return p
 
     def lots(self, mid: float) -> int:
         """Real inventory in lots of ``lot_usd`` (rounded), what the policy sees as q."""
@@ -489,13 +573,14 @@ class Executor:
             self.day = d
         elif d != self.day:                      # new UTC day: loss stop resets
             self.day, self.stopped, self.day_start_pnl = d, False, self.pnl(mid)
+            self.day_start_pos, self.day_start_mid = self.pos, mid
         self.sync(mid)
-        if not self.stopped and self.pnl(mid) - self.day_start_pnl < -self.max_daily_loss_usd:
+        if not self.stopped and self.day_pnl(mid) < -self.max_daily_loss_usd:
             self.stopped = True
             self._log("orders", {"op": "loss-stop", "pnl": self.pnl(mid)})
         q = self.lots(mid)
         for side in (1, -1):
-            want = None if self.stopped else targets.get(side)
+            want = self._unwind_target(side, q, targets) if self.stopped else targets.get(side)
             capped = q >= self.q_max if side > 0 else q <= -self.q_max
             if want is not None and capped:
                 want = None                      # real inventory cap
@@ -508,6 +593,17 @@ class Executor:
                 placed = self._place(side, want, mid)
             self._log_state(side, want, capped, placed, q, now, mid)
 
+    def _unwind_target(self, side: int, q: int, targets: dict):
+        """While the loss stop holds, only the side that brings the position back toward flat keeps an order, resting
+        (never crossing) at the policy's price or, when the policy is out, at the best price of its own side."""
+        if q == 0 or (q > 0) != (side < 0):
+            return None
+        k = targets.get(side)
+        book = self._info.get("book")
+        if k is None and book and self.rules.tick > 0:
+            k = int(round((book[1] if side < 0 else book[0]) / self.rules.tick))
+        return k
+
     def _log_state(self, side: int, want, capped: bool, placed, q: int, now: int, mid: float) -> None:
         inf = self._info
         if inf.get("warmup"):
@@ -515,7 +611,8 @@ class Executor:
         elif inf.get("stale"):
             st, detail = "STALE_FEED", None
         elif self.stopped:
-            st, detail = "LOSS_STOP", {"pnl_day": self.pnl(mid) - self.day_start_pnl, "max_loss": self.max_daily_loss_usd}
+            st, detail = "LOSS_STOP", {"pnl_day": self.day_pnl(mid), "max_loss": self.max_daily_loss_usd,
+                                       "unwinding": self.orders[side] is not None}
         elif capped:
             st, detail = "INV_CAP", {"lots": q, "q_max": self.q_max}
         elif want is None:
@@ -669,6 +766,7 @@ async def _run(session: TestnetSession, hours: Optional[float]) -> None:
 
 
 def _main(argv=None) -> None:
+    install_break_handler()                      # supervisor's Ctrl+Break -> KeyboardInterrupt -> shutdown()
     ap = argparse.ArgumentParser(prog="python -m mm.testnet")
     ap.add_argument("--symbols", default="BTCUSDT")
     ap.add_argument("--symbols-file", default=None)
@@ -716,9 +814,12 @@ def _main(argv=None) -> None:
             left = client.cancel_all(s)
             if left:
                 print(f"{s}: cancelled {len(left)} order(s) left over from a previous run")
-    bal = {b["asset"]: float(b["free"]) for b in client.account()["balances"]}
+    balances = client.account()["balances"]
+    bal = {b["asset"]: float(b["free"]) for b in balances}
+    total = {b["asset"]: float(b["free"]) + float(b.get("locked", 0) or 0) for b in balances}
     for s, ex in session.execs.items():
         print(f"{s}: executor state {ex.load_exec_state()} (pos {ex.pos:g}, cash {ex.cash:.2f}, stopped {ex.stopped})")
+        ex.reconcile_balance(total.get(rules[s].base, 0.0))
         ex.base_free, ex.quote_free = bal.get(rules[s].base, 0.0), bal.get(rules[s].quote, 0.0)
         print(f"{s}: free {ex.base_free:g} {rules[s].base}, {ex.quote_free:g} {rules[s].quote}")
         session.cli_args = vars(args)

@@ -19,15 +19,16 @@ Basis points per dollar traded, 180 coin-days (`results/queue_baseline.csv`). Th
 - v2 (`docs/BUILD_GUIDE.md`, Tasks 0-11): queue-aware engine shared by backtest, walk-forward and paper trading; edge table; calibration agent; tick-constraint screener; multi-symbol recorder; paper trader with exact replay; daily supervisor.
 - Testnet trader: the same agent sending real post-only orders on the Binance spot testnet, to prove the execution code.
 
-**The dashboard** (`dashboard/`, no build step; the published copy is made by `python -m scripts.publish_dashboard`). It opens on the **live sessions** (the two testnet traders and the paper trader): Overview (is each bot healthy, what went wrong), P&L (where the money went, with testnet artifacts in their own bucket), Execution (quote state, markouts, queue wait, a tape around any fill), Model (which arm was live and why it stayed out) and Market & health. The 60-day backtest lives under **Research**: Verdict, P&L, Execution, Risk, Model, Market book, Data, Simulator, Archive, About.
+**The dashboard** (`dashboard/`, no build step; the published copy is made by `python -m scripts.publish_dashboard --live-snapshot`). It is one case study, read top to bottom: the **Story** (what was built, the 60-day pre-registered result, where a fill's money goes, the edge that was not there, the agent that declined to trade, the testnet execution test, what is next), then **Evidence** (Verdict, Fill economics, Agent, Execution test) and an **Appendix** menu (backtest P&L, risk, market book, simulator, paper replication, v1 archive, method and limits). The public copy carries a frozen, sanitised snapshot of the live sessions; the owner's local copy (served by the supervisor on `http://localhost:8765`) also has the live Operations pages. Every sentence and number on the Story is written by Python (`scripts/build_story.py`) from the run bundles.
 
-![Overview: state per bot, incidents, cumulative P&L across restarts](docs/img/live-overview.jpg)
-![P&L: attribution waterfall, per-hour attribution, per-day table, worst and best fills](docs/img/live-pnl.jpg)
-![Execution: the tape around a glitch fill, with our orders and the markout ticks](docs/img/live-execution-tape.jpg)
-![Model: live-arm strip, arm scores and why the agent stays out](docs/img/live-model.jpg)
-![Research > Verdict: headline, forest plot by coin and queue assumption, gate scoreboard](docs/img/verdict.png)
-![Research > Execution: markouts by side and action against the 10 bp fee line](docs/img/execution.png)
-![Research > Market book > Universe: the screener with tick size, spread and volume per coin](docs/img/universe.png)
+![Story at 1,440 px: the finding, the stack, the forest plot, the waterfall, the realism ladder, the Gate A scoreboard, the testnet tape](docs/img/showcase-story-1440.png)
+![Verdict: forest plot by coin and queue assumption, Gate A scoreboard with every value](docs/img/showcase-verdict-1440.png)
+![Fill economics: markouts, the money in a fill, queue wait, fill quality per coin](docs/img/showcase-fills-1440.png)
+![Agent: edge table, calibration, live setting, and the paper trader on real data](docs/img/showcase-agent-1440.png)
+![Execution test: what the test caught, quote state, funnel, markouts, incidents, the tape around a glitch fill, P&L folded away](docs/img/showcase-exec-test-1440.png)
+![Story at 390 px](docs/img/showcase-story-390.png)
+
+Screenshots of every public page at 1,440 and 390 px are in `docs/img/showcase-<page>-<width>.png`.
 
 The recorded-order-book views (Market book > Order book, Live, Data > Recorder health and tape validation) fill in once the recorder has run for a few days; until then they say so instead of showing placeholder numbers.
 
@@ -102,7 +103,12 @@ code. Only a few coins exist on testnet (BTC, ETH, BNB and some others), not the
 
 `dashboard/index.html` is an interactive, static dashboard: a live A-S simulator with sliders, model intuition charts, the paper replication, and the real BTCUSDT data analysis. Open the file in a browser (double-click), or host it free on GitHub Pages: Settings → Pages → deploy from the `main` branch, root folder; it is then at `https://<user>.github.io/<repo>/dashboard/`.
 
-The page has six tabs. The first five (Overview, P&L, Execution, Model, Market & health) are about the **live sessions** and read *session bundles* from `dashboard/live/`, written every 5 minutes by `scripts/build_session.py` (the supervisor runs it; see `docs/DASHBOARD_GUIDE.md`, "Live tabs"). They need the page served by the supervisor (`http://localhost:8765`), and nothing under `dashboard/live` is ever published. **Research** holds everything that reads *run bundles* from `dashboard/runs/` (written by `mm/report.py`) plus the original tabs; old links such as `#pnl` or `#simulator` still land there.
+The page has one nav row: **Story**, then **Evidence** (Verdict, Fill economics, Agent, Execution test) and an **Appendix** menu. The live parts (the Execution test and the paper sessions under Agent) read *session bundles* from `dashboard/live/`, written every 5 minutes by `scripts/build_session.py` (the supervisor runs it; see `docs/DASHBOARD_GUIDE.md`, "Live tabs"); the backtest pages read *run bundles* from `dashboard/runs/` (written by `mm/report.py`). Old links such as `#l-exec`, `#overview` or `#simulator` still resolve. By default nothing live is published; `--live-snapshot` publishes a frozen copy of the sessions under `snapshot/` through an allow-list of keys, never the Operations pages, `status.js`, `.env` or `data/`, and fails if any written file holds a path, a private address, the host name, a process id field or a credential word.
+
+One chart draws a trading session in three places: Simulator > Playground (the A-S strategy on one synthetic path), the Execution test page (a testnet session on the real feed) and Agent > "Live on real data" (the paper sessions). It layers price with our quotes and fills, quotes in bp from the mid, inventory against its cap and, for paper sessions only, cumulative P&L, with tiles that follow a replay slider and a Play button (`dashboard/js/session_chart.js`; spec `docs/DASHBOARD_SESSION_CHART_SPEC.md`). For the live sessions Python writes every number and sentence into `dashboard/live/chart-<id>.js`; `--live-snapshot` publishes those files too, through an allow-list.
+
+![Session chart, simulator](docs/img/session-chart-simulator-wide.jpg)
+![Session chart, Execution test](docs/img/session-chart-exec-test-wide.jpg)
 
 Regenerate its data after new results or downloads:
 

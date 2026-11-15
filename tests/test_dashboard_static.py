@@ -1,6 +1,11 @@
 """Static checks on the dashboard files (read as text, no browser)."""
+import json
 import re
+import shutil
+import subprocess
 from pathlib import Path
+
+import pytest
 
 DASH = Path(__file__).resolve().parent.parent / "dashboard"
 RESEARCH_VIEWS = ["simulator", "model", "replication", "real-data", "backtest",
@@ -93,54 +98,126 @@ def _tree():
     return t
 
 
-LIVE_TABS = ["l-overview", "l-pnl", "l-exec", "l-model", "l-health"]
-RESEARCH_TABS = ["overview", "book", "pnl", "execution", "risk", "model-health", "data", "simulator", "archive", "about"]
+NAV_TABS = ["story", "verdict", "fills", "agent", "exec-test"]            # showcase spec section 5: Story, then Evidence
+APPENDIX_HREFS = ["#pnl", "#risk", "#book", "#book/market", "#data/health", "#data/simlive", "#simulator", "#archive",
+                  "#about", "#l-health"]
+WRAPPERS = set(NAV_TABS) | {"l-health", "book", "pnl", "risk", "data", "simulator", "archive", "about"}
+OLD_HASHES = ["l-overview", "l-pnl", "l-exec", "l-model", "l-health", "overview", "execution", "model-health", "pnl", "risk",
+              "book", "data", "simulator", "archive", "about", "signals", "market", "model", "replication", "real-data"]
 
 
-def test_tab_row_has_exactly_six_links():
-    """Live spec section 4: five live tabs, then Research (changed from eleven)."""
-    links = [a["data-view"] for a in _tree().tab_links]
-    assert links == LIVE_TABS + ["research"]
+def _nav():
+    return re.findall(r'<nav class="tabs".*?</nav>', _html(), re.S)[0]
 
 
-def test_tab_row_has_no_link_to_a_nested_view():
-    views = {a.get("data-view") for a in _tree().tab_links}
-    assert not views & set(OLD_NESTED)
+def test_nav_is_one_row_story_evidence_then_the_appendix_menu():
+    """Showcase spec section 5 (changed in S2 from five live tabs + Research): one nav row, no second row."""
+    nav = _nav()
+    top = re.findall(r'<nav class="tabs"[^>]*>(.*?)<details', nav, re.S)[0]
+    assert re.findall(r'<a href="#[^"]+" data-tab="([^"]+)"', top) == NAV_TABS
+    menu = re.findall(r'<div class="menu".*?</div>', nav, re.S)[0]
+    assert re.findall(r'<a href="([^"]+)"', menu) == APPENDIX_HREFS
+    assert "Operations" in menu and "data-local-only" in menu
+    assert "research-bar" not in _html() and nav.count("<nav") == 1
 
 
-def test_live_and_book_views_exist():
+def test_header_holds_the_name_and_the_nav_only():
+    header = re.findall(r"<header>.*?</header>", _html(), re.S)[0]
+    for tag in ("<select", "<button", "<input", "livebar", "runbar", "sess-select"):
+        assert tag not in header, tag
+    assert "MM-AS" in header
+
+
+def test_selectors_and_range_buttons_live_in_the_page_bar_and_show_only_where_used():
     html = _html()
-    assert 'id="view-live"' in html and 'id="view-book"' in html
+    bar = re.findall(r'<div class="pagebar".*?\n  </div>\n  <div class="tab-wrap"', html, re.S)[0]
+    for i in ("run-select", "f-symbol", "f-variant", "run-compare", "sess-select", "live-range"):
+        assert f'id="{i}"' in bar, i
+    core = (DASH / "js" / "core.js").read_text(encoding="utf-8")
+    assert 'LIVE_VIEWS = ["lv-overview", "lv-pnl", "lv-exec", "lv-model"]' in core
+    assert 'classList.toggle("live-view", LIVE_VIEWS.includes(view))' in core
+    assert "body.live-view .livebar { display: flex; }" in html and ".livebar { display: none;" in html
 
 
-def test_model_and_replication_live_under_the_simulator_tab():
-    under = _tree().under
-    assert "simulator" in under["view-model"] and "simulator" in under["view-replication"]
-
-
-def test_every_tab_link_points_at_a_tab_wrapper_and_every_view_is_in_one():
+def test_every_nav_link_points_at_a_tab_wrapper_and_every_view_is_in_one():
     t = _tree()
     html = _html()
     wrappers = set(re.findall(r'class="tab-wrap" data-tab="([^"]+)"', html))
-    # the Research link has no wrapper of its own: its content is the old tabs, each with its own wrapper
-    assert {a["data-view"] for a in t.tab_links} - {"research"} == set(LIVE_TABS) <= wrappers
-    assert wrappers == set(LIVE_TABS) | set(RESEARCH_TABS)
-    bar = re.findall(r'<nav class="research-bar".*?</nav>', html, re.S)[0]
-    assert re.findall(r'data-tab="([^"]+)"', bar) == ["overview", "pnl", "execution", "risk", "model-health", "book", "data", "simulator", "archive", "about"]
-    for v in RESEARCH_VIEWS + DESK_VIEWS + ["live", "book"]:
+    assert wrappers == WRAPPERS
+    linked = {a["data-tab"] for a in t.tab_links if a.get("data-tab")}
+    assert linked == WRAPPERS                                       # every wrapper is reachable from the nav
+    for v in RESEARCH_VIEWS + DESK_VIEWS + ["live", "book", "story", "lv-overview", "lv-pnl", "lv-exec", "lv-model"]:
         assert t.under[f"view-{v}"], f"view-{v} is not inside a tab"
+    for v in ("lv-overview", "lv-pnl", "lv-exec"):
+        assert t.under[f"view-{v}"] == ["exec-test"], v
+    assert t.under["view-lv-model"] == ["agent"] and t.under["view-execution"] == ["fills"] and t.under["view-overview"] == ["verdict"]
 
 
-def test_every_old_hash_resolves_to_a_tab_in_core_js():
+def test_every_old_hash_resolves_in_core_js():
     core = (DASH / "js" / "core.js").read_text(encoding="utf-8")
-    assert "const TABS" in core and "function subtabs" in core
+    assert "const TABS" in core and "const ALIASES" in core and "function subtabs" in core and "function resolveHash" in core
     for v in RESEARCH_VIEWS + DESK_VIEWS + ["live", "book", "archive", "data"]:
         assert f'"{v}"' in core, v
-    # old hashes resolve to their new place: the old tab keys are still tabs (Research), the old Live tab's
-    # views moved into Market & health, and the default landing tab is the live Overview
-    for t in RESEARCH_TABS + LIVE_TABS:
-        assert f'"{t}":' in core, t
-    assert '"live", "Market feed"' in core and 'tab: "l-overview"' in core
+    for tab in WRAPPERS:
+        assert f'"{tab}":' in core, tab
+    # the tab keys that disappeared are aliases of their new place; the empty hash lands on the Story
+    for old, new in {"overview": "verdict", "execution": "fills", "model-health": "agent", "l-overview": "exec-test",
+                     "l-pnl": "exec-test/pnl", "l-exec": "exec-test/tape", "l-model": "agent/lv-model"}.items():
+        assert f'"{old}": "{new}"' in core, old
+    assert 'DEFAULT_VIEW = { tab: "story", view: "story" }' in core and 'show(location.hash || "#" + DEFAULT_VIEW.tab)' in core
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_hash_map_resolves_every_old_hash_under_node():
+    """Run the real resolveHash of core.js with the TABS/ALIASES text it defines, in node, with no browser."""
+    core = (DASH / "js" / "core.js").read_text(encoding="utf-8")
+    a, b = core.index("const TABS"), core.index("const EVIDENCE_TABS")
+    r0, r1 = core.index("function resolveHash"), core.index("/* Segmented control")
+    script = core[a:b] + "const DEFAULT_VIEW = { tab: 'story', view: 'story' };\n" + core[r0:r1] + """
+    const hs = JSON.parse(process.argv[1]);
+    console.log(JSON.stringify(hs.map(h => resolveHash(h))));
+    """
+    hashes = ["", "#story", "#" + "#".join(OLD_HASHES[:0])] + ["#" + h for h in OLD_HASHES] + ["#exec-test/tape", "#model-health/signals", "#agent/lv-model", "#nonsense"]
+    r = subprocess.run(["node", "-e", script, json.dumps(hashes)], capture_output=True, text=True, timeout=30)
+    assert r.returncode == 0, r.stderr
+    got = dict(zip(hashes, json.loads(r.stdout)))
+    assert got[""]["tab"] == "story" and got["#nonsense"]["tab"] == "story"
+    assert (got["#overview"]["tab"], got["#overview"]["view"]) == ("verdict", "overview")
+    assert (got["#execution"]["tab"], got["#execution"]["view"]) == ("fills", "execution")
+    assert (got["#model-health"]["tab"], got["#model-health"]["view"]) == ("agent", "model-health")
+    assert (got["#model-health/signals"]["tab"], got["#model-health/signals"]["view"]) == ("agent", "signals")
+    assert (got["#l-overview"]["tab"], got["#l-overview"]["view"]) == ("exec-test", "lv-overview")
+    # S6: the Execution test is one page; the old exec and P&L pages are sections of it
+    assert (got["#l-exec"]["tab"], got["#l-exec"]["view"], got["#l-exec"]["section"]) == ("exec-test", "lv-overview", "tape")
+    assert (got["#l-pnl"]["tab"], got["#l-pnl"]["view"], got["#l-pnl"]["section"]) == ("exec-test", "lv-overview", "pnl")
+    assert (got["#l-model"]["tab"], got["#l-model"]["view"]) == ("agent", "lv-model")
+    assert (got["#agent/lv-model"]["tab"], got["#agent/lv-model"]["view"]) == ("agent", "lv-model")
+    assert (got["#l-health"]["tab"], got["#l-health"]["view"]) == ("l-health", "live")
+    for old in ("signals", "market", "model", "replication", "real-data", "pnl", "risk", "book", "data", "simulator", "archive", "about"):
+        assert got["#" + old]["tab"] in WRAPPERS, old
+    assert got["#model"]["tab"] == "simulator" and got["#market"]["tab"] == "book" and got["#signals"]["tab"] == "agent"
+    assert (got["#exec-test/tape"]["tab"], got["#exec-test/tape"]["section"]) == ("exec-test", "tape")
+
+
+def test_page_change_scrolls_to_top_and_a_section_deep_link_scrolls_to_it():
+    core = (DASH / "js" / "core.js").read_text(encoding="utf-8")
+    assert "window.scrollTo(0, 0)" in core and "scrollIntoView" in core and "const changed = view !== shownView" in core
+
+
+def test_footer_shows_only_the_provenance_that_applies_to_the_page():
+    core = (DASH / "js" / "core.js").read_text(encoding="utf-8")
+    assert "function drawFooter" in core and "Backtest built" in core and "Live snapshot frozen" in core and "Live data built" in core
+    assert "if (story || !live)" in core and "if (story || live)" in core
+    assert "foot-built" not in (DASH / "js" / "views" / "research.js").read_text(encoding="utf-8")
+
+
+def test_operations_entry_is_removed_from_the_public_menu_and_the_name_is_one_everywhere():
+    core = (DASH / "js" / "core.js").read_text(encoding="utf-8")
+    assert "if (window.PUBLIC_SITE) d.querySelectorAll(\"[data-local-only]\").forEach(a => a.remove())" in core
+    name = "Crypto market making: from Avellaneda–Stoikov to a queue-aware agent"
+    html = _html()
+    assert f"<title>{name}</title>" in html and f'<h1 class="story-title">{name}</h1>' in html
+    assert "Avellaneda–Stoikov Market Maker" not in html
 
 
 def test_demo_run_is_hidden_unless_asked_for():
@@ -273,3 +350,216 @@ def test_no_duplicate_element_ids_and_the_live_views_are_loaded():
     for f in ("live_sessions.js", "views/lv_overview.js", "views/lv_pnl.js", "views/lv_exec.js", "views/lv_model.js", "views/lv_health.js"):
         assert f'src="js/{f}"' in html, f
         assert "fetch(" not in (DASH / "js" / f).read_text(encoding="utf-8"), f
+
+
+# ---- showcase S4: the Story page draws the story bundle and types no finding ----
+def _story_js():
+    return (DASH / "js" / "views" / "story.js").read_text(encoding="utf-8")
+
+
+def test_story_view_is_wired_and_reads_only_the_story_bundle():
+    html, js = _html(), _story_js()
+    assert 'id="story-body"' in html and 'src="runs/pub-story.js"' in html and 'src="js/views/story.js"' in html
+    assert 'register("story", drawStory)' in js and "window.STORY" in js
+    assert "fetch(" not in js
+
+
+def test_story_view_types_no_digit_bearing_text_outside_the_format_helpers():
+    """Python writes every sentence and number (spec S4): a string literal with a digit may only sit between the markers."""
+    js = _story_js()
+    a, b = js.index("/* ---- format helpers"), js.index("/* ---- end format helpers ---- */")
+    outside = js[:a] + js[b:]
+    outside = re.sub(r"/\*.*?\*/", "", outside, flags=re.S)
+    outside = re.sub(r"(?m)//.*$", "", outside)
+    literals = re.findall(r'"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'|`(?:\\.|[^`\\])*`', outside)
+    def has_digit(s):       # template holes, HTML tag names (h2, h3) and a bare tag selector are not text
+        if re.fullmatch(r"[\"'`]h\d[\"'`]", s):
+            return False
+        s = re.sub(r"\$\{[^}]*\}", "", s)
+        s = re.sub(r"</?[a-zA-Z][a-zA-Z0-9]*", "", s)
+        return bool(re.search(r"\d", s))
+    bad = [s for s in literals if has_digit(s)]
+    assert not bad, bad
+    # the page HTML holds no number of the story either: only the heading and the empty container
+    view = re.search(r'<section class="view" id="view-story">(.*?)</section>', _html(), re.S).group(1)
+    assert not re.search(r"\d", re.sub(r'</?[a-zA-Z][a-zA-Z0-9]*|class="[^"]*"|id="[^"]*"', "", view))
+
+
+def test_story_view_has_every_section_of_the_spec():
+    js = _story_js()
+    for fn in ("storyHero", "storyStack", "storyForest", "storyWaterfall", "storyLadder", "storyAgent", "storyExecution", "storyNext"):
+        assert f"function {fn}(" in js and fn in js.split("function drawStory")[1], fn
+    assert "displayModeBar: false" in js and "scrollZoom: false" in js
+
+
+# ---- showcase S5: the three Evidence pages ----
+def test_verdict_gate_table_prints_a_value_for_every_condition():
+    js = (DASH / "js" / "views" / "overview.js").read_text(encoding="utf-8")
+    assert "gateValueText(name, c)" in js and "value_text" in js
+    story = (DASH / "runs" / "pub-story.js").read_text(encoding="utf-8")
+    conds = json.loads(story[story.index("{"):story.rindex("}") + 1])["sections"]["agent"]["gate"]["conditions"]
+    assert conds and all(c.get("value_text") for c in conds)
+
+
+def test_fill_economics_page_holds_the_attribution_waterfall_and_the_page_sentence():
+    html = _html()
+    ex = re.search(r'<section class="view" id="view-execution">(.*?)</section>', html, re.S).group(1)
+    assert 'id="fe-wf"' in ex and 'id="fe-headline"' in ex
+    assert 'drawPnlWaterfall(b, "fe-wf")' in (DASH / "js" / "views" / "execution.js").read_text(encoding="utf-8")
+    assert 'id="pnl-wf"' in html                       # the appendix P&L page keeps its own copy
+
+
+def test_agent_page_has_its_sentence_and_the_paper_sessions_have_their_own_selector():
+    html = _html()
+    assert 'id="ag-headline"' in html and "ag-headline" in (DASH / "js" / "views" / "model.js").read_text(encoding="utf-8")
+    ls = (DASH / "js" / "live_sessions.js").read_text(encoding="utf-8")
+    assert 'v === "lv-model" ? "paper" : "testnet"' in ls and "mine.some" in ls
+    assert 'tab-wrap" data-tab="agent"' in html or '"agent"' in (DASH / "js" / "core.js").read_text(encoding="utf-8")
+
+
+# ---- showcase S6: the Execution test is one page in the order of spec section 7
+def test_execution_test_is_one_page_in_spec_order_with_the_pnl_folded_away():
+    html = _html()
+    v = re.search(r'<section class="view" id="view-lv-overview">(.*?)</section>', html, re.S).group(1)
+    order = ["xt-purpose", 'id="xt-caught"', 'id="ov2-state"', 'id="lvx-state"', 'id="lvx-funnel"', 'id="lvx-wait"', 'id="lvx-markout"',
+             'id="lvx-edge"', 'id="ov2-incidents"', 'id="sec-tape"', 'id="lvx-fills"', 'id="sec-pnl"']
+    pos = [v.index(o) for o in order]
+    assert pos == sorted(pos), order
+    fold = re.search(r"<details[^>]*id=\"sec-pnl\"[^>]*>(.*)</details>", v, re.S)
+    assert fold and "open" not in re.search(r"<details[^>]*>", v).group(0).split()      # collapsed by default
+    for i in ("ov2-cum", "lvp-waterfall", "lvp-days", "lvp-worst", "xt-pnl-summary"):
+        assert f'id="{i}"' in fold.group(0), i
+    for old in ("lv-pnl", "lv-exec"):                      # the old pages stay as empty shells so every id and old link resolves
+        assert re.search(rf'<section class="view" id="view-{old}"[^>]*></section>', html)
+
+
+def test_execution_test_opens_on_the_curated_tape_and_draws_one_page():
+    ex = (DASH / "js" / "views" / "lv_exec.js").read_text(encoding="utf-8")
+    assert "STORY.tape_example" in ex and "Tape.example()" in ex and 'register("lv-overview"' in ex
+    assert "drawLvOverview(); drawExecHead(); drawLvPnl(); drawLvExec();" in ex
+    assert 'const all = "";' in (DASH / "js" / "live_sessions.js").read_text(encoding="utf-8")
+
+
+def test_agent_pages_open_on_a_walk_forward_run_not_the_baseline():
+    core = (DASH / "js" / "core.js").read_text(encoding="utf-8")
+    assert 'AGENT_VIEWS = ["model-health", "signals"]' in core and "function ensureAgentRun" in core
+    assert "ensureAgentRun();" in core and 'r.kind === "walkforward"' in core
+
+
+# ---- showcase S8 (audit A3): the About page leads with the real result; the simulated numbers sit under Paper replication
+def test_about_head_has_no_simulated_sharpe_or_fill_r2_and_replication_holds_them_with_a_caveat():
+    r = (DASH / "js" / "views" / "research.js").read_text(encoding="utf-8")
+    head = r[r.index("function drawHeader"):r.index("register(\"simulator\"")]
+    assert "Sharpe, A-S vs benchmark" not in head and "Fill model fit on BTC" not in head and "Profit volatility cut" not in head
+    assert "window.STORY.sections.hero" in head
+    rep = r[r.index("function drawReplication"):r.index("function drawHeader") if False else r.index("/* =======================", r.index("function drawReplication"))]
+    assert "Sharpe, A-S vs benchmark" in rep and "Fill-curve fit, BTC" in rep and 'getElementById("rep-tiles")' in rep
+    view = re.search(r'<section class="view" id="view-replication">(.*?)</section>', _html(), re.S).group(1)
+    assert 'id="rep-tiles"' in view and "no adverse selection, fees, tick size or latency" in view
+
+
+# ---------------------------------------------------------------- session chart (C1)
+SIMULATE_BOTH_SHA256 = "e925e6049d299abb85f485dc38ccaea936121aeaffa56be2e543886fea13a56e"
+
+
+def _script_order():
+    return re.findall(r'<script[^>]*\bsrc="([^"]+)"', _html())
+
+
+def test_session_chart_is_loaded_after_core_and_before_every_view():
+    order = _script_order()
+    assert "js/session_chart.js" in order
+    i = order.index("js/session_chart.js")
+    assert order.index("js/core.js") < i
+    first_view = min(k for k, s in enumerate(order) if s.startswith("js/views/"))
+    assert i < first_view
+
+
+def test_session_chart_is_self_contained():
+    src = (DASH / "js" / "session_chart.js").read_text(encoding="utf-8")
+    assert "fetch(" not in src
+    for name in ("SIM", "Sess", "SESSION_DATA"):
+        assert not re.search(r"\b" + name + r"\b", src), name
+    assert "module.exports = { frameIndex, check, plotX }" in src
+
+
+def test_session_chart_defines_and_exports_plotx():
+    src = (DASH / "js" / "session_chart.js").read_text(encoding="utf-8")
+    assert re.search(r"^function plotX\(xType, v\)", src, re.M)
+    assert re.search(r"module\.exports = \{[^}]*\bplotX\b", src)
+    assert re.search(r"return \{[^}]*\bplotX\b[^}]*\};\s*\}\)\(\);", src)
+
+
+def test_session_chart_hands_plotly_no_raw_x_on_a_date_axis():
+    src = (DASH / "js" / "session_chart.js").read_text(encoding="utf-8")
+    assert "range: R.x" not in src
+    for raw in ("x: e.x", "x: xEnd"):
+        assert raw not in src, raw
+
+
+def test_simulator_page_has_one_session_chart_and_no_old_replay_ids():
+    html = _html()
+    assert 'id="ch-session"' in html
+    for gone in ("btn-replay", "ch-path", "ch-inv"):
+        assert gone not in html, gone
+        for f in _js_files():
+            assert gone not in f.read_text(encoding="utf-8"), (gone, f.name)
+
+
+def test_simulate_both_body_is_unchanged():
+    import hashlib
+    txt = (DASH / "js" / "views" / "research.js").read_text(encoding="utf-8")
+    body = re.search(r"function simulateBoth\(.*?\n\}\n", txt, re.S).group(0)
+    assert hashlib.sha256(body.encode("utf-8")).hexdigest() == SIMULATE_BOTH_SHA256
+
+
+def test_research_js_dropped_the_old_path_helpers_and_mounts_the_chart():
+    txt = (DASH / "js" / "views" / "research.js").read_text(encoding="utf-8")
+    for gone in ("pathTraces", "pathLayout", "drawPath", "drawInv"):
+        assert gone not in txt, gone
+    assert "SessionChart.mount" in txt
+
+
+# ---------------------------------------------------------------- session chart, live views (C3)
+def _lv_chart_js():
+    return (DASH / "js" / "views" / "lv_chart.js").read_text(encoding="utf-8")
+
+
+def test_live_chart_cards_sit_where_the_spec_puts_them():
+    html = _html()
+    ov = re.search(r'<section class="view" id="view-lv-overview">(.*?)</section>', html, re.S).group(1)
+    assert 'id="lvc-exec"' in ov and ov.index('id="xt-caught"') < ov.index('id="lvc-exec"') < ov.index('id="ov2-state"')
+    mo = re.search(r'<section class="view" id="view-lv-model">(.*?)</section>', html, re.S).group(1)
+    body = mo[mo.index('id="lvm-body"'):]
+    assert 'id="lvc-agent"' in body and body.index('id="lvc-agent"') < body.index('id="lvm-strip"')
+    assert html.count('id="lvc-exec"') == 1 and html.count('id="lvc-agent"') == 1
+
+
+def test_live_chart_script_order_and_the_chart_file_is_loaded_with_the_bundle():
+    order = _script_order()
+    i = order.index("js/views/lv_chart.js")
+    assert i > order.index("js/session_chart.js") and i > order.index("js/live_sessions.js")
+    ls = (DASH / "js" / "live_sessions.js").read_text(encoding="utf-8")
+    assert "chart-${id}.js" in ls and "S.charts" in ls
+    assert "drawLvChart(" in (DASH / "js" / "views" / "lv_overview.js").read_text(encoding="utf-8")
+    assert "drawLvChart(" in (DASH / "js" / "views" / "lv_model.js").read_text(encoding="utf-8")
+
+
+def test_live_chart_adapter_does_no_arithmetic_and_types_no_number():
+    js = re.sub(r"(?m)//.*$", "", re.sub(r"/\*.*?\*/", "", _lv_chart_js(), flags=re.S))
+    for banned in ("Math.max", "Math.min", ".reduce(", "+="):
+        assert banned not in js, banned
+    assert "fetch(" not in js
+    literals = re.findall(r'"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'|`(?:\\.|[^`\\])*`', js)
+    fixed = "\"The session chart is written with the next 5-minute build.\""        # the one sentence the spec dictates; its number is the build cadence
+    bad = [s for s in literals if s != fixed and re.search(r"\d", re.sub(r"\$\{[^}]*\}", "", s))]
+    assert not bad, bad
+    assert "The session chart is written with the next 5-minute build." in js
+
+
+def test_fills_page_says_when_the_selected_variant_made_no_fills():
+    html = _html()
+    v = re.search(r'<section class="view" id="view-execution">(.*?)</section>', html, re.S).group(1)
+    assert 'id="ex-nofill"' in v and v.index('id="fe-headline"') < v.index('id="ex-nofill"') < v.index('id="ex-side"')
+    js = (DASH / "js" / "views" / "execution.js").read_text(encoding="utf-8")
+    assert "drawNoFillNote(b)" in js and "made no fills" in js and "fetch(" not in js

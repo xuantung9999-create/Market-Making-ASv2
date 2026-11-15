@@ -86,7 +86,7 @@ document.getElementById("btn-reroll").addEventListener("click", () => { P.seed =
 document.getElementById("p-t").addEventListener("input", e => { document.getElementById("o-t").textContent = (+e.target.value).toFixed(2); drawModel(); });
 
 function runSim() {
-  stopReplay();
+  SessionChart.stop("ch-session");
   SIM = simulateBoth(P, P.paths, P.seed);
   dirty.simulator = dirty.model = true;
   renderVisible();
@@ -105,44 +105,68 @@ function drawKpis() {
   const a = card("inv", "A-S strategy", C.accent), b = card("sym", "Symmetric benchmark", C.bench);
   box.innerHTML = a.html + b.html;
 }
-let replayId = null;
-function pathTraces(n) {
-  const p = SIM.path, t = Array.from(SIM.t.slice(0, n));
-  const cut = a => a.slice(0, n);
-  const bf = p.bidFill.filter(f => f[0] < t[t.length - 1] + 1e-9), af = p.askFill.filter(f => f[0] < t[t.length - 1] + 1e-9);
-  return [
-    { x: t, y: cut(p.ask), mode: "lines", line: { width: 0 }, hoverinfo: "skip", showlegend: false },
-    { x: t, y: cut(p.bid), mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: rgba(C.accent, 0.13), name: "quoted band", hoverinfo: "skip" },
-    { x: t, y: cut(p.s), mode: "lines", name: "mid s", line: { color: C.text, width: 1.6 }, hovertemplate: "%{y:.3f}" },
-    { x: t, y: cut(p.r), mode: "lines", name: "reservation r", line: { color: C.accent, width: 1.4, dash: "dash" }, hovertemplate: "%{y:.3f}" },
-    { x: bf.map(f => f[0]), y: bf.map(f => f[1]), mode: "markers", name: "bid filled (buy)", marker: { symbol: "triangle-up", size: 8, color: C.bid }, hovertemplate: "buy @ %{y:.3f}" },
-    { x: af.map(f => f[0]), y: af.map(f => f[1]), mode: "markers", name: "ask filled (sell)", marker: { symbol: "triangle-down", size: 8, color: C.ask }, hovertemplate: "sell @ %{y:.3f}" },
-  ];
-}
-function pathLayout() {
-  const p = SIM.path, lo = Math.min(...p.bid), hi = Math.max(...p.ask), pad = (hi - lo) * 0.05;
-  return { xaxis: axis("time t", { range: [0, 1] }), yaxis: axis("price", { range: [lo - pad, hi + pad] }) };
-}
-function drawPath() { plot("ch-path", pathTraces(SIM.N + 1), pathLayout()); }
-function stopReplay() { if (replayId) { cancelAnimationFrame(replayId); replayId = null; document.getElementById("btn-replay").textContent = "▶ Replay session"; } }
-document.getElementById("btn-replay").addEventListener("click", () => {
-  if (replayId) { stopReplay(); drawPath(); return; }
-  if (reduceMotion) { drawPath(); return; }
-  const btn = document.getElementById("btn-replay"); btn.textContent = "■ Stop";
-  const lay = pathLayout(); let n = 2, last = 0;
-  const frame = ts => {
-    if (ts - last > 24) { last = ts; Plotly.react("ch-path", pathTraces(n), layout(lay), CONFIG); n += 1; }
-    if (n <= SIM.N + 1) replayId = requestAnimationFrame(frame); else { replayId = null; btn.textContent = "▶ Replay session"; }
+/* Simulator adapter for the session chart (docs/DASHBOARD_SESSION_CHART_SPEC.md 7.1, 7.3, 7.4). The numbers are
+   computed here in the browser, so this is the one place whose sentences are templates and not typed text.
+   A fill is drawn at the end of its step (t[i+1]) so that the inventory step, the tiles and the marker agree. */
+function simModel() {
+  const p = SIM.path, n = SIM.t.length, x = Array.from(SIM.t), qMax = P.qmax > 0 ? P.qmax : null;
+  const fills = [];
+  p.bidFill.forEach(f => { const i = Math.round(f[0] / P.dt); fills.push({ x: x[i + 1], y: f[1], side: "buy", dist: p.s[i] - f[1] }); });
+  p.askFill.forEach(f => { const i = Math.round(f[0] / P.dt); fills.push({ x: x[i + 1], y: f[1], side: "sell", dist: f[1] - p.s[i] }); });
+  fills.sort((a, b) => a.x - b.x);
+  const pnl = SIM.inv.fan[0], bench = SIM.sym.fan[0];
+  const peak = [], fillsCum = [], buysCum = [], sellsCum = [], maxAbs = [], spread = [];
+  let pk = -Infinity, nb = 0, ns = 0, k = 0, mx = 0;
+  for (let i = 0; i < n; i++) {
+    pk = Math.max(pk, pnl[i]); peak.push(pk);
+    while (k < fills.length && fills[k].x <= x[i] + 1e-12) { if (fills[k].side === "buy") nb++; else ns++; k++; }
+    buysCum.push(nb); sellsCum.push(ns); fillsCum.push(nb + ns);
+    mx = Math.max(mx, Math.abs(p.qInv[i])); maxAbs.push(mx);
+    spread.push(p.ask[i] - p.bid[i]);
+  }
+  fills.forEach(f => { f.text = `${f.side} @ ${fmt(f.y, 3)}`; f.bp = null; f.artifact = false; });
+  // sentences
+  let below = 0; for (let i = 0; i < n; i++) if (p.r[i] < p.s[i]) below++;
+  let worst = 0, worstAt = -1; for (let i = 0; i < n; i++) if (peak[i] - pnl[i] > worst) { worst = peak[i] - pnl[i]; worstAt = i; }
+  const bMax = Math.max(...p.qSym.map(Math.abs));
+  let touches = 0; if (qMax) for (let i = 1; i < n; i++) if (Math.abs(p.qInv[i]) >= qMax && Math.abs(p.qInv[i - 1]) < qMax) touches++;
+  const invSentence = qMax
+    ? (mx >= qMax ? `Inventory reached the ±${qMax} cap ${touches} ${touches === 1 ? "time" : "times"}` : `Inventory stayed inside ±${qMax}`)
+    : `A-S inventory peaked at ${mx}; the benchmark reached ${bMax}`;
+  const titles = {
+    card: "One trading session, replayed",
+    sub: "Mid price, reservation price, the quoted band and every fill, with inventory and profit below. Press Play or drag the slider to follow the session.",
+    price: `${fills.length} fills, ${nb} buys and ${ns} sells; quotes sat below the mid ${fmt(100 * below / n, 0)}% of the session`,
+    inventory: invSentence,
+    pnl: `A-S ended at ${sign(pnl[n - 1], 1)} with ${worst > 0 ? "a worst drawdown of " + sign(-worst, 1) : "no drawdown"}; the benchmark ended at ${sign(bench[n - 1], 1)}`,
   };
-  replayId = requestAnimationFrame(frame);
-});
-function drawInv() {
-  const t = Array.from(SIM.t);
-  plot("ch-inv", [
-    { x: t, y: SIM.path.qInv, name: "A-S", line: { color: C.accent, shape: "hv", width: 1.6 } },
-    { x: t, y: SIM.path.qSym, name: "benchmark", line: { color: C.bench, shape: "hv", width: 1.6 } },
-  ], { xaxis: axis("time t"), yaxis: axis("inventory q", { zeroline: true }) });
+  // events: inventory, the fill furthest from the mid, the deepest drawdown (each only when it has something to say)
+  const events = [];
+  let iq = -1;
+  if (qMax) { for (let i = 0; i < n; i++) if (Math.abs(p.qInv[i]) >= qMax) { iq = i; break; } }
+  else { let m0 = 0; for (let i = 0; i < n; i++) if (Math.abs(p.qInv[i]) > m0) { m0 = Math.abs(p.qInv[i]); iq = i; } }
+  if (iq >= 0) events.push({ panel: "inventory", x: x[iq], y: p.qInv[iq], text: qMax ? `cap reached, ±${qMax}` : `max |q| = ${Math.abs(p.qInv[iq])}` });
+  if (fills.length) {
+    const f = fills.reduce((a, b) => (b.dist > a.dist ? b : a));
+    events.push({ panel: "price", x: f.x, y: f.y, text: `${f.side} ${fmt(f.dist, 2)} ${f.side === "sell" ? "above" : "below"} mid` });
+  }
+  if (worstAt >= 0) events.push({ panel: "pnl", x: x[worstAt], y: pnl[worstAt], text: `drawdown ${sign(-worst, 1)}` });
+  return {
+    kind: "sim", xType: "linear", x, xTitle: "time t", panels: ["price", "inventory", "pnl"],
+    units: { price: "price", inventory: "inventory (units)", pnl: "profit" },
+    hover: { price: "", inventory: " units", pnl: "", fillUnit: "" },
+    labels: { inventory: "A-S", inventoryBench: "benchmark", pnl: "A-S", pnlBench: "benchmark" },
+    names: { inventory: "inventory", pnl: "P&L" },
+    mid: p.s, res: p.r, band: { bid: p.bid, ask: p.ask }, quotes: null, fills,
+    inventory: p.qInv, inventoryBench: p.qSym, qMax,
+    pnl, pnlPeak: peak, pnlAlt: null, pnlBench: bench,
+    tiles: { mid: p.s, inventory: p.qInv, pnl, fills: fillsCum, buys: buysCum, sells: sellsCum, maxAbs, spread },
+    titles, events, axes: { price: null, bp: null }, offScale: null, bands: [], lines: [],
+    palette: { mid: C.text, res: C.accent, buy: C.bid, sell: C.ask, artifact: null, inventory: C.accent, bench: C.muted,
+               limit: "#818cf8", zero: "#64748b", pnl: C.text, bid: C.bid, ask: C.ask },
+  };
 }
+function drawSession() { SessionChart.mount("ch-session", simModel()); }
 function drawHist() {
   const all = [...SIM.inv.final, ...SIM.sym.final]; const lo = Math.min(...all), hi = Math.max(...all);
   const size = (hi - lo) / 45 || 1;
@@ -214,6 +238,12 @@ function drawReplication() {
   const g01 = f => rows.find(r => r.gamma === 0.1 && r.strategy === f);
   const a = g01("inventory"), b = g01("symmetric");
   document.getElementById("rep-callout").innerHTML = `At the paper's settings (γ = 0.1), A-S earns <b>${fmt(a.mean_pnl, 1)}</b> on average vs ${fmt(b.mean_pnl, 1)} for the benchmark, with profit volatility of <b>${fmt(a.std_pnl, 1)}</b> vs ${fmt(b.std_pnl, 1)}. That is ${fmt(100 * (1 - a.mean_pnl / b.mean_pnl), 0)}% less profit for ${fmt(100 * (1 - a.std_pnl / b.std_pnl), 0)}% less risk: a Sharpe ratio of <b>${fmt(a.mean_pnl / a.std_pnl, 1)}</b> vs ${fmt(b.mean_pnl / b.std_pnl, 1)}.`;
+
+  const d0 = D && D.real_days.length ? (D.real_days.filter(d => d.symbol === "BTCUSDT").pop() || D.real_days[0]) : null;
+  const tiles = [["Sharpe, A-S vs benchmark", `${fmt(a.mean_pnl / a.std_pnl, 1)} vs ${fmt(b.mean_pnl / b.std_pnl, 1)}`, "simulated market, paper settings, 1,000 paths"],
+                 ["Profit volatility cut", `−${fmt(100 * (1 - a.std_pnl / b.std_pnl), 0)}%`, `for −${fmt(100 * (1 - a.mean_pnl / b.mean_pnl), 0)}% mean profit, simulated`]];
+  if (d0) tiles.push(["Fill-curve fit, BTC", `R² ${fmt(d0.fill_curve.r2, 3)}`, `λ(δ) = A·e^(−kδ), k = ${fmt(d0.fill_curve.k, 3)}/USDT, one day, v1 fit`]);
+  document.getElementById("rep-tiles").innerHTML = tiles.map(h => `<div class="hl"><div class="k">${h[0]}</div><div class="v">${h[1]}</div><div class="s">${h[2]}</div></div>`).join("");
 
   const cols = [["gamma", "γ", 2], ["strategy", "Strategy"], ["avg_spread", "Avg spread", 2], ["mean_pnl", "Mean profit", 2], ["std_pnl", "Profit std", 2],
                 ["mean_final_q", "Mean final q", 2], ["std_final_q", "Final q std", 2], ["fills_per_path", "Fills / path", 1]];
@@ -538,20 +568,20 @@ function drawTuning() {
 /* ======================= Header, about, routing ======================= */
 function drawHeader() {
   const chips = [SITE.stage ? `<span class="chip">${esc(SITE.stage)}</span>` : `<span class="chip">Day <b>${SITE.dayOfPlan}</b> of ${SITE.planDays}</span>`];
-  const nTests = SITE.testsPassed || (D && D.tests_passed);
+  const nTests = D && D.tests_passed;                  // measured: written when the suite last ran green (spec 9.9)
   if (nTests) chips.push(`<span class="chip ok">${nTests} tests passing</span>`);
   chips.push('<span class="chip">Python · NumPy · pandas</span>');
   document.getElementById("chips").innerHTML = chips.join("");
   const hl = [];
+  /* The About page leads with the real result (the Python-built Story tiles); the simulated Sharpe, the volatility cut and the
+     simulator's fill-curve R² live under Paper replication with their caveat (showcase audit A3). */
+  const hero = window.STORY && window.STORY.sections && window.STORY.sections.hero;
+  if (hero && hero.status === "ok") hero.tiles.forEach(t => hl.push([t.label, isNum(t.value) ? (t.key === "agent_fills" ? fmt(t.value, 0) : sign(t.value, 1)) : t.value, t.context]));
   if (D) {
-    const rows = D.replication.paper_table, a = rows.find(r => r.gamma === 0.1 && r.strategy === "inventory"), b = rows.find(r => r.gamma === 0.1 && r.strategy === "symmetric");
-    hl.push(["Sharpe, A-S vs benchmark", `${fmt(a.mean_pnl / a.std_pnl, 1)} vs ${fmt(b.mean_pnl / b.std_pnl, 1)}`, "paper settings, 1,000 paths"]);
-    hl.push(["Profit volatility cut", `−${fmt(100 * (1 - a.std_pnl / b.std_pnl), 0)}%`, `for −${fmt(100 * (1 - a.mean_pnl / b.mean_pnl), 0)}% mean profit`]);
     if (D.real_days.length) {
       const n = D.real_days.reduce((x, d) => x + d.summary.n_trades, 0), d0 = D.real_days.filter(d => d.symbol === "BTCUSDT").pop() || D.real_days[0];
       const nc = new Set(D.real_days.map(d => d.symbol)).size;
       hl.push(["Real trades analysed", fmt(n, 0), `Binance spot, ${nc} coin${nc > 1 ? "s" : ""}, ${D.real_days.length} coin-days`]);
-      hl.push(["Fill model fit on BTC", `R² ${fmt(d0.fill_curve.r2, 3)}`, `λ(δ) = A·e^(−kδ), k = ${fmt(d0.fill_curve.k, 3)}/USDT`]);
     }
     if (D.backtest) {
       const all = D.backtest.runs.filter(r => r.fill_rule === "through").flatMap(r => r.strategies.map(st => st.summary));
@@ -566,10 +596,9 @@ function drawHeader() {
   if (SITE.linkedin) links.push(`Author: <a href="${SITE.linkedin}">${SITE.author}</a>`);
   document.getElementById("links").innerHTML = links.join(" · ");
   document.getElementById("foot-author").textContent = SITE.author ? `Built by ${SITE.author}` : "";
-  document.getElementById("foot-built").textContent = D ? `Data built ${D.built}` : "data.js not found: run python -m scripts.build_dashboard";
 }
 
-register("simulator", () => { drawKpis(); drawPath(); drawInv(); drawHist(); drawFan(); });
+register("simulator", () => { drawKpis(); drawSession(); drawHist(); drawFan(); });
 register("model", drawModel);
 register("replication", () => D && drawReplication());
 register("real-data", () => D && drawRealData());

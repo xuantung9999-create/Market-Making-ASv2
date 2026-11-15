@@ -82,6 +82,27 @@ def test_policy_choices():
     assert EdgePolicy(t, e_min_bp=0.0, gamma_bp=1.0).decide(state(), -9) == (Action.JOIN, Action.OUT)
 
 
+# ---- reduce-only at the inventory cap (the ETH deadlock: bid capped, ask OUT, no way to unwind)
+def test_at_cap_the_reducing_side_joins_even_with_negative_edge():
+    t = table_with(join=-15.0, back=-15.0)              # every action loses ~15 bp, like ETH's table
+    pol = EdgePolicy(t, e_min_bp=2.0, z=1.0, gamma_bp=0.5, q_max=10)
+    assert pol.decide(state(), 10) == (Action.OUT, Action.JOIN)    # long at cap: sell
+    assert pol.decide(state(), -10) == (Action.JOIN, Action.OUT)   # short at cap: buy
+    assert pol.decide(state(), 12) == (Action.OUT, Action.JOIN)    # beyond cap (restored) still unwinds
+
+
+def test_below_cap_the_table_still_decides():
+    t = table_with(join=-15.0, back=-15.0)
+    pol = EdgePolicy(t, e_min_bp=2.0, z=1.0, gamma_bp=0.5, q_max=10)
+    assert pol.decide(state(), 9) == (Action.OUT, Action.OUT)
+    assert pol.decide(state(), 0) == (Action.OUT, Action.OUT)
+
+
+def test_without_q_max_the_old_behaviour_is_unchanged():
+    t = table_with(join=-15.0, back=-15.0)
+    assert EdgePolicy(t, e_min_bp=2.0, z=1.0, gamma_bp=0.5).decide(state(), 10) == (Action.OUT, Action.OUT)
+
+
 def test_policy_prefers_back_when_better_and_ties_go_to_join():
     assert EdgePolicy(table_with(join=1.0, back=6.0)).decide(state(), 0) == (Action.BACK, Action.BACK)
     assert EdgePolicy(table_with(join=4.0, back=4.0)).decide(state(), 0) == (Action.JOIN, Action.JOIN)

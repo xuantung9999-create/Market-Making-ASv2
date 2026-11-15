@@ -86,6 +86,13 @@ function drawVerdictForest(b) {
   });
 }
 
+/* What each condition scored, in words: Python writes it into the story bundle (build_story.gate_rows). */
+function gateValueText(gate, c) {
+  const rows = (((window.STORY || {}).sections || {}).agent || {}).gate;
+  const hit = gate === "A" && rows && (rows.conditions || []).find(x => x.id === c.id);
+  if (hit && hit.value_text) return hit.value_text;
+  return isNum(c.value) ? fmtP(c.value) : "no value recorded";
+}
 function drawVerdictGates(b) {
   const g = section(b, "gates");
   if (!g) return emptyPanel("ov-gates", "Not evaluated yet");
@@ -96,7 +103,7 @@ function drawVerdictGates(b) {
     html += `<tr><th>Gate ${name}</th><th>${gate ? "" : "not evaluated yet"}</th><th></th><th>${gate ? mark(gate.pass) : ""}</th></tr>`;
     if (!gate) continue;
     for (const c of gate.conditions || [])
-      html += `<tr><td>${esc(c.id)}</td><td>${esc(c.text)}</td><td>${isNum(c.value) ? fmtP(c.value) : "–"}</td><td>${mark(c.pass)}</td></tr>`;
+      html += `<tr><td>${esc(c.id)}</td><td>${esc(c.text)}</td><td>${esc(gateValueText(name, c))}</td><td>${mark(c.pass)}</td></tr>`;
   }
   fillHtml("ov-gates", `<table class="gates"><tbody>${html}</tbody></table>`);
 }

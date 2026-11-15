@@ -5,14 +5,20 @@ const HORIZONS = [1, 5, 30, 60, 300];
 
 /* ----------------------------------------------------------------- tape drill-down */
 const Tape = {
-  pending: null,
-  /* Open the tape around a fill (index) or an incident time on the Execution tab. */
+  pending: null, dismissed: false, quiet: false,
+  /* Open the tape around a fill (index) or an incident time on the Execution test page. */
   open(sid, tms, fillI) {
-    Tape.pending = { sid, t: tms, i: fillI };
+    Tape.pending = { sid, t: tms, i: fillI }; Tape.quiet = false;
     Sess.select(sid);
-    if (location.hash === "#l-exec") { markDirty("lv-exec"); drawTape(); } else location.hash = "#l-exec";
+    if (current === "lv-overview") drawTape(); else location.hash = "#exec-test/tape";
   },
-  close() { Tape.pending = null; $("lvx-tape-card").hidden = true; },
+  close() { Tape.pending = null; Tape.dismissed = true; $("lvx-tape-card").hidden = true; },
+  /* The page opens on one curated example (story.tape_example, chosen in Python) until the reader opens or closes one. */
+  example() {
+    const ex = window.STORY && window.STORY.tape_example, b = Sess.one();
+    if (Tape.pending || Tape.dismissed || !ex || !b || b.meta.id !== ex.session) return;
+    Tape.pending = { sid: ex.session, t: ex.t, i: ex.i }; Tape.quiet = true;
+  },
 };
 function dayOfMs(ms) { return new Date(ms).toISOString().slice(0, 10); }
 
@@ -27,7 +33,7 @@ function drawTape() {
   const key = `${req.sid}|${dayOfMs(req.t)}`;
   const go = () => paintTape(b, req, fill, inc, (window.TAPES || {})[key]);
   if ((window.TAPES || {})[key]) return go();
-  const src = `live/tape-${req.sid}-${dayOfMs(req.t)}.js`;
+  const src = `${LIVE_DIR}/tape-${req.sid}-${dayOfMs(req.t)}.js`;
   const s = document.createElement("script");
   s.src = src + "?t=" + Date.now(); s.onload = go;
   s.onerror = () => paintTape(b, req, fill, inc, null);
@@ -75,14 +81,14 @@ function paintTape(b, req, fill, inc, tape) {
   if (offN) $("lvx-tape-sub").textContent += " " + offNote(offN, "prices") + " Prices beyond the frame are clipped, not drawn.";
   card_scroll();
 }
-function card_scroll() { const c = $("lvx-tape-card"); if (c && c.scrollIntoView && !reduceMotion) c.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+function card_scroll() { const c = $("lvx-tape-card"); if (Tape.quiet) return; if (c && c.scrollIntoView && !reduceMotion) c.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
 
 /* ----------------------------------------------------------------- the tab */
 function drawLvExec() {
   const b = Sess.one();
   const all = ["lvx-state", "lvx-markout", "lvx-edge", "lvx-wait", "lvx-funnel", "lvx-activity", "lvx-fills"];
   if (!b) { all.forEach(lvWaiting); return; }
-  const tk = b.takeaways, m = b.meta, w = Sess.windowOf(b);
+  const tk = tkOf(b), m = b.meta, w = Sess.windowOf(b);
   const fills = b.fills.filter(f => Sess.inWin(b, f.t));
 
   // quote state
@@ -99,7 +105,7 @@ function drawLvExec() {
     const legend = [...seen].map(s => ({ type: "scatter", mode: "markers", x: [null], y: [null], name: stateName(s), marker: { symbol: "square", size: 10, color: STATE_COLOR[s] } }));
     deskPlot("lvx-state", legend, { shapes, height: 130, hovermode: false, xaxis: axis("", { type: "date", range: w ? [isoT(w[0]), isoT(w[1])] : undefined }),
       yaxis: axis("", { tickmode: "array", tickvals: [0.5, 1.5], ticktext: ["ask", "bid"], range: [0, 2], zeroline: false, showgrid: false }), margin: { l: 40, r: 16, t: 24, b: 30 } });
-    const rows = (RANGE_H[Sess.state.range] && RANGE_H[Sess.state.range] <= 24 ? b.uptime_24h : b.uptime) || [];
+    const rows = (rangeEntry(b) || { uptime: b.uptime }).uptime || [];
     lvTable("lvx-uptime", [{ k: "side", label: "Side", left: true }, { k: "state", label: "State", left: true, f: v => statePill(v) }, { k: "seconds", label: "Time", f: v => agoText(v) }, { k: "share", label: "Share", f: v => pct(v, 1) }],
       rows, { sort: "share", empty: "No state time recorded in this range." });
   }
@@ -146,9 +152,9 @@ function drawLvExec() {
     const lo = Math.min(...waits), hi = Math.max(...waits) * 1.0001, n = 14, edges2 = Array.from({ length: n + 1 }, (_, i) => lo * Math.pow(hi / lo, i / n));
     const counts = Array(n).fill(0); waits.forEach(v => { let i = Math.min(n - 1, Math.floor(Math.log(v / lo) / Math.log(hi / lo) * n)); counts[i]++; });
     deskPlot("lvx-wait", [{ type: "bar", x: counts.map((_, i) => Math.sqrt(edges2[i] * edges2[i + 1])), width: counts.map((_, i) => (edges2[i + 1] - edges2[i]) * 0.9), y: counts, marker: { color: "#cbd5e1" }, hovertemplate: "%{x:.2f} s: %{y} fills<extra></extra>" }],
-      { showlegend: false, xaxis: axis("seconds from place to fill (log)", { type: "log" }), yaxis: axis("fills") });
-    lvTable("lvx-wait-table", [{ k: "tercile", label: "Wait tercile", left: true, f: (v, r) => `${fmt(r.wait_lo, 1)} to ${fmt(r.wait_hi, 1)} s` }, { k: "mk_60", label: "60 s markout bp", f: bpTxt }, { k: "se", label: "± 1.96 se", f: v => isNum(v) ? fmt(1.96 * v, 1) : dashes }, { k: "n", label: "n", f: v => nTxt(v) }],
-      b.wait_terciles || [], { sort: "tercile", empty: "Markout by wait tercile needs at least 9 fills with exchange timing." });
+      { showlegend: false, xaxis: axis("order age at fill: seconds since it was last placed (log)", { type: "log" }), yaxis: axis("fills") });
+    lvTable("lvx-wait-table", [{ k: "tercile", label: "Order-age tercile", left: true, f: (v, r) => `${fmt(r.wait_lo, 1)} to ${fmt(r.wait_hi, 1)} s` }, { k: "mk_60", label: "60 s markout bp", f: bpTxt }, { k: "se", label: "± 1.96 se", f: v => isNum(v) ? fmt(1.96 * v, 1) : dashes }, { k: "n", label: "n", f: v => nTxt(v) }],
+      b.wait_terciles || [], { sort: "tercile", empty: "Markout by order-age tercile needs at least 9 fills with exchange timing." });
   }
 
   // funnel
@@ -166,7 +172,8 @@ function drawLvExec() {
     { barmode: "group", yaxis: axis("orders per hour (log)", { type: "log" }), xaxis: axis("", { type: "date" }), margin: { l: 56, r: 16, t: 24, b: 36 } });
 
   drawFillsTable(b, fills);
-  if (Tape.pending) drawTape();
+  Tape.example();
+  if (Tape.pending) drawTape(); else $("lvx-tape-card").hidden = true;
 }
 
 function drawFillsTable(b, fills) {
@@ -185,7 +192,7 @@ function drawFillsTable(b, fills) {
   const slice = rows.slice(FillsUI.page * FillsUI.per, (FillsUI.page + 1) * FillsUI.per);
   const cols = [{ k: "t", label: "Time (UTC)", left: true, f: v => utcStamp(v) }, { k: "side", label: "Side", left: true, f: v => v > 0 ? "buy" : "sell" },
     { k: "price", label: "Price", f: v => fmtP(v) }, { k: "mid", label: "Mid", f: v => fmtP(v) }, { k: "edge_bp", label: "Edge bp", f: bpTxt },
-    ...HORIZONS.map(h => ({ k: "mk_" + h, label: `${h} s`, f: bpTxt })), { k: "wait_s", label: "Wait s", f: v => isNum(v) ? fmt(v, 1) : dashes },
+    ...HORIZONS.map(h => ({ k: "mk_" + h, label: `${h} s`, f: bpTxt })), { k: "wait_s", label: "Order age s", f: v => isNum(v) ? fmt(v, 1) : dashes },
     { k: "lots_after", label: "Lots", f: v => nTxt(v) }, { k: "artifact", label: "", left: true, f: (v, r) => r.artifact ? '<span class="dot-art"></span>artifact' : "" }];
   lvTable("lvx-fills", cols, slice, { presorted: true, sort: k, dir: FillsUI.dir, scroll: true, rowClass: r => r.artifact ? "art" : "", onClick: r => Tape.open(b.meta.id, r.t, r.i),
     onSort: key => { FillsUI.dir = FillsUI.sort === key ? -FillsUI.dir : -1; FillsUI.sort = key; drawFillsTable(b, fills); }, empty: "No fills match this filter." });
@@ -196,4 +203,6 @@ function drawFillsTable(b, fills) {
 }
 
 register("lv-exec", drawLvExec);
+/* The Execution test page is one page: the overview, P&L and execution parts draw together under the "lv-overview" view. */
+register("lv-overview", () => { drawLvOverview(); drawExecHead(); drawLvPnl(); drawLvExec(); });
 document.addEventListener("DOMContentLoaded", () => { const c = $("lvx-tape-close"); if (c) c.addEventListener("click", Tape.close); });

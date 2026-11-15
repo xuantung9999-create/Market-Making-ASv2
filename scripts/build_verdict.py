@@ -23,6 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     path = rep.write_bundle(b, root, slim=False)
     print(f"verdict -> {path} ({path.stat().st_size / 1e3:.0f} kB)")
     print(b["takeaways"].get("headline", ""))
+    from scripts import build_story            # the Story page reads the verdict bundle: rebuild it with it
+    build_story.main([str(root.parent.parent)])
     return 0
 
 

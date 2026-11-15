@@ -5,12 +5,13 @@ const armColor = i => `hsl(${(i * 30 + 200) % 360}, 70%, 62%)`;
 function drawLvModel() {
   const b = Sess.one();
   if (!b) { ["lvm-strip", "lvm-scores", "lvm-calib"].forEach(lvWaiting); fillLv("lvm-arms", ""); return; }
-  const mo = b.model, tk = b.takeaways, w = Sess.windowOf(b);
+  const mo = b.model, tk = tkOf(b), w = Sess.windowOf(b);
   const fixed = $("lvm-fixed"), body = $("lvm-body");
   if (mo.fixed) {
     fixed.hidden = false; fixed.textContent = tk.why_out; fixed.className = "verdict amber"; body.hidden = true; return;
   }
   fixed.hidden = true; body.hidden = false;
+  drawLvChart("lvc-agent");
 
   // live-arm strip and the menu table
   setSub("lvm-strip-sub", tk.arm_strip);

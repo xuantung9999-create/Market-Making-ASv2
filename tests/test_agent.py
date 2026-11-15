@@ -48,6 +48,18 @@ def test_no_look_ahead_in_learning():
     assert a.table.cell(Action.JOIN, bucket)[1] == pytest.approx(mean)
 
 
+def test_arms_and_live_track_unwind_at_the_cap():
+    a = make_agent()
+    assert all(arm.policy.q_max == 10 for arm in a.arms)
+    assert all(not hasattr(s.policy, "q_max") or s.policy.q_max is None for s in a.shadows)
+    st = a.live.policy                                     # the live track delegates to the live arm
+    from mm.queue_sim import MarketState
+    ms = MarketState(0, 99.0, 100.0, 10.0, 10.0, 1.0, {"book_imb": 0.0, "vol_ratio": 1.0})
+    assert st.decide(ms, 10)[1] == Action.JOIN             # empty table (all OUT) but at +10: sell
+    assert st.decide(ms, -10)[0] == Action.JOIN
+    assert st.decide(ms, 0) == (Action.OUT, Action.OUT)    # below the cap the (empty) table rules
+
+
 def test_shadows_have_no_inventory_cap():
     a = make_agent()
     for i in range(30):

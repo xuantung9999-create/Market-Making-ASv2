@@ -854,8 +854,12 @@ def takeaways(b: dict) -> dict:
                  and r.get("queue_mult") == HEADLINE_QUEUE), None)
     if cmp_ is not None and jt:
         coins = len({r["symbol"] for r in forest if r["variant"] == "join_touch" and r["symbol"] != "ALL"})
-        out["ov-cum"] = (f"At queue {HEADLINE_QUEUE:g}x the {coins} coins together {'lost' if cmp_['pnl_total'] < 0 else 'made'} "
-                         f"{abs(cmp_['pnl_total']):,.0f} USD on 100 USD lots.")
+        base = next((r for r in jt if r.get("queue_mult") == HEADLINE_QUEUE), None)
+        traded = ""
+        if base is not None and base.get("net_bp") and cmp_["pnl_total"]:
+            traded = f", on about {abs(cmp_['pnl_total'] / (base['net_bp'] * 1e-4)) / 1e6:.0f} million USD traded"
+        out["ov-cum"] = (f"Simulated, not real money: at queue {HEADLINE_QUEUE:g}x the {coins} coins together "
+                         f"{'lost' if cmp_['pnl_total'] < 0 else 'made'} {abs(cmp_['pnl_total']):,.0f} USD on 100 USD lots{traded}.")
     gate = ((b.get("gates") or {}).get("A") or {}).get("conditions")
     if gate:
         met = sum(1 for c in gate if c.get("pass"))

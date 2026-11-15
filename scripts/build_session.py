@@ -26,7 +26,7 @@ import numpy as np
 import pandas as pd
 
 from mm import livestats as ls
-from mm.agent import MENU
+from mm.agent import MENU, START_ARM, AgentConfig
 from mm.queue_sim import QSConfig
 
 US = ls.US
@@ -34,6 +34,10 @@ MAX_BYTES = 1_500_000
 HEAVY_EVERY_S = 300
 DEFAULTS = {"lot_usd": 100.0, "q_max": 10, "max_loss": 20.0}
 MARKOUT_GROUPS = ("all", "buy", "sell", "JOIN", "BACK")
+# the range buttons of the page: key -> (hours, label that every sentence of that range carries)
+RANGES = {"6h": (6, "the last 6 h"), "24h": (24, "the last 24 h"), "3d": (72, "the last 3 days"), "all": (None, "all time")}
+OPEN_SEVERITIES = ("high", "medium")
+REPLACE_MAX_GAP_S = 120.0       # a longer pause between two placements is a stop or a restart, not a replacement
 _PART_CACHE: dict = {}
 
 
@@ -236,7 +240,7 @@ def _why(s: dict, q_max: int, lots) -> str:
     if st == "NO_BALANCE" and isinstance(d, dict):
         return f"blocked by balance (need {d.get('need', 0):.4g}, free {d.get('free', 0):.4g} {d.get('asset', '')})"
     if st == "LOSS_STOP":
-        return "daily loss stop"
+        return "daily loss stop, holds until the next UTC day"
     if st == "POLICY_OUT":
         arm = d.get("live_arm") if isinstance(d, dict) else None
         return "policy stays out" + (f" (arm {arm})" if arm is not None else "")
@@ -251,6 +255,39 @@ def _why(s: dict, q_max: int, lots) -> str:
     if st == "UNKNOWN" or st is None:
         return "reason not recorded yet"
     return str(st).lower().replace("_", " ")
+
+
+def state_reason(s: dict, q_max: int, lots, max_loss: float) -> Optional[str]:   # noqa: ARG001
+    """Python's sentence for the detail of a quote state (the page shows it as written). Only states whose
+    detail is easy to misread get one; the page formats the rest itself."""
+    if s.get("state") != "LOSS_STOP":
+        return None
+    d = s.get("detail") if isinstance(s.get("detail"), dict) else {}
+    since = f"fired at {hhmm(s['since_us'])}, " if s.get("since_us") else ""
+    day = d.get("pnl_day")
+    lim = d.get("max_loss", max_loss)
+    if day is None:
+        return f"daily loss stop ({since}holds until the next UTC day)"
+    inside = "" if day < -lim else f", now inside the limit of -{lim:g}"
+    return f"daily loss stop: the day's P&L is {day:+.2f} USDT{inside}; {since}holds until the next UTC day"
+
+
+def last_state(intervals: dict, status_state: dict, stop_us: Optional[int] = None) -> dict:
+    """Per side, the last logged interval when there is one; otherwise the status file's state, then inference.
+    A loss stop is "since" the moment it fired (the latest loss-stop order of that UTC day), not since the last restart
+    that cut the state log into two intervals."""
+    out = {}
+    for name in ("bid", "ask"):
+        ivs = intervals.get(name) or []
+        if ivs:
+            iv = ivs[-1]
+            since = int(iv["t0"])
+            if iv["state"] == "LOSS_STOP" and stop_us and stop_us // ls.DAY_US == since // ls.DAY_US:
+                since = min(since, int(stop_us))
+            out[name] = {"state": iv["state"], "detail": iv.get("detail"), "since_us": since}
+        elif (status_state or {}).get(name):
+            out[name] = status_state[name]
+    return out
 
 
 def markout_table(f: pd.DataFrame, actions: dict, fee_bps: float) -> list[dict]:
@@ -317,11 +354,56 @@ def funnel(orders: list[dict], fills: pd.DataFrame) -> dict:
     for o in rej:
         e = re.sub(r"\d+(\.\d+)?", "#", str(o.get("error", "")))[:100]
         reasons[e] = reasons.get(e, 0) + 1
+    gaps = []                                               # time between two placements on the same side
+    for side in (1, -1):
+        t = sorted(o["ts_us"] for o in orders if o.get("op") == "place" and o.get("side") == side)
+        gaps += [(b - a) / US for a, b in zip(t, t[1:]) if b - a <= REPLACE_MAX_GAP_S * US]
     return {"placed": ops.count("place"), "cancelled": ops.count("cancel"), "rejected": len(rej),
+            "median_replace_s": float(np.median(gaps)) if len(gaps) >= 5 else None,
             "filled": int((fills["how"] != "partial").sum()) if len(fills) else 0,
             "partial": int((fills["how"] == "partial").sum()) if len(fills) else 0,
             "by_hour": [{"t": h * 3_600_000, **v} for h, v in sorted(by_hour.items())],
             "reject_reasons": [{"error": e, "n": n} for e, n in sorted(reasons.items(), key=lambda kv: -kv[1])]}
+
+
+def caught_section(spec: Spec, inc: list[dict], fun: dict, an: dict, intervals: dict, att: dict) -> list[dict]:
+    """What the execution test caught (showcase spec section 7). Only testnet sessions have one, and every row cites a
+    count or an incident that is in this bundle: a finding with nothing to cite is left out, never invented.
+    ``n`` and ``unit`` are the cited count; ``cites`` names the incident ids or the counter the row rests on."""
+    if spec.source != "testnet":
+        return []
+    rows = []
+    restarts = [i for i in inc if i["kind"] == "restart"]
+    if restarts:
+        rows.append({"id": "carry_state", "finding": "Position and the daily loss stop were not carried across restarts",
+                     "status": "fixed", "task": "live spec L1b", "n": len(restarts), "unit": "restarts",
+                     "evidence": restarts[0]["sentence"], "cites": {"kind": "incident", "ids": [restarts[0]["id"]]}})
+    nb = [iv for name in ("bid", "ask") for iv in intervals.get(name, []) if iv["state"] == "NO_BALANCE"]
+    if nb:
+        rows.append({"id": "no_balance", "finding": "The trader returned silently when the balance check failed",
+                     "status": "fixed", "task": "live spec L1 (NO_BALANCE)", "n": len(nb), "unit": "NO_BALANCE intervals",
+                     "evidence": f"{len(nb)} intervals are now logged as NO_BALANCE instead of a silent return",
+                     "cites": {"kind": "count", "key": "states.NO_BALANCE"}})
+    post = sum(r["n"] for r in fun.get("reject_reasons", []) if "immediately match" in r["error"])
+    if post:
+        attempts = fun["placed"] + fun["rejected"]
+        rows.append({"id": "post_only", "finding": "Post-only orders were rejected with \"would immediately match and take\"",
+                     "status": "by design", "task": "a post-only order never takes liquidity", "n": post, "unit": "rejected orders",
+                     "evidence": f"{post:,} of {attempts:,} order attempts were rejected this way; they are counted as rejects, never as fills",
+                     "cites": {"kind": "count", "key": "funnel.reject_reasons"}})
+    if restarts:
+        rows.append({"id": "unclean_restart", "finding": "The trader restarted without a clean stop", "status": "open", "task": None,
+                     "n": len(restarts), "unit": "restarts without a clean stop",
+                     "evidence": f"{len(restarts)} restart{'s' if len(restarts) != 1 else ''} logged as incidents",
+                     "cites": {"kind": "incident", "ids": [i["id"] for i in restarts]}})
+    n_art = int(an["counts"].get("artifact_fills", 0))
+    if n_art:
+        usd = float(att["artifact"])
+        rows.append({"id": "book_glitch", "finding": "The testnet book printed fills far from the mid", "status": "by design",
+                     "task": "a thin testnet book; kept out of the strategy numbers", "n": n_art, "unit": "book-glitch fills", "usd": usd,
+                     "evidence": f"{n_art} fill{'s' if n_art != 1 else ''} at prices far from the mid, {usd:+.2f} USDT in total, excluded from the strategy numbers",
+                     "cites": {"kind": "count", "key": "attribution.counts.artifact_fills"}})
+    return rows
 
 
 def model_section(spec: Spec, history: list[dict], agent_state: Optional[dict], f: pd.DataFrame, orders: list[dict],
@@ -363,13 +445,44 @@ def model_section(spec: Spec, history: list[dict], agent_state: Optional[dict], 
     tot_out = sum(iv["t1"] - iv["t0"] for n in ("bid", "ask") for iv in intervals.get(n, []) if iv["state"] == "POLICY_OUT")
     tot = sum(iv["t1"] - iv["t0"] for n in ("bid", "ask") for iv in intervals.get(n, []))
     scores = [a["score_bp"] for a in arms if a["score_bp"] is not None]
+    min_fills = AgentConfig().min_arm_fills
+    eligible = [a["arm"] for a in arms if a["fills"] is not None and a["fills"] >= min_fills]
     return {"fixed": spec.policy == "join", "live_arm": live_arm, "arm_strip": strip, "arms": arms, "history": hist,
             "calibration": calib, "policy_out_share": (tot_out / tot) if tot else None,
             "best_score_bp": max(scores) if scores else None, "entry_threshold_bp": 0.0,
+            "min_arm_fills": min_fills, "eligible_arms": eligible, "start_arm": START_ARM,
             "switches": sum(1 for h in history if h.get("switched"))}
 
 
-def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] = None) -> dict:
+def why_out_sentence(mo: dict) -> str:
+    """Why the agent is (or is not) quoting, in three cases: no arm is eligible yet, every eligible arm scores
+    below zero, or an eligible arm is positive. The switch rule is ``AgentConfig.min_arm_fills`` shadow fills."""
+    arms = [a for a in mo["arms"] if a.get("score_bp") is not None]
+    if not arms:
+        return "No arm scores recorded yet."
+    seen = [a for a in arms if (a.get("fills") or 0) > 0]
+    share = mo.get("policy_out_share")
+    stayed = f"; it stayed out {share:.0%} of the logged time" if share is not None else ""
+    need = mo["min_arm_fills"]
+    elig = [a for a in arms if a["arm"] in mo["eligible_arms"]]
+    if not elig:
+        best = max(seen, key=lambda a: a["score_bp"]) if seen else None
+        live = mo["live_arm"]
+        where = (f"its most conservative setting, arm {live}" if live == mo["start_arm"]
+                 else f"its current setting, arm {live}")
+        so_far = (f"best so far: arm {best['arm']}, {best['score_bp']:+.2f} bp on {best['fills']:.1f} fills" if best
+                  else "none has a shadow fill yet")
+        return f"No setting has the {need:g} shadow fills needed to be chosen ({so_far}), so the agent stays on {where}{stayed}."
+    best = max(elig, key=lambda a: a["score_bp"])
+    if best["score_bp"] < mo["entry_threshold_bp"]:
+        return (f"Every eligible arm scores below 0 bp (best: arm {best['arm']}, {best['score_bp']:+.2f} bp on "
+                f"{best['fills']:.1f} fills), so the agent quotes nothing{stayed}.")
+    return (f"The best eligible arm, {best['arm']}, scores {best['score_bp']:+.2f} bp on {best['fills']:.1f} fills against "
+            f"an entry threshold of {mo['entry_threshold_bp']:g} bp; the live arm is {mo['live_arm']}{stayed}.")
+
+
+def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] = None,
+                 chart_out: Optional[dict] = None) -> dict:
     fee_bps = QSConfig().maker_fee_bps
     th = ls.Thresholds()
     rows = load_fill_rows(spec)
@@ -386,22 +499,28 @@ def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] 
     agent_state = _read_json(base / "data" / spec.source / "state" / f"{spec.symbol}_agent.json")
     status = _read_json(spec.folder / "status.json") or {}
     intervals = ls.state_intervals(states, t_end=min(now_us, t_end) if t_end else None)
-    inc = ls.incidents(an, intervals, orders, sessions, q_max=spec.q_max, max_loss=spec.max_loss, thresholds=th, t_end=t_end)
+    inc = ls.incidents(an, intervals, orders, sessions, q_max=spec.q_max, max_loss=spec.max_loss, thresholds=th, t_end=t_end,
+                       state_rows=states)
     f = an["fills"]
     first_us = int(f["t_us"].min()) if len(f) else None
     last_us = int(f["t_us"].max()) if len(f) else None
     att = an["attribution"]
 
     # now
-    st_now = status.get("state") or (infer_state(status, spec.q_max) if status else {})
+    st_fallback = status.get("state") or (infer_state(status, spec.q_max) if status else {})
+    st_now = {**st_fallback, **last_state(intervals, status.get("state") or {}, max((int(r["ts_us"]) for r in orders if r.get("op") == "loss-stop"), default=None))}      # a logged interval wins (B8)
     mid_now = an["mid_end"] or (status.get("pos") and 0) or 0
     lots_now = status.get("lots") if status.get("lots") is not None else (int(f["lots_after"].iloc[-1]) if len(f) else 0)
-    since24 = now_us - 24 * 3600 * US
-    open_inc = [i for i in inc if i["severity"] in ("high", "medium") and i["t1"] >= since24]
+    for name in ("bid", "ask"):                              # Python writes the loss-stop wording (B9)
+        if name in st_now:
+            rs = state_reason(st_now[name], spec.q_max, lots_now, spec.max_loss)
+            if rs:
+                st_now[name] = {**st_now[name], "reason": rs}
     now = {"state": st_now, "lots": lots_now, "pos_usd": (status.get("pos", 0) or 0) * (mid_now or 0),
            "open": {"bid": (status.get("open") or {}).get("bid"), "ask": (status.get("open") or {}).get("ask")},
            "last_fill_ms": ms(last_us) if last_us else None, "process": process_info(base, spec, sessions, time.time()),
-           "state_logged": bool(status.get("state")), "open_incidents": len(open_inc), "mid": mid_now or None}
+           "state_logged": bool(status.get("state")) or bool(intervals["bid"] or intervals["ask"]),
+           "open_incidents": 0, "mid": mid_now or None}      # open_incidents is filled from by_range["24h"] below
 
     # markers
     markers = []
@@ -438,6 +557,7 @@ def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] 
             "pnl_after", "lots_after", "artifact", "reason", "timing"]
     ft = f[keep].copy() if len(f) else pd.DataFrame(columns=keep)
     ft["t"] = (ft["t_us"] // 1000).astype("int64")
+    ft["dist_bp"] = (ft["price"] - ft["mid"]) / ft["mid"].where(ft["mid"] > 0) * 1e4     # signed in price terms: a sell under the mid is negative
     ft["caption"] = [fill_caption(r) for r in ft.itertuples()]
     ft = ft.drop(columns=["t_us"])
     fills_out = ft.to_dict("records")
@@ -446,6 +566,7 @@ def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] 
     markout = markout_table(f, actions, fee_bps)
     fun = funnel(orders, f)
     model = model_section(spec, history, agent_state, f, orders, intervals, fee_bps, t_end)
+    caught = caught_section(spec, inc, fun, an, intervals, att)
 
     bundle = {
         "meta": {"id": spec.id, "source": spec.source, "symbol": spec.symbol, "policy": spec.policy,
@@ -462,8 +583,10 @@ def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] 
                         "counts": an["counts"], "thresholds": th.to_dict()},
         "fills": fills_out, "markout": markout, "funnel": fun, "wait_terciles": wait_terciles(f),
         "incidents": [{**i, "t0": ms(i["t0"]), "t1": ms(i["t1"]), "id": i["id"]} for i in inc],
-        "model": model,
+        "model": model, "caught": caught,
     }
+    bundle["by_range"] = build_by_range(spec, bundle, an, f, intervals, t_end)
+    bundle["now"]["open_incidents"] = bundle["by_range"]["24h"]["counts"]["open_incidents"]
     bundle["takeaways"], bundle["headline"] = takeaways(spec, bundle, an, f, intervals, status, now_us)
     attribution_raw = bundle["attribution"]
     bundle = clean(bundle)
@@ -478,66 +601,157 @@ def build_bundle(base: Path, spec: Spec, now_us: int, tapes_out: Optional[dict] 
         bundle["fills"] = [{k: v for k, v in r.items() if k not in ("mk_1", "mk_5", "reason", "caption")} for r in bundle["fills"]]
     if tapes_out is not None:
         tapes_out.update(build_tapes(spec, fills, an, inc, orders, now_us, book))
+    if chart_out is not None:
+        chart_out.update(fills=f, book=book, orders=orders, curve=an["curve"], t_end=t_end,
+                         ranges={k: (RANGES[k][0], v["label"]) for k, v in bundle["by_range"].items()},
+                         pnl_sentences={k: v["takeaways"]["cum_pnl"] for k, v in bundle["by_range"].items()})
     return bundle
 
 
 # ---------------------------------------------------------------------- sentences (Python writes every finding)
-def takeaways(spec: Spec, b: dict, an: dict, f: pd.DataFrame, intervals: dict, status: dict, now_us: int):
-    att = an["attribution"]
-    q_max = spec.q_max
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def _window_sums(b: dict, an: dict, w0: Optional[int], end_ms: int, n: int) -> dict:
+    """Attribution terms of a range, summed from the hourly buckets with the rule the page used to apply itself
+    (an hour counts when it ends after the window starts). The whole session uses the exact totals."""
+    keys = ("edge", "adverse", "carry", "fees", "artifact", "net", "fills", "notional")
+    if w0 is None:
+        a = an["attribution"]
+        return {**{k: float(a[k]) for k in keys if k in a}, "fills": n}
+    s = dict.fromkeys(keys, 0.0)
+    for r in b["attribution"]["by_hour"]:
+        if r["t"] + 3_600_000 > w0 and r["t"] <= end_ms:
+            for k in keys:
+                s[k] += r.get(k) or 0.0
+    s["fills"] = int(s["fills"])
+    return s
+
+
+def _in_window(t_ms: pd.Series, w0: Optional[int], end_ms: int) -> pd.Series:
+    return (t_ms <= end_ms) & ((t_ms >= w0) if w0 is not None else True)
+
+
+def _worst_fill_sentence(f: pd.DataFrame, w0: Optional[int], end_ms: int, label: str) -> str:
+    """About fills only: the fill with the lowest edge at fill plus 60 s markout in the range (what the table sorts by)."""
+    if not len(f):
+        return "No fills yet, so there is no worst fill."
+    g = f[_in_window(f["t_us"] // 1000, w0, end_ms) & f["edge_bp"].notna()].copy()
+    if g.empty:
+        return f"No fill in {label} has a markout, so there is no worst fill."
+    g["score"] = g["edge_bp"] + g["mk_60"].fillna(0.0)
+    r = g.loc[g["score"].idxmin()]
+    mk = (f" and {r['mk_60']:+.1f} bp 60 s later" if r["mk_60"] == r["mk_60"] else ", with no 60 s markout")
+    glitch = " It is a book glitch fill." if r["artifact"] else ""
+    return (f"The worst fill in {label}: {'sold' if r['side'] < 0 else 'bought'} {r['qty']:g} at {r['price']:g}, "
+            f"{r['edge_bp']:+.1f} bp against its mid{mk} (edge plus 60 s: {r['score']:+.1f} bp).{glitch}")
+
+
+def build_by_range(spec: Spec, b: dict, an: dict, f: pd.DataFrame, intervals: dict, t_end: int) -> dict:
+    """Everything that depends on the range buttons, built once per range (spec section 9, rules 1 and 2).
+    The page reads ``by_range[range]`` and never recomputes these numbers. The window ends at ``meta.last_ms``."""
     n = len(f)
-    tk: dict = {}
-    nruns = max(1, sum(1 for m in b["markers"] if m["kind"] == "restart"))
-    rest = att["net"] - att["fees"] - att["artifact"]
-    net_ex = att["net"] - att["artifact"]
-    if n == 0:
-        tk["cum_pnl"] = "No fills in this session yet, so there is no P&L to show."
-    else:
-        tk["cum_pnl"] = (f"Net {att['net']:+.2f} USDT over {n} fills ({net_ex:+.2f} without artifacts), kept as one "
-                         f"curve across {nruns} run{'s' if nruns != 1 else ''}; fees are estimated.")
-    tk["waterfall"] = (f"Of the {att['net']:+.2f} USDT net, fees are {att['fees']:+.2f}, artifacts {att['artifact']:+.2f}, "
-                       f"and everything else {rest:+.2f} (edge {att['edge']:+.2f}, adverse selection {att['adverse']:+.2f}, "
-                       f"carry {att['carry']:+.2f}).") if n else "Nothing to attribute yet: no fills."
-    worst = f.loc[(f["edge_usd"]).idxmin()] if n else None
-    cost_inc = [i for i in b["incidents"] if i.get("cost_usd")]
-    if cost_inc:
-        top = max(cost_inc, key=lambda i: i["cost_usd"])
-        tk["worst_fills"] = f"The costliest single event: {top['sentence']}"
-    elif worst is not None:
-        tk["worst_fills"] = (f"The worst fill cost {-worst['edge_usd']:.2f} USDT against its own mid "
-                             f"({worst['edge_bp']:.1f} bp); no fill looks like an artifact.")
-    else:
-        tk["worst_fills"] = "No fills yet, so there is no worst fill."
+    end_ms = ms(t_end)
+    first_us = int(f["t_us"].min()) if n else None
+    t_ms = f["t_us"] // 1000 if n else pd.Series(dtype="int64")
+    out = {}
+    for key, (hours, label) in RANGES.items():
+        w0 = end_ms - hours * 3_600_000 if hours else None
+        if hours is None and first_us:
+            label = f"all time since {datetime.fromtimestamp(first_us / US, tz=timezone.utc).strftime('%d %b')}"
+        s = _window_sums(b, an, w0, end_ms, n)
+        net_ex = s["net"] - s["artifact"]
+        inc = [i for i in b["incidents"] if (w0 is None or i["t0"] >= w0) and i["t0"] <= end_ms]
+        n_open = sum(1 for i in inc if i["severity"] in OPEN_SEVERITIES)
+        up = ls.uptime(intervals, t0=None if hours is None else t_end - hours * 3_600_000_000,
+                       t1=None if hours is None else t_end)
+        rows_q = [u for u in up if u["state"] == "QUOTING"]
+        quoting = (sum(u["share"] for u in rows_q) / 2.0) if up else None
+        shares = {u["side"]: u["share"] for u in rows_q}
+        inw = _in_window(t_ms, w0, end_ms) if n else pd.Series(dtype=bool)
+        n_art = int((inw & f["artifact"]).sum()) if n else 0
+        tiles = {"net": s["net"], "net_ex_artifacts": net_ex, "edge": s["edge"], "adverse": s["adverse"], "carry": s["carry"],
+                 "artifact": s["artifact"], "fees": s["fees"], "fills": s["fills"], "notional": s["notional"],
+                 "quoting_share": quoting}
+        counts = {"fills": s["fills"], "incidents": len(inc), "open_incidents": n_open, "artifact_fills": n_art}
+        tk: dict = {}
+        if n == 0:
+            tk["cum_pnl"] = "No fills in this session yet, so there is no P&L to show."
+            tk["waterfall"] = "Nothing to attribute yet: no fills."
+        else:
+            nruns = max(1, sum(1 for m in b["markers"] if m["kind"] == "restart" and (w0 is None or m["t"] >= w0)))
+            if s["fills"] == 0:                          # no trades, but the position held still moves with the price
+                tk["cum_pnl"] = (f"No fills in {label}; the net {s['net']:+.2f} USDT is the position already held moving with "
+                                 f"the price. The curve is cumulative since the session began.")
+            else:
+                tk["cum_pnl"] = (f"In {label}: net {s['net']:+.2f} USDT over {s['fills']} fills ({net_ex:+.2f} without artifacts), "
+                                 f"{nruns} run{'s' if nruns != 1 else ''}; fees are estimated. The curve is cumulative since "
+                                 f"the session began.")
+            rest = s["net"] - s["fees"] - s["artifact"]
+            tk["waterfall"] = (f"Of the {s['net']:+.2f} USDT net in {label}, fees are {s['fees']:+.2f}, artifacts "
+                               f"{s['artifact']:+.2f}, and everything else {rest:+.2f} (edge {s['edge']:+.2f}, adverse "
+                               f"selection {s['adverse']:+.2f}, carry {s['carry']:+.2f}).")
+        tk["worst_fills"] = _worst_fill_sentence(f, w0, end_ms, label)
+        tk["pnl_summary"] = (f"Net {s['net']:+.2f} USDT in {label}, of which fees {s['fees']:+.2f} and book glitches "
+                             f"{s['artifact']:+.2f}. Not a strategy result." if spec.source == "testnet" else
+                             f"Net {s['net']:+.2f} USDT in {label}, of which fees {s['fees']:+.2f}.")
+        eb = f.loc[inw & ~f["artifact"], "edge_bp"].dropna() if n else pd.Series(dtype=float)
+        tk["edge_hist"] = (f"Median edge at fill {eb.median():+.2f} bp over {len(eb)} fills in {label}; "
+                           f"{_plural(n_art, 'artifact')} off scale.") if len(eb) else f"No edge statistics for {label}."
+        wv = f.loc[inw & ~f["artifact"], "wait_s"].dropna() if n else pd.Series(dtype=float)
+        wv = wv[wv > 0]
+        rep = b["funnel"].get("median_replace_s")
+        if len(wv):
+            tk["queue_wait"] = (f"Median order age at fill {wv.median():.1f} s over {len(wv)} fills in {label}: the time since "
+                                f"the filled order was last placed"
+                                + (f"; the trader replaces each order about every {rep:.0f} s, so this is not time in the queue."
+                                   if rep else "; this is not time in the queue."))
+        else:
+            tk["queue_wait"] = f"No fill in {label} carries an exchange time, which the trader logs from its next restart."
+        if not b["now"]["state_logged"] and not b["states"]["bid"]:
+            tk["state_strip"] = ("The quote-state log starts at the next trader restart; until then the state shown is inferred "
+                                 "from the status file, and reasons for idle time are not recorded.")
+        elif up:
+            tk["state_strip"] = (f"Share of observed time quoting in {label}: bid {shares.get('bid', 0.0):.0%}, "
+                                 f"ask {shares.get('ask', 0.0):.0%}.")
+        else:
+            tk["state_strip"] = f"No quote state was recorded in {label}."
+        ss = state_sentence(b["now"]["state"], spec.q_max, b["now"]["lots"]) if b["now"]["state"] else "no state recorded"
+        src = f"{spec.source} {spec.symbol} {spec.policy}"
+        if n == 0:
+            head = f"{src}: no fills yet. {ss}. {_plural(n_open, 'open incident')} in {label}."
+        else:
+            head = (f"{src} ({label}): net {s['net']:+.2f} USDT ({net_ex:+.2f} without artifacts) on {s['fills']} fills. "
+                    f"{ss}. {_plural(n_open, 'open incident')}.")
+        out[key] = {"label": label, "tiles": tiles, "counts": counts, "takeaways": tk, "headline": head, "uptime": up}
+    return out
+
+
+def takeaways(spec: Spec, b: dict, an: dict, f: pd.DataFrame, intervals: dict, status: dict, now_us: int):
+    """Sentences that do not depend on the range, plus the whole-session version of those that do (``by_range`` holds
+    one set per range; the page prefers it)."""
+    n = len(f)
+    tk: dict = dict(b["by_range"]["all"]["takeaways"])
     tk["attr_time"] = ("Each bar is one UTC hour of signed edge, adverse selection, carry, fees and artifacts; the line is their sum."
                        if n else "No fills yet.")
     tk["day_table"] = (f"{len(b['attribution']['by_day'])} UTC day(s); a day with 'loss stop: yes' hit the "
                        f"{spec.max_loss:g} USDT daily limit.") if n else "No fills yet."
-    now = b["now"]
-    if not now["state_logged"] and not b["states"]["bid"]:
-        tk["state_strip"] = ("The quote-state log starts at the next trader restart; until then the state shown is inferred "
-                             "from the status file, and reasons for idle time are not recorded.")
-    else:
-        up = {(u["side"], u["state"]): u["share"] for u in b["uptime"]}
-        tk["state_strip"] = ("Share of observed time quoting: bid {:.0%}, ask {:.0%}.".format(
-            up.get(("bid", "QUOTING"), 0.0), up.get(("ask", "QUOTING"), 0.0)))
     m60 = [r for r in b["markout"] if r["group"] == "all" and r["h_s"] == 60]
     if m60:
         r = m60[0]
-        tk["markout"] = (f"60 s after a typical fill the mid sits {r['bp']:+.2f} bp from the fill price (n = {r['n']}), "
-                         f"against a maker fee of {spec.lot_usd and b['meta']['fee_bps']:g} bp; "
+        tk["markout"] = (f"Over all time, 60 s after a typical fill the mid sits {r['bp']:+.2f} bp from the fill price (n = {r['n']}), "
+                         f"against a maker fee of {b['meta']['fee_bps']:g} bp; "
                          f"{an['counts']['artifact_fills']} artifact fill(s) are left out.")
     else:
         tk["markout"] = "No markouts yet: no fill has a clean 60 s window in the recorded feed."
-    eb = f.loc[~f["artifact"], "edge_bp"].dropna() if n else pd.Series(dtype=float)
-    tk["edge_hist"] = (f"Median edge at fill {eb.median():+.2f} bp over {len(eb)} fills; "
-                       f"{an['counts']['artifact_fills']} artifact(s) are off scale.") if len(eb) else "No edge statistics yet."
-    w = f["wait_s"].dropna() if n else pd.Series(dtype=float)
-    tk["queue_wait"] = (f"Median queue wait {w.median():.1f} s over {len(w)} fills with exchange timing.") if len(w) else (
-        "Queue wait needs exchange fill times, which the trader logs from its next restart.")
     fu = b["funnel"]
-    tk["funnel"] = (f"{fu['placed']} orders placed, {fu['cancelled']} cancelled, {fu['rejected']} rejected, "
+    tk["funnel"] = (f"Over all time: {fu['placed']} orders placed, {fu['cancelled']} cancelled, {fu['rejected']} rejected, "
                     f"{fu['filled']} filled.")
     tk["fills_table"] = "Click a fill to open the tape around it." if n else "No fills yet."
+    nc = len(b.get("caught") or [])
+    tk["caught"] = (f"{nc} finding{'s' if nc != 1 else ''} from this session, each with the count or incident it rests on." if nc
+                    else "Nothing is recorded as caught for this session yet.")
     mo = b["model"]
     if spec.policy == "join":
         tk["arm_strip"] = tk["arm_scores"] = tk["calibration"] = tk["why_out"] = "Fixed policy: always join the best price. No model decisions."
@@ -547,25 +761,8 @@ def takeaways(spec: Spec, b: dict, an: dict, f: pd.DataFrame, intervals: dict, s
         tk["arm_scores"] = "Each line is one arm's decayed interval score in bp; the zero line is break-even."
         tk["calibration"] = ("Predicted edge against the realised 60 s markout net of fee, bucketed." if mo["calibration"]
                              else "No fills carry a prediction yet, so predicted and realised edge cannot be compared.")
-        best = mo["best_score_bp"]
-        share = mo["policy_out_share"]
-        if best is not None and best < 0:
-            tk["why_out"] = (f"Every arm scores below 0 bp (best {best:+.2f} bp), so the agent quotes nothing"
-                             + (f"; it stayed out {share:.0%} of the logged time." if share is not None else "."))
-        elif best is not None:
-            tk["why_out"] = f"The best arm scores {best:+.2f} bp against an entry threshold of 0 bp."
-        else:
-            tk["why_out"] = "No arm scores recorded yet."
-    # headline
-    lots = now["lots"]
-    ss = state_sentence(now["state"], q_max, lots) if now["state"] else "no state recorded"
-    label = f"{spec.source} {spec.symbol} {spec.policy}"
-    if n:
-        head = (f"{label}: net {att['net']:+.2f} USDT ({net_ex:+.2f} without artifacts) on {n} fills. {ss}. "
-                f"{now['open_incidents']} open incident{'s' if now['open_incidents'] != 1 else ''}.")
-    else:
-        head = f"{label}: no fills yet. {ss}."
-    return tk, head
+        tk["why_out"] = why_out_sentence(mo)
+    return tk, b["by_range"]["all"]["headline"]
 
 
 # ---------------------------------------------------------------------- tape files
@@ -647,6 +844,21 @@ def _order_segments(orders: list[dict], f: pd.DataFrame, a: int, b: int) -> list
     return segs[:400]
 
 
+# ---------------------------------------------------------------------- the session chart file
+def build_chart_file(spec: Spec, args: dict, now_us: int) -> str:
+    """``window.SESSION_CHART["<id>"] = {...}`` (dashboard chart spec 7.2). Thinned to fewer buckets until it fits the
+    size limit; numbers keep 12 significant digits so the width of a quote stays ask minus bid."""
+    for nb in (500, 250, 125, 60):
+        by_range = ls.chart_series(args["fills"], args["book"], args["orders"], args["curve"], t_end=args["t_end"],
+                                   q_max=spec.q_max, source=spec.source, symbol=spec.symbol, policy=spec.policy,
+                                   ranges=args["ranges"], pnl_sentences=args["pnl_sentences"] if spec.source == "paper" else None,
+                                   max_buckets=nb)
+        text = json.dumps(clean({"id": spec.id, "built_ms": ms(now_us), "by_range": by_range}, 12), separators=(",", ":"))
+        if len(text) <= MAX_BYTES:
+            break
+    return f'window.SESSION_CHART = window.SESSION_CHART || {{}};\nwindow.SESSION_CHART["{spec.id}"] = {text};\n'
+
+
 # ---------------------------------------------------------------------- writing
 def _write(path: Path, text: str, out_root: Path) -> None:
     path = path.resolve()
@@ -667,8 +879,10 @@ def build(base: Path = Path("."), now_us: Optional[int] = None, cfg: Optional[di
     wanted = {"sessions.js"}
     for spec in discover(base, cfg):
         tapes: dict = {}
+        chart_in: dict = {}
         try:
-            b = build_bundle(base, spec, now_us, tapes)
+            b = build_bundle(base, spec, now_us, tapes, chart_in)
+            chart_js = build_chart_file(spec, chart_in, now_us)
         except Exception as e:                              # noqa: BLE001 - one bad session must not hide the others
             print(f"session {spec.id}: build failed: {e!r}", flush=True)
             continue
@@ -676,6 +890,8 @@ def build(base: Path = Path("."), now_us: Optional[int] = None, cfg: Optional[di
         name = f"session-{spec.id}.js"
         _write(out / name, js, out)
         wanted.add(name)
+        _write(out / f"chart-{spec.id}.js", chart_js, out)
+        wanted.add(f"chart-{spec.id}.js")
         for day, t in tapes.items():
             tn = f"tape-{spec.id}-{day}.js"
             _write(out / tn, f'window.TAPES = window.TAPES || {{}};\nwindow.TAPES["{spec.id}|{day}"] = {json.dumps(t, separators=(",", ":"))};\n', out)
@@ -684,7 +900,7 @@ def build(base: Path = Path("."), now_us: Optional[int] = None, cfg: Optional[di
         sessions.append({"id": spec.id, "source": spec.source, "symbol": spec.symbol, "policy": spec.policy,
                          "first_ms": m["first_ms"], "last_ms": m["last_ms"], "n_fills": len(b["fills"])})
     _write(out / "sessions.js", "window.SESSIONS = " + json.dumps(sessions, separators=(",", ":")) + ";\n", out)
-    for f in list(out.glob("session-*.js")) + list(out.glob("tape-*.js")):   # drop files of sessions that are gone
+    for f in list(out.glob("session-*.js")) + list(out.glob("tape-*.js")) + list(out.glob("chart-*.js")):   # drop files of sessions that are gone
         if f.name not in wanted:
             f.unlink()
     return sessions

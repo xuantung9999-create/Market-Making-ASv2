@@ -29,6 +29,7 @@ import asyncio
 import json
 import os
 import re
+import signal
 import time
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
@@ -422,7 +423,19 @@ async def _run(session: PaperSession, hours: Optional[float]) -> None:
         session.checkpoint()
 
 
+def install_break_handler() -> bool:
+    """Windows: make Ctrl+Break raise KeyboardInterrupt like Ctrl+C, so the normal shutdown path runs.
+    scripts.supervise_live stops its children with CTRL_BREAK_EVENT (they run in their own process group,
+    where Ctrl+C is disabled); without this handler Python dies at once with 0xC000013A and skips the cleanup
+    (testnet: cancel orders, save state, log the stop). No-op elsewhere."""
+    if not hasattr(signal, "SIGBREAK"):
+        return False
+    signal.signal(signal.SIGBREAK, signal.default_int_handler)
+    return True
+
+
 def _main(argv=None) -> None:
+    install_break_handler()
     ap = argparse.ArgumentParser(prog="python -m mm.paper")
     ap.add_argument("--symbols", default=None)
     ap.add_argument("--symbols-file", default=None)

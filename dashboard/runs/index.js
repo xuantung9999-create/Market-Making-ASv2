@@ -1,17 +1,5 @@
 window.RUN_INDEX = [
  {
-  "run_id": "pub-verdict",
-  "kind": "walkforward",
-  "label": "Verdict: 60-day queue-aware test, 3 coins",
-  "built_utc": "2026-11-12 12:31",
-  "symbols": [
-   "ANKRUSDT",
-   "COTIUSDT",
-   "SKLUSDT"
-  ],
-  "n_days": 60
- },
- {
   "run_id": "wf-2026-11-12-q0.5",
   "kind": "walkforward",
   "label": "Agent walk-forward, queue 0.5x (optimistic)",
@@ -46,6 +34,18 @@ window.RUN_INDEX = [
    "SKLUSDT"
   ],
   "n_days": 53
+ },
+ {
+  "run_id": "pub-verdict",
+  "kind": "walkforward",
+  "label": "Verdict: 60-day queue-aware test, 3 coins",
+  "built_utc": "2026-11-12 12:31",
+  "symbols": [
+   "ANKRUSDT",
+   "COTIUSDT",
+   "SKLUSDT"
+  ],
+  "n_days": 60
  },
  {
   "run_id": "qb-2026-11-12",

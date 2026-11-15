@@ -24,7 +24,7 @@ from __future__ import annotations
 import math
 from bisect import bisect_right
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Mapping, Optional
 
 from mm.queue_sim import Action, MarketState
 
@@ -133,8 +133,13 @@ class EdgePolicy:
     z: float = 1.0
     gamma_bp: float = 1.0
     name: str = "Edge"
+    q_max: Optional[int] = None              # at |q| >= q_max the reducing side always JOINs (reduce-only)
 
     def _side(self, feat, side: int, q: int) -> Action:
+        if self.q_max is not None and side * q <= -self.q_max:
+            # At the cap the other side is blocked, so if this side also stays OUT the position can never
+            # unwind (the ETH deadlock of 2026-11-13..15). Quote it whatever the table's edge says.
+            return Action.JOIN
         threshold = self.e_min_bp + side * self.gamma_bp * q
         bucket = self.table.bucket(feat, side)
         best, best_score = Action.OUT, 0.0
