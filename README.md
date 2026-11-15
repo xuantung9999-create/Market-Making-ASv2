@@ -30,14 +30,13 @@ A market-making stack on Binance spot, from the Avellaneda & Stoikov (2008) pape
 
 Over 500 tests. The page (`dashboard/`, no build step) is one case study read top to bottom; Python writes every number and sentence on it (`scripts/build_story.py`, `mm/report.py`).
 
-<!-- DRAFT: owner to edit, then delete this line -->
-> **What I did myself** (draft for the owner to edit)
+> **What I did myself**
 >
-> - Framed the question: does the one-day +16 bp micro-cap edge survive a queue model, latency and fees, or was it an artefact of a simulator with no queue?
-> - Fixed Gate A's five pass conditions, the 7-day warm-up and the "if it fails, say so and stop, do not tune" rule before the 60-day run (`docs/BUILD_GUIDE.md`, Task 8).
-> - Wrote the working rules every build follows: a spec per piece of work, tests first, one task per session, when to stop and ask (`docs/BUILD_GUIDE.md` section 3, the `docs/*_SPEC.md` files).
-> - Reviewed each task against its spec; the rulings and test counts are logged in `docs/progress/v2_ledger.md`.
-> - Decided to stop at the negative result and publish it, and fixed the v2.1 pass rules before any of its data exists (`docs/SPEC_V2_1.md`).
+> - **Framed the question:** does the one-day +16 bp micro-cap edge survive a queue model, latency and fees?
+> - **Set the pass/fail rules first:** Gate A's five conditions, the 7-day warm-up and "if it fails, stop, don't tune", all fixed before the 60-day run (`docs/BUILD_GUIDE.md`, Task 8).
+> - **Wrote the specs and working rules** every build followed: a spec per task, tests first, one task per session (`docs/BUILD_GUIDE.md` section 3, the `docs/*_SPEC.md` files).
+> - **Reviewed every task** against its spec (rulings in `docs/progress/v2_ledger.md`).
+> - **Called the result:** stopped at the negative finding, published it, and fixed the v2.1 rules before any of its data exists (`docs/SPEC_V2_1.md`).
 
 ## How it was built
 

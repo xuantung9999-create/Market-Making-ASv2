@@ -131,13 +131,13 @@ def test_every_image_and_file_link_resolves(doc):
     assert not bad, f"{doc}: {bad}"
 
 
-def test_readme_leads_with_the_live_url_and_keeps_the_draft_marker_for_the_owner():
+def test_readme_leads_with_the_live_url_and_has_the_owner_approved_box():
     text = (ROOT / "README.md").read_text(encoding="utf-8")
     from scripts.publish_dashboard import PUBLIC_URL
     first = [ln for ln in text.splitlines() if ln.strip()][1]                 # the line under the title
     assert PUBLIC_URL in first and first.startswith("**Live page")
-    assert "<!-- DRAFT" in text and "What I did myself" in text
-    assert text.index("<!-- DRAFT") < text.index("What I did myself")
+    # the owner chose the wording of the box on 15 Nov 2026, so the draft marker (which blocks deploy) is gone
+    assert "What I did myself" in text and "<!-- DRAFT" not in text and "draft for the owner" not in text
     assert "SITE block" not in text and "## Dashboard" not in text
     assert "notes/HISTORY.md" in text
 
