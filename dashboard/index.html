@@ -399,7 +399,7 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
     <span class="nav-sep" aria-hidden="true"></span><span class="nav-group">Evidence</span>
     <a href="#verdict" data-tab="verdict">Verdict</a>
     <a href="#fills" data-tab="fills">Fill economics</a>
-    <a href="#agent" data-tab="agent">Agent</a>
+    <a href="#backtests" data-tab="backtests">Backtests</a>
     <a href="#exec-test" data-tab="exec-test">Execution test</a>
     <span class="nav-sep" aria-hidden="true"></span>
     <details class="appendix" id="appendix-menu">
@@ -628,44 +628,60 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
   </section>
   </div>
 
-  <div class="tab-wrap" data-tab="agent">
-  <div class="subtabs" id="sub-agent" role="tablist"></div>
-  <section class="view" id="view-model-health">
-    <p class="desk-msg" id="desk-msg-model-health" hidden></p>
-    <div id="desk-body-model-health">
-      <h1 class="page-title">The agent</h1>
-      <p class="verdict-line" id="ag-headline" hidden></p>
-      <p class="view-intro">Is the model still right about itself? What the agent learned a fill is worth in each market state, whether its predictions come true, and which setting it ran.</p>
-      <div class="card"><h2>Edge table</h2><p class="sub">Learned net edge per fill (bp, after fee) by book imbalance (rows) and volatility (columns). * = fewer than 30 fills. Red means quoting there loses money. Colour scale fixed at ±20 bp.</p><div class="edge-grid" id="md-edge"></div></div>
-      <div class="grid g2" style="margin-top:16px">
-        <div class="card"><h2>Predicted vs realised edge</h2><p class="sub">5 equal-size bins of predicted net edge; below the diagonal = too optimistic</p><div class="chart" id="md-calib"></div></div>
-        <div class="card"><h2>Live setting over time</h2><p class="sub" id="md-arms-sub">Which of the 12 menu entries the agent followed</p><div class="chart" id="md-arms"></div></div>
-      </div>
-      <div class="card" style="margin-top:16px"><h2>Arm scores</h2><p class="sub">Latest decayed scores of the 12 settings</p><div class="table-wrap" id="md-scores"></div></div>
+  <div class="tab-wrap" data-tab="backtests">
+  <div class="subtabs" id="sub-backtests" role="tablist"></div>
+  <section class="view" id="view-backtest">
+    <p class="view-intro">Event-driven backtest on the real trades (<span class="mono">mm/backtest.py</span>): 100 ms bars, requote every 500 ms, 50 ms latency, 0.001 BTC per fill, inventory cap ±10 lots. A quote fills only when a trade prints <b>strictly beyond</b> it (pessimistic) or, in the optimistic case, <b>at</b> it. A-S uses k = 0.15 fitted on 9 Nov, so 10 Nov is out of sample, with a horizon that resets every hour.</p>
+    <div class="daybar" id="bt-bar"></div>
+    <div class="callout" id="bt-callout"></div>
+    <div class="card"><h2>Results by strategy</h2><p class="sub">P&amp;L in USDT for one day. Net P&amp;L applies the maker fee selected above to every fill.</p><div class="table-wrap"><table id="bt-table"></table></div></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h2>P&amp;L through the day</h2><p class="sub">Before fees, marked to the mid every 5 minutes.</p><div class="chart" id="ch-bt-pnl"></div></div>
+      <div class="card"><h2>Where the P&amp;L came from</h2><p class="sub">Spread capture (earned at the fill) vs inventory P&amp;L (price moves while holding). Inventory losses dominate everywhere.</p><div class="chart" id="ch-bt-attr"></div></div>
+      <div class="card"><h2>Markouts: what a fill is worth after it happens</h2><p class="sub">Average of side × (mid h seconds later − fill price), in bp. Falling below zero is adverse selection.</p><div class="chart" id="ch-bt-mk"></div></div>
+      <div class="card"><h2>Time spent at each inventory level</h2><p class="sub">Share of minutes. A-S with higher γ stays near zero; fixed spreads pile up at the cap.</p><div class="chart" id="ch-bt-inv"></div></div>
     </div>
   </section>
-  <section class="view" id="view-signals">
-    <p class="desk-msg" id="desk-msg-signals" hidden></p>
-    <div id="desk-body-signals">
-      <p class="view-intro">Do the model's inputs still predict? Net edge per fill by book imbalance and by volatility, pooled over the selected coins and weighted by fills.</p>
-      <div class="grid g2">
-        <div class="card"><h2>By book imbalance</h2><p class="sub">Net edge per fill (bp, after fee), ±1.96 se; hollow = fewer than 30 fills</p><div class="chart short" id="sg-imb"></div></div>
-        <div class="card"><h2>By volatility</h2><p class="sub">Net edge per fill (bp, after fee), ±1.96 se; hollow = fewer than 30 fills</p><div class="chart short" id="sg-vol"></div></div>
-      </div>
+  <section class="view" id="view-universe">
+    <p class="view-intro">Twelve Binance spot coins, sorted into tiers by <b>measured</b> USD volume per day (large &gt; $500M, mid $50–500M, small $5–50M, micro &lt; $5M). Each coin is calibrated on 9 Nov (<span class="mono">mm/calibrate.py</span>) and backtested out of sample on 10 Nov with $100 per fill and a $1,000 inventory limit. Click a column header to sort.</p>
+    <div class="daybar" id="uni-bar"></div>
+    <div class="callout" id="uni-callout"></div>
+    <div class="card"><h2>Calibration and result by coin</h2><p class="sub">Calibration from day 1. Result columns: best strategy on day 2 under the selected fill rule and fee.</p><div class="table-wrap"><table id="uni-table"></table></div></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><div class="card-head"><div><h2>Does a wider spread pay?</h2><p class="sub">P&amp;L per dollar traded vs typical spread, for one strategy across all coins.</p></div><select id="uni-strat" aria-label="Strategy"></select></div><div class="chart" id="ch-uni-scatter"></div></div>
+      <div class="card"><h2>How far fills reach, by coin</h2><p class="sub">Fill intensity vs distance from the mid in bp (log scale). Click legend entries to show or hide coins.</p><div class="chart" id="ch-uni-fill"></div></div>
     </div>
+    <div class="card" style="margin-top:16px"><div class="card-head"><div><h2>One coin in detail</h2><p class="sub">Day-2 P&amp;L of each strategy, and markouts of its fills against random entry times (the dashed line should sit near zero).</p></div><select id="uni-coin" aria-label="Coin"></select></div>
+      <div class="grid g2"><div class="chart" id="ch-uni-pnl"></div><div class="chart" id="ch-uni-mk"></div></div></div>
+    <div class="card" style="margin-top:16px"><h2>What changes from BTC to micro caps</h2>
+      <div class="table-wrap"><table class="advice">
+        <thead><tr><th scope="col">Topic</th><th scope="col">BTC (large)</th><th scope="col">Small cap</th><th scope="col">Micro cap</th></tr></thead>
+        <tbody>
+          <tr><td>Quote size</td><td>Base units</td><td>In USD, and as a % of daily volume</td><td>Tiny: $100 can be a visible share of an hour's volume</td></tr>
+          <tr><td>Inventory limit</td><td>Easy to exit</td><td>In USD and by time to liquidate</td><td>By time to liquidate (hours); assume you cannot exit fast</td></tr>
+          <tr><td>Hedging</td><td>Perpetual futures</td><td>Sometimes a thin perp</td><td>Usually none: higher γ, larger skew</td></tr>
+          <tr><td>Price grid</td><td>Sub-bp tick, smooth skew</td><td>1–6 bp tick, skew in steps</td><td>10–30 bp tick: skew by pulling a side or by size</td></tr>
+          <tr><td>What wins</td><td>Speed and fees</td><td>Spread vs adverse selection, flow signals</td><td>Queue priority at a tick-wide spread</td></tr>
+          <tr><td>Calibration</td><td>One day is enough</td><td>Several days; core vs tail fill curve</td><td>Too few trades for k; use tick and spread</td></tr>
+          <tr><td>Volatility</td><td>Smooth intraday regimes</td><td>Jumps and pumps</td><td>Regime changes: needs a kill switch</td></tr>
+          <tr><td>Operational</td><td>Stable listing</td><td>Delistings happen</td><td>Real delisting risk: 5 of 17 candidates were gone</td></tr>
+        </tbody></table></div>
+      <p class="note">Full write-up: <span class="mono">notes/day8_small_caps.md</span>.</p></div>
   </section>
-  <section class="view" id="view-lv-model">
-    <p class="view-intro">What was the model thinking? Which arm was live, what edge it predicted, and why it stayed out.</p>
-    <p class="verdict" id="lvm-fixed" hidden></p>
-    <div id="lvm-body">
-      <div class="card" id="lvc-agent"></div>
-      <div class="card"><h2>Live arm</h2><p class="sub" id="lvm-strip-sub"></p><div class="chart lv-strip" id="lvm-strip"></div><div class="table-wrap" id="lvm-arms"></div></div>
-      <div class="grid g2 lv-gap">
-        <div class="card"><h2>Arm scores over time</h2><p class="sub" id="lvm-scores-sub"></p><div class="chart short2" id="lvm-scores"></div></div>
-        <div class="card"><h2>Predicted against realised edge</h2><p class="sub" id="lvm-calib-sub"></p><div class="chart short2" id="lvm-calib"></div></div>
-      </div>
-      <div class="card lv-gap"><h2>Why it stayed out</h2><p class="sub" id="lvm-why"></p></div>
+  <section class="view" id="view-tuning">
+    <p class="view-intro">Days 9–10. A <b>parameter sweep</b> over 48 out-of-sample coin-days (A-S vs the infinite-horizon <b>GLFT</b> model, inventory skew, kill-switch strength), tuning that only looks at past days, the cost of slow quotes, <b>cross-asset signals</b> from BTC spot and the BTC perpetual future, and what 50 minutes of the <b>live order book</b> showed.</p>
+    <div class="callout" id="tun-callout"></div>
+    <div class="grid g2">
+      <div class="card"><div class="card-head"><div><h2>Parameter sweep</h2><p class="sub">Total over 48 coin-days. Skew 1× = max(10 bp, 2 spreads) at full inventory.</p></div>
+        <div class="btn-row" id="tun-ctl"></div></div><div class="chart" id="ch-tun-heat"></div></div>
+      <div class="card"><h2>Tuning on the past only</h2><p class="sub">Test days 2–4. Each day uses the setting that did best on the earlier test days.</p><div class="chart" id="ch-tun-tune"></div></div>
+      <div class="card"><h2>Slow quotes get picked off</h2><p class="sub">Default setting, P&amp;L per dollar traded vs requote interval and latency. Your PC measured ~285 ms to Binance.</p><div class="chart" id="ch-tun-speed"></div></div>
+      <div class="card"><h2>Do BTC and the perpetual future lead?</h2><p class="sub">Out-of-sample correlation with the next 10 s move, own flow vs adding BTC spot and BTC perp flow.</p><div class="chart" id="ch-tun-lead"></div></div>
     </div>
+    <div class="card" style="margin-top:16px"><h2>Live order book (50 minutes of BTCUSDT from the recorder)</h2><p class="sub" id="tun-book-sub"></p>
+      <div class="tiles" id="tun-book-tiles" style="margin-top:8px"></div>
+      <div class="grid g2"><div class="chart" id="ch-tun-book-corr"></div><div class="chart" id="ch-tun-book-dec"></div></div></div>
+    <p class="note">Full write-up: <span class="mono">notes/day10_tuning_signals.md</span>.</p>
   </section>
   </div>
 
@@ -785,44 +801,6 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
       <div class="card" id="live-card" hidden><h2>Live order book snapshot</h2><p class="sub" id="live-sub"></p><div class="chart short" id="ch-live"></div></div>
     </div>
   </section>
-  <section class="view" id="view-backtest">
-    <p class="view-intro">Event-driven backtest on the real trades (<span class="mono">mm/backtest.py</span>): 100 ms bars, requote every 500 ms, 50 ms latency, 0.001 BTC per fill, inventory cap ±10 lots. A quote fills only when a trade prints <b>strictly beyond</b> it (pessimistic) or, in the optimistic case, <b>at</b> it. A-S uses k = 0.15 fitted on 9 Nov, so 10 Nov is out of sample, with a horizon that resets every hour.</p>
-    <div class="daybar" id="bt-bar"></div>
-    <div class="callout" id="bt-callout"></div>
-    <div class="card"><h2>Results by strategy</h2><p class="sub">P&amp;L in USDT for one day. Net P&amp;L applies the maker fee selected above to every fill.</p><div class="table-wrap"><table id="bt-table"></table></div></div>
-    <div class="grid g2" style="margin-top:16px">
-      <div class="card"><h2>P&amp;L through the day</h2><p class="sub">Before fees, marked to the mid every 5 minutes.</p><div class="chart" id="ch-bt-pnl"></div></div>
-      <div class="card"><h2>Where the P&amp;L came from</h2><p class="sub">Spread capture (earned at the fill) vs inventory P&amp;L (price moves while holding). Inventory losses dominate everywhere.</p><div class="chart" id="ch-bt-attr"></div></div>
-      <div class="card"><h2>Markouts: what a fill is worth after it happens</h2><p class="sub">Average of side × (mid h seconds later − fill price), in bp. Falling below zero is adverse selection.</p><div class="chart" id="ch-bt-mk"></div></div>
-      <div class="card"><h2>Time spent at each inventory level</h2><p class="sub">Share of minutes. A-S with higher γ stays near zero; fixed spreads pile up at the cap.</p><div class="chart" id="ch-bt-inv"></div></div>
-    </div>
-  </section>
-  <section class="view" id="view-universe">
-    <p class="view-intro">Twelve Binance spot coins, sorted into tiers by <b>measured</b> USD volume per day (large &gt; $500M, mid $50–500M, small $5–50M, micro &lt; $5M). Each coin is calibrated on 9 Nov (<span class="mono">mm/calibrate.py</span>) and backtested out of sample on 10 Nov with $100 per fill and a $1,000 inventory limit. Click a column header to sort.</p>
-    <div class="daybar" id="uni-bar"></div>
-    <div class="callout" id="uni-callout"></div>
-    <div class="card"><h2>Calibration and result by coin</h2><p class="sub">Calibration from day 1. Result columns: best strategy on day 2 under the selected fill rule and fee.</p><div class="table-wrap"><table id="uni-table"></table></div></div>
-    <div class="grid g2" style="margin-top:16px">
-      <div class="card"><div class="card-head"><div><h2>Does a wider spread pay?</h2><p class="sub">P&amp;L per dollar traded vs typical spread, for one strategy across all coins.</p></div><select id="uni-strat" aria-label="Strategy"></select></div><div class="chart" id="ch-uni-scatter"></div></div>
-      <div class="card"><h2>How far fills reach, by coin</h2><p class="sub">Fill intensity vs distance from the mid in bp (log scale). Click legend entries to show or hide coins.</p><div class="chart" id="ch-uni-fill"></div></div>
-    </div>
-    <div class="card" style="margin-top:16px"><div class="card-head"><div><h2>One coin in detail</h2><p class="sub">Day-2 P&amp;L of each strategy, and markouts of its fills against random entry times (the dashed line should sit near zero).</p></div><select id="uni-coin" aria-label="Coin"></select></div>
-      <div class="grid g2"><div class="chart" id="ch-uni-pnl"></div><div class="chart" id="ch-uni-mk"></div></div></div>
-    <div class="card" style="margin-top:16px"><h2>What changes from BTC to micro caps</h2>
-      <div class="table-wrap"><table class="advice">
-        <thead><tr><th scope="col">Topic</th><th scope="col">BTC (large)</th><th scope="col">Small cap</th><th scope="col">Micro cap</th></tr></thead>
-        <tbody>
-          <tr><td>Quote size</td><td>Base units</td><td>In USD, and as a % of daily volume</td><td>Tiny: $100 can be a visible share of an hour's volume</td></tr>
-          <tr><td>Inventory limit</td><td>Easy to exit</td><td>In USD and by time to liquidate</td><td>By time to liquidate (hours); assume you cannot exit fast</td></tr>
-          <tr><td>Hedging</td><td>Perpetual futures</td><td>Sometimes a thin perp</td><td>Usually none: higher γ, larger skew</td></tr>
-          <tr><td>Price grid</td><td>Sub-bp tick, smooth skew</td><td>1–6 bp tick, skew in steps</td><td>10–30 bp tick: skew by pulling a side or by size</td></tr>
-          <tr><td>What wins</td><td>Speed and fees</td><td>Spread vs adverse selection, flow signals</td><td>Queue priority at a tick-wide spread</td></tr>
-          <tr><td>Calibration</td><td>One day is enough</td><td>Several days; core vs tail fill curve</td><td>Too few trades for k; use tick and spread</td></tr>
-          <tr><td>Volatility</td><td>Smooth intraday regimes</td><td>Jumps and pumps</td><td>Regime changes: needs a kill switch</td></tr>
-          <tr><td>Operational</td><td>Stable listing</td><td>Delistings happen</td><td>Real delisting risk: 5 of 17 candidates were gone</td></tr>
-        </tbody></table></div>
-      <p class="note">Full write-up: <span class="mono">notes/day8_small_caps.md</span>.</p></div>
-  </section>
   <section class="view" id="view-informed">
     <p class="view-intro">Real fills lose 1.5–10 bp within a minute while random entries lose nothing: that gap is <b>adverse selection</b>, trading against people who know more. This tab tests defences <b>walk-forward</b>: for each of 4 test days, everything is calibrated on the 3 days before it, then the strategy trades a day it has never seen. 12 coins × 4 days = 48 out-of-sample coin-days.</p>
     <div class="levers" id="levers"></div>
@@ -835,20 +813,42 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
     </div>
     <div class="card" style="margin-top:16px"><div class="card-head"><div><h2>One coin across the 4 test days</h2><p class="sub">Cumulative P&amp;L before fees, days placed end to end (dotted lines mark midnight UTC).</p></div><select id="inf-coin" aria-label="Coin"></select></div><div class="chart" id="ch-inf-curve"></div></div>
   </section>
-  <section class="view" id="view-tuning">
-    <p class="view-intro">Days 9–10. A <b>parameter sweep</b> over 48 out-of-sample coin-days (A-S vs the infinite-horizon <b>GLFT</b> model, inventory skew, kill-switch strength), tuning that only looks at past days, the cost of slow quotes, <b>cross-asset signals</b> from BTC spot and the BTC perpetual future, and what 50 minutes of the <b>live order book</b> showed.</p>
-    <div class="callout" id="tun-callout"></div>
-    <div class="grid g2">
-      <div class="card"><div class="card-head"><div><h2>Parameter sweep</h2><p class="sub">Total over 48 coin-days. Skew 1× = max(10 bp, 2 spreads) at full inventory.</p></div>
-        <div class="btn-row" id="tun-ctl"></div></div><div class="chart" id="ch-tun-heat"></div></div>
-      <div class="card"><h2>Tuning on the past only</h2><p class="sub">Test days 2–4. Each day uses the setting that did best on the earlier test days.</p><div class="chart" id="ch-tun-tune"></div></div>
-      <div class="card"><h2>Slow quotes get picked off</h2><p class="sub">Default setting, P&amp;L per dollar traded vs requote interval and latency. Your PC measured ~285 ms to Binance.</p><div class="chart" id="ch-tun-speed"></div></div>
-      <div class="card"><h2>Do BTC and the perpetual future lead?</h2><p class="sub">Out-of-sample correlation with the next 10 s move, own flow vs adding BTC spot and BTC perp flow.</p><div class="chart" id="ch-tun-lead"></div></div>
+  <section class="view" id="view-model-health">
+    <p class="desk-msg" id="desk-msg-model-health" hidden></p>
+    <div id="desk-body-model-health">
+      <h1 class="page-title">The agent</h1>
+      <p class="verdict-line" id="ag-headline" hidden></p>
+      <p class="view-intro">Is the model still right about itself? What the agent learned a fill is worth in each market state, whether its predictions come true, and which setting it ran.</p>
+      <div class="card"><h2>Edge table</h2><p class="sub">Learned net edge per fill (bp, after fee) by book imbalance (rows) and volatility (columns). * = fewer than 30 fills. Red means quoting there loses money. Colour scale fixed at ±20 bp.</p><div class="edge-grid" id="md-edge"></div></div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card"><h2>Predicted vs realised edge</h2><p class="sub">5 equal-size bins of predicted net edge; below the diagonal = too optimistic</p><div class="chart" id="md-calib"></div></div>
+        <div class="card"><h2>Live setting over time</h2><p class="sub" id="md-arms-sub">Which of the 12 menu entries the agent followed</p><div class="chart" id="md-arms"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>Arm scores</h2><p class="sub">Latest decayed scores of the 12 settings</p><div class="table-wrap" id="md-scores"></div></div>
     </div>
-    <div class="card" style="margin-top:16px"><h2>Live order book (50 minutes of BTCUSDT from the recorder)</h2><p class="sub" id="tun-book-sub"></p>
-      <div class="tiles" id="tun-book-tiles" style="margin-top:8px"></div>
-      <div class="grid g2"><div class="chart" id="ch-tun-book-corr"></div><div class="chart" id="ch-tun-book-dec"></div></div></div>
-    <p class="note">Full write-up: <span class="mono">notes/day10_tuning_signals.md</span>.</p>
+  </section>
+  <section class="view" id="view-signals">
+    <p class="desk-msg" id="desk-msg-signals" hidden></p>
+    <div id="desk-body-signals">
+      <p class="view-intro">Do the model's inputs still predict? Net edge per fill by book imbalance and by volatility, pooled over the selected coins and weighted by fills.</p>
+      <div class="grid g2">
+        <div class="card"><h2>By book imbalance</h2><p class="sub">Net edge per fill (bp, after fee), ±1.96 se; hollow = fewer than 30 fills</p><div class="chart short" id="sg-imb"></div></div>
+        <div class="card"><h2>By volatility</h2><p class="sub">Net edge per fill (bp, after fee), ±1.96 se; hollow = fewer than 30 fills</p><div class="chart short" id="sg-vol"></div></div>
+      </div>
+    </div>
+  </section>
+  <section class="view" id="view-lv-model">
+    <p class="view-intro">What was the model thinking? Which arm was live, what edge it predicted, and why it stayed out.</p>
+    <p class="verdict" id="lvm-fixed" hidden></p>
+    <div id="lvm-body">
+      <div class="card" id="lvc-agent"></div>
+      <div class="card"><h2>Live arm</h2><p class="sub" id="lvm-strip-sub"></p><div class="chart lv-strip" id="lvm-strip"></div><div class="table-wrap" id="lvm-arms"></div></div>
+      <div class="grid g2 lv-gap">
+        <div class="card"><h2>Arm scores over time</h2><p class="sub" id="lvm-scores-sub"></p><div class="chart short2" id="lvm-scores"></div></div>
+        <div class="card"><h2>Predicted against realised edge</h2><p class="sub" id="lvm-calib-sub"></p><div class="chart short2" id="lvm-calib"></div></div>
+      </div>
+      <div class="card lv-gap"><h2>Why it stayed out</h2><p class="sub" id="lvm-why"></p></div>
+    </div>
   </section>
   </div>
 
@@ -917,6 +917,7 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
 <script src="js/views/story.js"></script>
 <script src="js/live.js"></script>
 <script src="js/live_sessions.js"></script>
+<script src="js/fill_tape.js"></script>
 <script src="js/views/lv_overview.js"></script>
 <script src="js/views/lv_chart.js"></script>
 <script src="js/views/lv_pnl.js"></script>

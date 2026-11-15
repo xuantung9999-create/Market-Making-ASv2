@@ -98,7 +98,7 @@ def _tree():
     return t
 
 
-NAV_TABS = ["story", "verdict", "fills", "agent", "exec-test"]            # showcase spec section 5: Story, then Evidence
+NAV_TABS = ["story", "verdict", "fills", "backtests", "exec-test"]           # showcase spec section 5: Story, then Evidence
 APPENDIX_HREFS = ["#pnl", "#risk", "#book", "#book/market", "#data/health", "#data/simlive", "#simulator", "#archive",
                   "#about", "#l-health"]
 WRAPPERS = set(NAV_TABS) | {"l-health", "book", "pnl", "risk", "data", "simulator", "archive", "about"}
@@ -150,7 +150,7 @@ def test_every_nav_link_points_at_a_tab_wrapper_and_every_view_is_in_one():
         assert t.under[f"view-{v}"], f"view-{v} is not inside a tab"
     for v in ("lv-overview", "lv-pnl", "lv-exec"):
         assert t.under[f"view-{v}"] == ["exec-test"], v
-    assert t.under["view-lv-model"] == ["agent"] and t.under["view-execution"] == ["fills"] and t.under["view-overview"] == ["verdict"]
+    assert t.under["view-lv-model"] == ["archive"] and t.under["view-backtest"] == ["backtests"] and t.under["view-execution"] == ["fills"] and t.under["view-overview"] == ["verdict"]
 
 
 def test_every_old_hash_resolves_in_core_js():
@@ -161,8 +161,8 @@ def test_every_old_hash_resolves_in_core_js():
     for tab in WRAPPERS:
         assert f'"{tab}":' in core, tab
     # the tab keys that disappeared are aliases of their new place; the empty hash lands on the Story
-    for old, new in {"overview": "verdict", "execution": "fills", "model-health": "agent", "l-overview": "exec-test",
-                     "l-pnl": "exec-test/pnl", "l-exec": "exec-test/tape", "l-model": "agent/lv-model"}.items():
+    for old, new in {"overview": "verdict", "execution": "fills", "agent": "archive/model-health", "l-overview": "exec-test",
+                     "l-pnl": "exec-test/pnl", "l-exec": "exec-test/tape", "l-model": "archive/lv-model"}.items():
         assert f'"{old}": "{new}"' in core, old
     assert 'DEFAULT_VIEW = { tab: "story", view: "story" }' in core and 'show(location.hash || "#" + DEFAULT_VIEW.tab)' in core
 
@@ -177,25 +177,26 @@ def test_hash_map_resolves_every_old_hash_under_node():
     const hs = JSON.parse(process.argv[1]);
     console.log(JSON.stringify(hs.map(h => resolveHash(h))));
     """
-    hashes = ["", "#story", "#" + "#".join(OLD_HASHES[:0])] + ["#" + h for h in OLD_HASHES] + ["#exec-test/tape", "#model-health/signals", "#agent/lv-model", "#nonsense"]
+    hashes = ["", "#story", "#" + "#".join(OLD_HASHES[:0])] + ["#" + h for h in OLD_HASHES] + ["#exec-test/tape", "#agent", "#backtests", "#agent/lv-model", "#nonsense"]
     r = subprocess.run(["node", "-e", script, json.dumps(hashes)], capture_output=True, text=True, timeout=30)
     assert r.returncode == 0, r.stderr
     got = dict(zip(hashes, json.loads(r.stdout)))
     assert got[""]["tab"] == "story" and got["#nonsense"]["tab"] == "story"
     assert (got["#overview"]["tab"], got["#overview"]["view"]) == ("verdict", "overview")
     assert (got["#execution"]["tab"], got["#execution"]["view"]) == ("fills", "execution")
-    assert (got["#model-health"]["tab"], got["#model-health"]["view"]) == ("agent", "model-health")
-    assert (got["#model-health/signals"]["tab"], got["#model-health/signals"]["view"]) == ("agent", "signals")
+    assert (got["#model-health"]["tab"], got["#model-health"]["view"]) == ("archive", "model-health")
+    assert (got["#agent"]["tab"], got["#agent"]["view"]) == ("archive", "model-health")     # the Story's "See the evidence" link
+    assert (got["#backtests"]["tab"], got["#backtests"]["view"]) == ("backtests", "backtest")
     assert (got["#l-overview"]["tab"], got["#l-overview"]["view"]) == ("exec-test", "lv-overview")
     # S6: the Execution test is one page; the old exec and P&L pages are sections of it
     assert (got["#l-exec"]["tab"], got["#l-exec"]["view"], got["#l-exec"]["section"]) == ("exec-test", "lv-overview", "tape")
     assert (got["#l-pnl"]["tab"], got["#l-pnl"]["view"], got["#l-pnl"]["section"]) == ("exec-test", "lv-overview", "pnl")
-    assert (got["#l-model"]["tab"], got["#l-model"]["view"]) == ("agent", "lv-model")
-    assert (got["#agent/lv-model"]["tab"], got["#agent/lv-model"]["view"]) == ("agent", "lv-model")
+    assert (got["#l-model"]["tab"], got["#l-model"]["view"]) == ("archive", "lv-model")
+    assert (got["#agent/lv-model"]["tab"], got["#agent/lv-model"]["view"]) == ("archive", "lv-model")
     assert (got["#l-health"]["tab"], got["#l-health"]["view"]) == ("l-health", "live")
     for old in ("signals", "market", "model", "replication", "real-data", "pnl", "risk", "book", "data", "simulator", "archive", "about"):
         assert got["#" + old]["tab"] in WRAPPERS, old
-    assert got["#model"]["tab"] == "simulator" and got["#market"]["tab"] == "book" and got["#signals"]["tab"] == "agent"
+    assert got["#model"]["tab"] == "simulator" and got["#market"]["tab"] == "book" and got["#signals"]["tab"] == "archive"
     assert (got["#exec-test/tape"]["tab"], got["#exec-test/tape"]["section"]) == ("exec-test", "tape")
 
 
@@ -414,7 +415,7 @@ def test_agent_page_has_its_sentence_and_the_paper_sessions_have_their_own_selec
     assert 'id="ag-headline"' in html and "ag-headline" in (DASH / "js" / "views" / "model.js").read_text(encoding="utf-8")
     ls = (DASH / "js" / "live_sessions.js").read_text(encoding="utf-8")
     assert 'v === "lv-model" ? "paper" : "testnet"' in ls and "mine.some" in ls
-    assert 'tab-wrap" data-tab="agent"' in html or '"agent"' in (DASH / "js" / "core.js").read_text(encoding="utf-8")
+    assert '"agent": "archive/model-health"' in (DASH / "js" / "core.js").read_text(encoding="utf-8")
 
 
 # ---- showcase S6: the Execution test is one page in the order of spec section 7

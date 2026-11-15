@@ -116,7 +116,7 @@ const TABS = {
   "story":        { label: "Story", views: ["story"] },
   "verdict":      { label: "Verdict", views: ["overview"] },
   "fills":        { label: "Fill economics", views: ["execution"] },
-  "agent":        { label: "Agent", views: [["model-health", "Edge table"], ["signals", "Signals"], ["lv-model", "Live on real data"]] },
+  "backtests":    { label: "Backtests", views: [["backtest", "A-S on BTC"], ["universe", "BTC to micro caps"], ["tuning", "Tuning and signals"]] },
   "exec-test":    { label: "Execution test", views: ["lv-overview"] },       // one page; its P&L and tape are sections (#exec-test/pnl, #exec-test/tape)
   "l-health":     { label: "Operations", views: [["live", "Market feed"], ["pcstatus", "PC status"]] },
   "book":         { label: "Market book", views: [["book", "Order book"], ["market", "Universe"]] },
@@ -124,19 +124,20 @@ const TABS = {
   "risk":         { label: "Risk", views: ["risk"] },
   "data":         { label: "Data", views: [["health", "Recorder health"], ["simlive", "Sim vs live"]] },
   "simulator":    { label: "Simulator", views: [["simulator", "Playground"], ["model", "How it quotes"], ["replication", "Paper replication"]] },
-  "archive":      { label: "Research archive", views: [["real-data", "Real data"], ["backtest", "Backtest"], ["universe", "BTC to micro caps"],
-                                                       ["informed", "Informed traders"], ["tuning", "Tuning and signals"]] },
+  /* The agent pages moved here from the main nav: the agent never traded, so its tab was mostly empty. The Story still links to them. */
+  "archive":      { label: "Research archive", views: [["real-data", "Real data"], ["informed", "Informed traders"],
+                                                       ["model-health", "Agent edge table"], ["signals", "Agent signals"], ["lv-model", "Agent live"]] },
   "about":        { label: "Method and limits", views: ["about"] },
 };
 /* Old first hash segments that are no longer a tab key -> "tab" or "tab/view". */
 const ALIASES = {
-  "overview": "verdict", "execution": "fills", "model-health": "agent",
-  "l-overview": "exec-test", "l-pnl": "exec-test/pnl", "l-exec": "exec-test/tape", "l-model": "agent/lv-model",
+  "overview": "verdict", "execution": "fills", "agent": "archive/model-health",
+  "l-overview": "exec-test", "l-pnl": "exec-test/pnl", "l-exec": "exec-test/tape", "l-model": "archive/lv-model",
 };
 const viewIds = t => TABS[t].views.map(v => Array.isArray(v) ? v[0] : v);
 const VIEW_TAB = {};
 Object.keys(TABS).forEach(t => viewIds(t).forEach(v => { VIEW_TAB[v] = t; }));
-const EVIDENCE_TABS = ["verdict", "fills", "agent", "exec-test"];
+const EVIDENCE_TABS = ["verdict", "fills", "backtests", "exec-test"];
 const APPENDIX_TABS = ["pnl", "risk", "book", "data", "simulator", "archive", "about", "l-health"];
 const LIVE_VIEWS = ["lv-overview", "lv-pnl", "lv-exec", "lv-model"];     // the views that use the session selector and range buttons
 const DEFAULT_VIEW = { tab: "story", view: "story" };/* Quote-state palette, defined once. Green and red are reserved for profit and loss, bid blue and ask amber for

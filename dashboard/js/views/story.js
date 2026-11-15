@@ -178,32 +178,13 @@ function storyExecution(host, S) {
   storyAfter(sec, s.link);
 }
 
-/* The tape around one real fill: the touch, the trades, our orders, the fill and (when the fill has them) its markout ticks. */
+/* The tape around one real fill: the book around it on the left, the mid and its markouts after it on the right. */
 function storyTape(tp) {
-  const w = tp.window, f = tp.fill, T = w.touch, x = T.map(r => isoT(r[0]));
-  const tr = [
-    { type: "scatter", mode: "lines", name: "best bid", x, y: T.map(r => r[1]), line: { color: BID_C, width: 1.5, shape: "hv" }, hovertemplate: "%{y}<extra>bid</extra>" },
-    { type: "scatter", mode: "lines", name: "best ask", x, y: T.map(r => r[2]), line: { color: ASK_C, width: 1.5, shape: "hv" }, hovertemplate: "%{y}<extra>ask</extra>" },
-  ];
-  if (w.trades.length) tr.push({ type: "scatter", mode: "markers", name: "trades", x: w.trades.map(r => isoT(r[0])), y: w.trades.map(r => r[1]),
-    marker: { size: 4, color: w.trades.map(r => r[3] > 0 ? BID_C : ASK_C), opacity: 0.7 }, hovertemplate: "%{y}<extra>trade</extra>" });
-  const endDash = { fill: "solid", cancel: "dot", reject: "dash", open: "solid" };
-  w.orders.forEach((o, k) => tr.push({ type: "scatter", mode: "lines", name: "our orders", legendgroup: "orders", showlegend: k === 0, x: [isoT(o.t_place), isoT(o.t_end)], y: [o.price, o.price],
-    line: { color: o.side > 0 ? BID_C : ASK_C, width: 4, dash: endDash[o.end] || "solid" }, hovertemplate: `${o.side > 0 ? "buy" : "sell"} ${o.price}<extra>order</extra>` }));
-  tr.push({ type: "scatter", mode: "markers", name: "the fill", x: [isoT(f.t)], y: [f.price], marker: { symbol: "star", size: 16, color: f.artifact ? ART_C : C.text, line: { width: 1, color: C.panel } },
-    hovertemplate: `fill ${f.price}<extra></extra>` });
-  const shapes = [], ann = [];
-  STORY_HORIZONS.forEach((h, k) => {
-    const v = f["mk_" + h], at = f.t + h * 1000;
-    if (!isNum(v) || at > w.t1) return;
-    const y = 0.97 - 0.07 * (k % 3);
-    shapes.push({ type: "line", xref: "x", yref: "paper", x0: isoT(at), x1: isoT(at), y0: 0, y1: y, line: { color: C.line, width: 1, dash: "dot" } });
-    ann.push({ x: isoT(at), y, yref: "paper", text: `${h} s: ${sign(v, 1)} bp`, showarrow: false, xanchor: "left", font: { size: 10, color: C.muted } });
-  });
-  const ys = T.flatMap(r => [r[1], r[2]]).concat(w.trades.map(r => r[1]), w.orders.map(o => o.price), [f.price]);
-  const rng = typeof fitAxis === "function" ? fitAxis(ys) : null;
-  storyPlot("story-tape", tr, { shapes, annotations: ann, margin: { l: 70, r: 16, t: 10, b: 50 },
-    xaxis: axis("", { type: "date", range: [isoT(w.t0), isoT(w.t1)] }), yaxis: axis("price", rng ? { range: rng } : {}) });
+  const el = $("story-tape"), narrow = el && el.clientWidth > 0 && el.clientWidth < 640;
+  const fig = fillTapeFigure(tp.window, tp.fill, tp.t, { fixed: true, narrow });      // the shared two-panel tape (fill_tape.js)
+  if (el) el.style.height = fig.layout.height ? fig.layout.height + "px" : "";
+  Plotly.react("story-tape", fig.data, layout(Object.assign({ dragmode: false }, fig.layout)),
+               Object.assign({}, CONFIG, { displayModeBar: false, scrollZoom: false, doubleClick: false }));
 }
 
 function storyNext(host, S) {

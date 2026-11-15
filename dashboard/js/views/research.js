@@ -386,14 +386,14 @@ function drawBacktest() {
 /* ======================= Universe views ======================= */
 const TIER_C = { large: "#e2e8f0", mid: "#38bdf8", small: "#34d399", micro: "#f87171" };
 const UNI = { rule: "through", fee: 0, strat: "Join touch", coin: null, sort: null, asc: false };
-function drawUniverse() {
+function drawResearchUniverse() {
   const U = D.universe, bar = document.getElementById("uni-bar");
   if (!U) { bar.innerHTML = '<p class="note">No universe results yet. Run <span class="mono">python -m scripts.download_universe</span> and <span class="mono">python -m scripts.run_universe</span>.</p>'; return; }
   const coins = U.coins, btn = (a, v, l, on) => `<button type="button" data-${a}="${v}" aria-pressed="${on}">${l}</button>`;
   bar.innerHTML = '<span class="note">Fills:</span>' + btn("rule", "through", "strictly through (pessimistic)", UNI.rule === "through") + btn("rule", "touch", "at the price (first in queue)", UNI.rule === "touch") +
     '<span class="note" style="margin-left:12px">Maker fee:</span>' + [0, 2, 10].map(f => btn("fee", f, f + " bp", UNI.fee === f)).join("") +
     '<span style="margin-left:12px" class="note">Tiers:</span>' + Object.entries(TIER_C).map(([t, c]) => `<span class="tier" style="--c:${c}">${t}</span>`).join(" ");
-  bar.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { if (b.dataset.rule) UNI.rule = b.dataset.rule; if (b.dataset.fee !== undefined) UNI.fee = +b.dataset.fee; drawUniverse(); }));
+  bar.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { if (b.dataset.rule) UNI.rule = b.dataset.rule; if (b.dataset.fee !== undefined) UNI.fee = +b.dataset.fee; drawResearchUniverse(); }));
   const net = sm => sm.pnl + sm.fees - UNI.fee / 1e4 * sm.notional_usdt;
   const runsOf = c => c.runs.filter(r => r.fill_rule === UNI.rule);
   const bestOf = c => runsOf(c).reduce((a, b) => (net(b.summary) > net(a.summary) ? b : a));
@@ -413,12 +413,12 @@ function drawUniverse() {
   const tbl = document.getElementById("uni-table");
   tbl.innerHTML = "<thead><tr>" + cols.map(c => `<th scope="col" class="sortable" data-k="${c[0]}">${c[1]}${UNI.sort === c[0] ? (UNI.asc ? " ▲" : " ▼") : ""}</th>`).join("") + "</tr></thead><tbody>" +
     rows.map(r => "<tr>" + cols.map(c => `<td${c[0] === "pnl" ? ` style="color:${r.pnl > 0 ? "var(--good)" : "var(--ask)"}"` : ""}>${cell(r, c[0])}</td>`).join("") + "</tr>").join("") + "</tbody>";
-  tbl.querySelectorAll("th").forEach(th => th.addEventListener("click", () => { const k = th.dataset.k; UNI.asc = UNI.sort === k ? !UNI.asc : false; UNI.sort = k; drawUniverse(); }));
+  tbl.querySelectorAll("th").forEach(th => th.addEventListener("click", () => { const k = th.dataset.k; UNI.asc = UNI.sort === k ? !UNI.asc : false; UNI.sort = k; drawResearchUniverse(); }));
 
   const strats = [...new Set(coins.flatMap(c => c.runs.map(r => r.name.replace(" (k from spread)", ""))))];
   const ss = document.getElementById("uni-strat");
   ss.innerHTML = strats.map(x => `<option ${x === UNI.strat ? "selected" : ""}>${x}</option>`).join("");
-  ss.onchange = e => { UNI.strat = e.target.value; drawUniverse(); };
+  ss.onchange = e => { UNI.strat = e.target.value; drawResearchUniverse(); };
   const pts = coins.map(c => { const r = runsOf(c).find(x => x.name.replace(" (k from spread)", "") === UNI.strat); return r ? { c, r } : null; }).filter(Boolean);
   plot("ch-uni-scatter", Object.keys(TIER_C).map(t => { const p = pts.filter(x => x.c.tier === t);
     return { x: p.map(x => x.c.calibration[0].spread_bp), y: p.map(x => x.r.summary.pnl_bps_of_volume - UNI.fee), text: p.map(x => x.c.symbol.replace("USDT", "")), name: t,
@@ -434,7 +434,7 @@ function drawUniverse() {
   if (!UNI.coin) UNI.coin = (coins.find(c => c.symbol === "ANKRUSDT") || coins[0]).symbol;
   const cs = document.getElementById("uni-coin");
   cs.innerHTML = coins.map(c => `<option ${c.symbol === UNI.coin ? "selected" : ""}>${c.symbol}</option>`).join("");
-  cs.onchange = e => { UNI.coin = e.target.value; drawUniverse(); };
+  cs.onchange = e => { UNI.coin = e.target.value; drawResearchUniverse(); };
   const coin = coins.find(c => c.symbol === UNI.coin), R = runsOf(coin), pal = ["#cfd8dc", "#f5a524", "#38bdf8", "#a78bfa"];
   plot("ch-uni-pnl", R.map((r, i) => ({ x: r.pnl.t, y: r.pnl.v, name: r.name, mode: "lines", line: { color: pal[i % 4], width: 1.8 }, hovertemplate: "%{y:,.1f}" })),
        { xaxis: axis("UTC, day 2", { type: "date" }), yaxis: axis("P&L before fees (USD)"), legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", font: { size: 10 } } });
@@ -605,7 +605,7 @@ register("model", drawModel);
 register("replication", () => D && drawReplication());
 register("real-data", () => D && drawRealData());
 register("backtest", () => D && drawBacktest());
-register("universe", () => D && drawUniverse());
+register("universe", () => D && drawResearchUniverse());
 register("informed", () => D && drawInformed());
 register("tuning", () => D && drawTuning());
 register("about", () => { if (typeof drawAboutLimits === "function") drawAboutLimits(); });

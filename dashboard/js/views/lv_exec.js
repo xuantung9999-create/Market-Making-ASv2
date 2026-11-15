@@ -49,36 +49,11 @@ function paintTape(b, req, fill, inc, tape) {
     lvEmpty("lvx-tape", (tape && tape.note) ? tape.note : `No tape is stored around ${utcStamp(req.t)}: the file for that day is missing, or the event is outside the windows kept (60 s before to 300 s after each fill or incident).`);
     return;
   }
-  setSub("lvx-tape-sub", caption + (tape.note ? " " + tape.note : ""));
-  const T = win.touch, tr = [];
-  const x = T.map(r => isoT(r[0]));
-  tr.push({ type: "scatter", mode: "lines", name: "best bid", x, y: T.map(r => r[1]), line: { color: BID_C, width: 1.5, shape: "hv" }, hovertemplate: "%{y}<extra>bid</extra>" });
-  tr.push({ type: "scatter", mode: "lines", name: "best ask", x, y: T.map(r => r[2]), line: { color: ASK_C, width: 1.5, shape: "hv" }, hovertemplate: "%{y}<extra>ask</extra>" });
-  if (win.trades.length) tr.push({ type: "scatter", mode: "markers", name: "trades", x: win.trades.map(r => isoT(r[0])), y: win.trades.map(r => r[1]),
-    marker: { size: 4, color: win.trades.map(r => r[3] > 0 ? BID_C : ASK_C), opacity: 0.7 }, hovertemplate: "%{y} × %{customdata}<extra>trade</extra>", customdata: win.trades.map(r => r[2]) });
-  const endStyle = { fill: ["solid", 1], cancel: ["dot", 0.8], reject: ["dash", 0.8], open: ["solid", 0.5] };
-  win.orders.forEach((o, k) => tr.push({ type: "scatter", mode: "lines", name: "our orders", legendgroup: "orders", showlegend: k === 0, x: [isoT(o.t_place), isoT(o.t_end)], y: [o.price, o.price],
-    line: { color: o.side > 0 ? BID_C : ASK_C, width: 4, dash: (endStyle[o.end] || endStyle.open)[0] }, opacity: (endStyle[o.end] || endStyle.open)[1],
-    hovertemplate: `${o.side > 0 ? "buy" : "sell"} ${o.price} · ${o.end}<extra>order</extra>` }));
-  const shapes = [], ann = [];
-  if (fill) {
-    tr.push({ type: "scatter", mode: "markers", name: "fill", x: [isoT(fill.t)], y: [fill.price], marker: { symbol: "star", size: 16, color: fill.artifact ? ART_C : "#e2e8f0", line: { width: 1, color: "#0a0f16" } }, hovertemplate: `fill ${fill.price}<extra></extra>` });
-    HORIZONS.forEach((h, k) => {
-      const mk = fill["mk_" + h], t = fill.t + h * 1000;
-      if (t > win.t1) return;
-      const y = 0.97 - 0.07 * (k % 3);                   // stagger: 1 s, 5 s and 30 s sit a few seconds apart
-      shapes.push({ type: "line", xref: "x", yref: "paper", x0: isoT(t), x1: isoT(t), y0: 0, y1: y, line: { color: "#475569", width: 1, dash: "dot" } });
-      ann.push({ x: isoT(t), y, yref: "paper", text: `${h} s: ${isNum(mk) ? sign(mk, 1) + " bp" : "n/a"}`, showarrow: false, xanchor: "left", yanchor: "middle",
-                 bgcolor: "rgba(16,24,35,.85)", font: { size: 10, color: "#cbd5e1" } });
-    });
-  } else shapes.push({ type: "line", xref: "x", yref: "paper", x0: isoT(req.t), x1: isoT(req.t), y0: 0, y1: 1, line: { color: "#facc15", width: 1.5, dash: "dash" } });
-  // the stored window can be many events merged: show 60 s before to 300 s after this one
-  const x0 = req.t - 60000, x1 = req.t + 300000, inX = t => t >= x0 && t <= x1;
-  const ys = T.filter(r => inX(r[0])).flatMap(r => [r[1], r[2]]).concat(win.trades.filter(r => inX(r[0])).map(r => r[1]), win.orders.filter(o => o.t_end >= x0 && o.t_place <= x1).map(o => o.price), fill ? [fill.price] : []);
-  const rng = fitAxis(ys);
-  deskPlot("lvx-tape", tr, { shapes, annotations: ann, hovermode: "closest", xaxis: axis("", { type: "date", range: [isoT(x0), isoT(x1)] }), yaxis: axis("price", rng ? { range: rng } : {}), margin: { l: 70, r: 16, t: 10, b: 50 } });
-  const offN = ys.filter(v => rng && (v < rng[0] || v > rng[1])).length;
-  if (offN) $("lvx-tape-sub").textContent += " " + offNote(offN, "prices") + " Prices beyond the frame are clipped, not drawn.";
+  const fig = fillTapeFigure(win, fill, req.t, { narrow: el.clientWidth > 0 && el.clientWidth < 640 });
+  el.style.height = fig.layout.height ? fig.layout.height + "px" : "";
+  const off = fig.offscale ? ` ${fig.offscale} book prices beyond the left frame are clipped.` : "";
+  setSub("lvx-tape-sub", [caption, fig.readout + off, tape.note || ""].filter(Boolean).join(" "));
+  deskPlot("lvx-tape", fig.data, fig.layout);
   card_scroll();
 }
 function card_scroll() { const c = $("lvx-tape-card"); if (Tape.quiet) return; if (c && c.scrollIntoView && !reduceMotion) c.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
