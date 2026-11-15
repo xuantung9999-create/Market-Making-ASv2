@@ -66,6 +66,9 @@ simulation against live. Those are also the things a trading interviewer will as
   - C4 `--live-snapshot` also copies the chart files (`CHART_ALLOW`) and `dist_bp` is on the fills allow-list.
   - As with S1/S6, a running supervisor keeps rewriting the session bundles with the code it started with (no `dist_bp`, so the quote strip
     shows no fill markers) until it is restarted; run `python -m scripts.build_session` before publishing. Screenshots: `docs/img/session-chart-*`.
+- **Session chart in UTC, 15 Nov 2026: `docs/DASHBOARD_SESSION_CHART_UTC_SPEC.md`, tasks U1-U2.** `plotX` in `js/session_chart.js` gives Plotly
+  ISO UTC strings, so traces, bands and lines share one UTC axis on every viewer's machine (3db8a22); the PC status activity chart in
+  `js/views/live.js` got the same fix (39a028a); public copy republished with `--live-snapshot` and the Execution test and Agent screenshots replaced.
 
 ## Live tabs (added 14 Nov 2026)
 
