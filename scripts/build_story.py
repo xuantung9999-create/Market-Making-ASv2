@@ -723,16 +723,21 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
     else:
         sections["execution"] = missing_section("It sends real orders.", ["dashboard/live/session-*.js"], "the testnet session bundles")
 
-    # ---- 8 next
-    title8 = "What is next, and what this cannot show."
+    # ---- 8 next (recruiter-ready spec 5.4): the next experiment only; the simulator caveats live on the Method and limits page
+    title8 = "What is next."
     lim, nxt = limits(src), by_id[5]
-    if lim and nxt["status"] == "ok":
-        sections["next"] = {"status": "ok", "title": title8, "sentence": nxt["text"], "limits": lim,
+    if nxt["status"] == "ok":
+        sections["next"] = {"status": "ok", "title": title8, "sentence": nxt["text"],
+                            "limits_line": {"lead": "What these simulations cannot show:", "href": "#about", "label": "Method and limits"},
                             "links": [{"href": "https://github.com/xuantung9999-create/Market-Making-ASv2/blob/main/docs/SPEC_V2_1.md",
-                                       "label": "docs/SPEC_V2_1.md"}, {"href": "#about", "label": "Method and limits"}]}
+                                       "label": "docs/SPEC_V2_1.md"}]}
     else:
-        miss = ([] if lim else [src.errors.get("about", "dashboard/index.html (Known limitations)")]) + nxt.get("missing", [])
-        sections["next"] = missing_section(title8, miss, "the v2.1 status and the known limitations")
+        sections["next"] = missing_section(title8, nxt.get("missing", []), "the v2.1 status")
+    if lim:
+        story["about_limits"] = {"title": "What this cannot show", "items": lim}
+    else:
+        story["about_limits"] = None
+        missing_src.add(src.errors.get("about", "dashboard/index.html (Known limitations)"))
 
     story["sections"] = sections
     story["sources_missing"] = sorted(missing_src | {s for sec in sections.values() for s in sec.get("missing", [])})

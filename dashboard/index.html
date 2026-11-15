@@ -344,14 +344,16 @@ nav.tabs details.appendix .menu a[aria-current="page"] { color: var(--accent); }
 header { position: relative; }
 nav.tabs { position: relative; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 nav.tabs::-webkit-scrollbar { display: none; }
-header::after { content: ""; position: absolute; right: 0; bottom: 0; height: 44px; width: 40px; pointer-events: none;
-  background: linear-gradient(to right, rgba(12, 19, 29, 0), #0c131d 85%); opacity: 0; transition: opacity .15s; }
+header::after { content: ""; position: absolute; right: max(16px, 4vw); bottom: 1px; height: 42px; width: 56px; pointer-events: none;
+  background: linear-gradient(to right, rgba(12, 19, 29, 0), #0c131d 80%); opacity: 0; transition: opacity .15s; }
 header.nav-more::after { opacity: 1; }
 .table-wrap.more-right { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
   mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
 .live-headline, .bar-verdict { font-family: var(--font-body); font-weight: 400; line-height: 1.45; }
 .xt-caught td:nth-child(2) { font-family: var(--font-body); }
 table.gates td:nth-child(3) { white-space: normal; text-align: left; }
+.about-cannot { border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); padding: 12px 16px 4px; margin: 0 0 8px; }
+.about-cannot h2 { margin-top: 0 !important; }
 @media (max-width: 640px) {
   /* wide numeric tables scroll in their wrapper with the first column pinned */
   .table-wrap table:not(.stack) th:first-child, .table-wrap table:not(.stack) td:first-child { position: sticky; left: 0; z-index: 1; background: var(--panel); }
@@ -858,7 +860,8 @@ table.gates td:nth-child(3) { white-space: normal; text-align: left; }
     <div class="chips" id="chips"></div>
     <div class="headline" id="headline"></div>
     <div class="prose">
-      <h2 style="margin-top:0">What this is</h2>
+      <div class="about-cannot" id="about-cannot" hidden></div>
+      <h2>What this is</h2>
       <p>A market maker posts a bid and an ask and earns the gap between them. The risk is inventory: after a run of buys you hold a position that loses money if the price falls. Avellaneda and Stoikov (2008) derive the quotes that maximise a risk-averse market maker's utility. This project implements that model from first principles, checks it against the paper, then takes it to real crypto data, where most of the paper's assumptions break.</p>
       <h2>Method</h2>
       <ol>

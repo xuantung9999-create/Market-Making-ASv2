@@ -79,3 +79,35 @@ def test_readme_test_count_is_rounded_down_and_not_above_the_last_green_run():
     n = int(m.group(1).replace(",", ""))
     assert n % 100 == 0 and n <= passed and passed - n < 100, \
         f"README says over {n}; the last green run had {passed}: write 'over {passed // 100 * 100} tests'"
+
+
+# ---- R4: the Story ends on the next experiment (spec 5.4)
+def test_story_ends_on_what_is_next_and_links_to_method_and_limits(tmp_path):
+    s = story(make_base(tmp_path))
+    last_key = list(s["sections"])[-1]
+    nxt = s["sections"][last_key]
+    assert last_key == "next" and nxt["title"] == "What is next." and nxt["status"] == "ok"
+    text = json.dumps(nxt)
+    assert "Sharpe" not in text and "limits" not in nxt
+    assert nxt["limits_line"]["href"] == "#about" and nxt["limits_line"]["lead"] == "What these simulations cannot show:"
+    assert nxt["limits_line"]["label"] == "Method and limits" and nxt["sentence"].endswith("Not yet evaluated.")
+
+
+def test_the_caveats_move_to_the_about_page_unchanged(tmp_path):
+    s = story(make_base(tmp_path))
+    assert s["about_limits"] == {"title": "What this cannot show", "items": ["First limit.", "Second & limit.", "Third limit bold."]}
+    html = (ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")
+    about = html[html.index('id="view-about"'):]
+    assert about.index('id="about-cannot"') < about.index("What this is")          # at the top of the page
+    js = (ROOT / "dashboard" / "js" / "views" / "story.js").read_text(encoding="utf-8")
+    fn = js[js.index("function drawAboutLimits"):]
+    assert "about_limits" in fn and "L.title" in fn and "L.items" in fn
+    assert "drawAboutLimits()" in (ROOT / "dashboard" / "js" / "views" / "research.js").read_text(encoding="utf-8")
+
+
+@pytest.mark.skipif(not (ROOT / "dashboard/runs/pub-story.js").exists(), reason="no story bundle")
+def test_committed_story_bundle_ends_without_simulator_caveats():
+    s = bst.load_js(ROOT / "dashboard/runs/pub-story.js")
+    nxt = s["sections"]["next"]
+    assert "Sharpe" not in json.dumps(nxt) and nxt["limits_line"]["href"] == "#about"
+    assert any("Sharpe" in x for x in s["about_limits"]["items"]) and len(s["about_limits"]["items"]) == 3

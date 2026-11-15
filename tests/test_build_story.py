@@ -157,8 +157,8 @@ def test_agent_section_uses_the_paper_sessions_own_sentence_and_the_snapshot_dat
     assert s["provenance"]["live_snapshot"].endswith("UTC") and s["provenance"]["backtest_built"] == "2026-11-12 12:31 UTC"
     ex = s["sections"]["execution"]
     assert ex["numbers"] == {"placed": 100, "filled": 7, "rejected": 3, "fills": 7} and ex["label"] == "TESTNET: execution test, not a result"
-    nxt = s["sections"]["next"]
-    assert nxt["limits"] == ["First limit.", "Second & limit.", "Third limit bold."]
+    assert s["about_limits"]["items"] == ["First limit.", "Second & limit.", "Third limit bold."]
+    assert "limits" not in s["sections"]["next"]
 
 
 def test_wording_follows_the_numbers_when_they_change(tmp_path):
@@ -174,7 +174,7 @@ def test_wording_follows_the_numbers_when_they_change(tmp_path):
     ("results/queue_baseline.csv", {"waterfall"}, set()),
     ("results/universe_backtest.csv", {"ladder"}, {3}),
     ("docs/SPEC_V2_1.md", {"next"}, {5}),
-    ("dashboard/index.html", {"next"}, set()),
+    ("dashboard/index.html", set(), set()),
     ("dashboard/live", {"execution"}, set()),
 ])
 def test_a_missing_source_gives_a_marker_and_no_number(tmp_path, gone, sections, conclusion_ids):

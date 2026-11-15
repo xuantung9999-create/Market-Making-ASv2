@@ -209,8 +209,18 @@ function storyTape(tp) {
 function storyNext(host, S) {
   const s = S.sections.next, sec = storySection(host, s);
   if (!sec) return;
-  if ((s.limits || []).length) sec.appendChild(storyEl("ul", "story-limits", s.limits.map(l => `<li>${esc(l)}</li>`).join("")));
   if ((s.links || []).length) sec.insertAdjacentHTML("beforeend", `<p class="story-link">${s.links.map(l => `<a href="${esc(l.href)}">${esc(l.label)}</a>`).join(" · ")}</p>`);
+  const ll = s.limits_line;
+  if (ll) sec.insertAdjacentHTML("beforeend", `<p class="story-text story-limits-line">${esc(ll.lead)} <a href="${esc(ll.href)}">${esc(ll.label)}</a>.</p>`);
+}
+
+/* The top of the Method and limits page (recruiter-ready spec 5.4): the three simulator caveats, worded by the story bundle. */
+function drawAboutLimits() {
+  const host = $("about-cannot"), L = (window.STORY || {}).about_limits;
+  if (!host) return;
+  host.hidden = !(L && (L.items || []).length);
+  if (host.hidden) { host.innerHTML = ""; return; }
+  host.innerHTML = `<h2>${esc(L.title)}</h2><ul class="story-limits">${L.items.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`;
 }
 
 function drawStory() {
