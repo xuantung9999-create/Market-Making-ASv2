@@ -314,26 +314,31 @@ def _wide_tape(base, sid, day, t0, t1):
         f'window.TAPES = window.TAPES || {{}};\nwindow.TAPES["{sid}|{day}"] = {json.dumps({"windows": [w]})};\n')
 
 
+def tape(base):
+    """The curated example for the Execution test page (no longer drawn on the Story; amendment of 16 Nov 2026)."""
+    src = bst.Sources(base, True)
+    return bst.tape_example(src, bst.live_facts(src))
+
+
 def test_tape_example_is_an_ordinary_fill_not_a_glitch_with_its_window_trimmed(tmp_path):
     base = make_base(tmp_path, live=False)
     fills = _glitch_session(base, big=0.5, small=0.5)                    # glitch fills and one ordinary fill with no markouts
     t = fills[1]["t"]
     _tape_file(base, t, "2026-11-14")
-    s = story(base)
-    e = s["sections"]["execution"]
-    assert e["tape"] is None and s["tape_example"] is None              # a glitch is never the curated example
-    assert "ordinary fill" in e["tape_missing"]
+    ex, why = tape(base)
+    assert ex is None and story(base)["tape_example"] is None           # a glitch is never the curated example
+    assert "ordinary fill" in why
 
     fills[2].update(MK, mk_60=0.4, t=t + 1_000)                          # now the ordinary fill carries every markout
     _session(base, "testnet-X-join", fills)
     s = story(base)
-    ex = s["sections"]["execution"]["tape"]
+    ex, why = tape(base)
     tf = t + 1_000
-    assert ex["i"] == 3 and ex["session"] == "testnet-X-join" and ex["fill"]["artifact"] is False
+    assert ex["i"] == 3 and ex["session"] == "testnet-X-join" and ex["fill"]["artifact"] is False and why is None
     assert s["tape_example"]["t"] == tf and "window" not in s["tape_example"]
     w = ex["window"]
     assert w["t0"] == tf - 60_000 and w["t1"] == tf + 300_000 and all(tf - 60_000 <= r[0] <= tf + 300_000 for r in w["touch"] + w["trades"])
-    assert s["sections"]["execution"]["tape_missing"] is None
+    assert "tape" not in s["sections"]["execution"]                     # the Story draws the order lifecycle instead
 
 
 def test_tape_example_prefers_the_agent_and_the_median_markout(tmp_path):
@@ -344,7 +349,7 @@ def test_tape_example_prefers_the_agent_and_the_median_markout(tmp_path):
     agent.append({**_ordinary(9, T0 + 9_000, -1.0), "artifact": True})   # glitches never count, even with markouts
     _session(base, "testnet-X-agent", agent)
     _wide_tape(base, "testnet-X-agent", "2026-11-14", T0 - 3_600_000, T0 + 3_600_000)
-    ex = story(base)["sections"]["execution"]["tape"]
+    ex, _ = tape(base)
     assert ex["session"] == "testnet-X-agent" and ex["i"] == 5          # median of -9, -1, 0.5, 2, 30 is 0.5
 
 
@@ -352,13 +357,42 @@ def test_a_fill_whose_window_is_cut_short_is_skipped(tmp_path):
     base = make_base(tmp_path, live=False)
     _session(base, "testnet-X-agent", [_ordinary(1, T0, 0.0), _ordinary(2, T0 + 400_000, 5.0)])
     _wide_tape(base, "testnet-X-agent", "2026-11-14", T0 - 100_000, T0 + 350_000)   # fill 2 has no 60 s before / 300 s after
-    ex = story(base)["sections"]["execution"]["tape"]
+    ex, _ = tape(base)
     assert ex["i"] == 1
 
 
 def test_missing_tape_gives_a_reason_and_no_example(tmp_path):
     base = make_base(tmp_path, live=False)
     _session(base, "testnet-X-join", [_ordinary(1, T0, 0.0)])            # no tape file written
-    s = story(base)
-    e = s["sections"]["execution"]
-    assert e["tape"] is None and s["tape_example"] is None and "tape-testnet-X-join" in e["tape_missing"]
+    ex, why = tape(base)
+    assert ex is None and story(base)["tape_example"] is None and "tape-testnet-X-join" in why
+
+
+# ---- amendment of 16 Nov 2026: the Story's execution section
+def test_story_caught_drops_the_glitch_row_into_a_footnote_and_never_says_open():
+    rows = [_row("carry_state", "State lost", 2, "fixed", "live spec L1b"), _row("unclean_restart", "Restarted without a clean stop", 2, "open"),
+            _row("book_glitch", "Glitch fills", 11, usd=-71.17), _row("book_glitch", "Glitch fills", 1, usd=20.09)]
+    items, foot = bst.story_caught(rows)
+    text = " ".join(i["text"] for i in items)
+    assert [i["id"] for i in items] == ["carry_state", "unclean_restart"]
+    assert "glitch" not in text.lower() and "Status: open" not in text and "known limitation" in items[1]["text"]
+    assert foot.startswith("12 fills that the thin testnet book") and "USDT" not in foot
+    assert bst.story_caught(rows[:1])[1] is None
+    assert bst.story_caught([_row("book_glitch", "g", 1)])[1].startswith("1 fill that") and " is kept out" in bst.story_caught([_row("book_glitch", "g", 1)])[1]
+
+
+def _bundle(sym, placed, filled, cancelled, rejected=0, partial=0, rep=None, reasons=()):
+    return {"meta": {"symbol": sym}, "funnel": {"placed": placed, "filled": filled, "cancelled": cancelled, "rejected": rejected,
+                                                 "partial": partial, "median_replace_s": rep, "reject_reasons": list(reasons)}}
+
+
+def test_order_lifecycle_adds_the_sessions_and_reconciles():
+    lc = bst.order_lifecycle([_bundle("BTCUSDT", 13, 6, 7, rep=3.52), _bundle("ETHUSDT", 0, 0, 0)])
+    assert (lc["placed"], lc["filled"], lc["cancelled"], lc["open"], lc["attempts"]) == (13, 6, 7, 0, 13)
+    assert lc["sentence"] == ("13 orders placed: 6 filled, 7 cancelled, none still open. No order attempt was rejected. "
+                              "A resting quote was replaced every 3.5 s on BTC (median).")
+    lc = bst.order_lifecycle([_bundle("XUSDT", 10, 3, 2, rejected=4, reasons=[{"error": "would immediately match and take", "n": 4}])])
+    assert lc["open"] == 5 and lc["attempts"] == 14 and lc["filled"] + lc["cancelled"] + lc["open"] + lc["rejected"] == lc["attempts"]
+    assert "4 attempts rejected before reaching the book (post-only" in lc["sentence"]
+    lc = bst.order_lifecycle([_bundle("XUSDT", 3, 3, 3, rejected=1, reasons=[{"error": "other", "n": 1}])])
+    assert lc["open"] == 0 and "1 attempt rejected before reaching the book." in lc["sentence"]          # never negative; no reason guessed

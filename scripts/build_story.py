@@ -340,6 +340,47 @@ def caught_items(rows: list[dict]) -> list[dict]:
     return out
 
 
+STORY_HIDDEN = {"book_glitch"}      # a venue artifact, not a finding about the code; the Execution test page still lists it
+
+
+def plural(n: int, one: str, many: Optional[str] = None) -> str:
+    return f"{n:,} {one if n == 1 else (many or one + 's')}"
+
+
+def story_caught(rows: list[dict]) -> tuple[list[dict], Optional[str]]:
+    """The Story's "What the test caught" (amendment of 16 Nov 2026): without book glitches, which become one footnote with
+    the count and no USDT figure; an open finding reads as a known limitation that is logged, not as "Status: open"."""
+    items = []
+    for it in caught_items([r for r in rows if r["id"] not in STORY_HIDDEN]):
+        if it["status"] == "open":
+            usd = f", {it['usd']:+.2f} USDT" if it["usd"] is not None else ""
+            it = {**it, "text": f"{it['finding']}: {it['n']:,} {it['unit']}{usd}. Status: known limitation; each one is logged as an incident."}
+        items.append(it)
+    n_gl = sum(int(r.get("n") or 0) for r in rows if r["id"] in STORY_HIDDEN)
+    foot = (f"{plural(n_gl, 'fill')} that the thin testnet book printed far from the mid "
+            f"{'is' if n_gl == 1 else 'are'} kept out of every strategy number (details on the Execution test page).") if n_gl else None
+    return items, foot
+
+
+def order_lifecycle(tn: list[dict]) -> dict:
+    """Every testnet order attempt and where it ended, added across the sessions, with one sentence (amendment of 16 Nov 2026)."""
+    tot = {k: sum(int(b["funnel"].get(k) or 0) for b in tn) for k in ("placed", "filled", "partial", "cancelled", "rejected")}
+    still = max(0, tot["placed"] - tot["filled"] - tot["cancelled"])
+    rep = [{"coin": coin_name(str(b["meta"].get("symbol", ""))), "median_s": b["funnel"]["median_replace_s"]}
+           for b in tn if finite(b["funnel"].get("median_replace_s"))]
+    s = (f"{plural(tot['placed'], 'order')} placed: {tot['filled']:,} filled, {tot['cancelled']:,} cancelled, "
+         f"{'none' if still == 0 else f'{still:,}'} still open.")
+    if tot["partial"]:
+        s += f" {plural(tot['partial'], 'partial fill')} along the way."
+    post = sum(int(r.get("n") or 0) for b in tn for r in b["funnel"].get("reject_reasons") or [] if "immediately match" in str(r.get("error")))
+    why = " (post-only orders that would have taken liquidity)" if tot["rejected"] and post == tot["rejected"] else ""
+    s += (" No order attempt was rejected." if not tot["rejected"] else
+          f" {plural(tot['rejected'], 'attempt')} rejected before reaching the book{why}.")
+    if rep:
+        s += " A resting quote was replaced every " + ", ".join(f"{r['median_s']:.1f} s on {r['coin']}" for r in rep) + " (median)."
+    return {**tot, "open": still, "attempts": tot["placed"] + tot["rejected"], "replace": rep, "sentence": s}
+
+
 def tape_example(src: Sources, live: dict) -> tuple[Optional[dict], Optional[str]]:
     """The curated tape (spec section 7, item 6; owner's answer to open question 2, 15 Nov 2026): a typical ordinary fill,
     not a book glitch. Candidates are the testnet fills that are not artifacts, carry every markout and have a stored tape
@@ -727,17 +768,18 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
 
     # ---- 7 execution
     if live.get("testnet"):
-        tape_ex, tape_why = tape_example(src, live)
+        tape_ex, _ = tape_example(src, live)            # the Execution test page opens on it; the Story no longer draws it
+        caught, foot = story_caught(live["caught"])
         sections["execution"] = {
             "status": "ok", "title": "It sends real orders.", "label": "TESTNET: execution test, not a result",
             "sentence": ("Testnet is for one question: are orders placed, replaced, filled, counted and cancelled correctly? "
                          "Its book is thin and moved by other people's test bots, so its P&L is noise."),
             "numbers": {"placed": live["orders_placed"], "filled": live["orders_filled"], "rejected": live["orders_rejected"],
                         "fills": live["testnet_fills"]},
-            "caught": caught_items(live["caught"]),
-            "caught_missing": None if live["caught"] else "the session bundles carry no list of what the test caught yet",
-            "tape": tape_ex, "tape_missing": None if tape_ex else f"This figure needs {tape_why}, which is not available.",
-            "link": {"href": "#exec-test/tape", "label": "See the evidence →"}}
+            "caught": caught, "caught_footnote": foot,
+            "caught_missing": None if caught else "the session bundles carry no list of what the test caught yet",
+            "lifecycle": order_lifecycle(live["testnet"]),
+            "link": {"href": "#exec-test", "label": "See the evidence →"}}
         story["tape_example"] = ({k: tape_ex[k] for k in ("session", "symbol", "day", "t", "i", "caption")} if tape_ex else None)
     else:
         sections["execution"] = missing_section("It sends real orders.", ["dashboard/live/session-*.js"], "the testnet session bundles")

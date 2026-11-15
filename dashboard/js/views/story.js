@@ -15,7 +15,7 @@ const STORY_HOVER = { y: " %{y:.1f} bp<extra></extra>", x: " %{x:.1f} bp<extra><
 const STORY_FOREST_AXIS = "bp per dollar traded (95% interval on net)";
 const STORY_POOLED_ROWS = 8;
 const STORY_TICK_PX = { narrow: 10, wide: 11 };
-const STORY_HORIZONS = [1, 5, 30, 60, 300];                     // seconds after the fill that carry a markout tick                                  // the forest shows at most this many rows (spec section 6)
+const STORY_LIFECYCLE_PX = 150;                                // height of the order-lifecycle bar
 /* ---- end format helpers ---- */
 
 const storyEl = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
@@ -169,23 +169,31 @@ function storyExecution(host, S) {
     : `<p class="story-text story-missing">${esc(s.caught_missing || "")}</p>`;
   const grid = storyEl("div", "story-exec");
   grid.appendChild(storyEl("div", "tiles story-tiles", left));
-  grid.appendChild(storyEl("div", "story-caught-wrap", `<h3>What the test caught</h3>${caught}`));
+  const foot = s.caught_footnote ? `<p class="story-footnote">${esc(s.caught_footnote)}</p>` : "";
+  grid.appendChild(storyEl("div", "story-caught-wrap", `<h3>What the test caught</h3>${caught}${foot}`));
   sec.appendChild(grid);
-  if (s.tape && s.tape.window) {
-    storyChart(sec, "story-tape", 320);
-    sec.appendChild(storyEl("p", "story-text story-caption", esc(s.tape.caption || "")));
-    storyTape(s.tape);
-  } else if (s.tape_missing) sec.appendChild(storyEl("p", "story-text story-missing", esc(s.tape_missing)));
+  const lc = s.lifecycle;
+  if (lc && lc.attempts > 0) {
+    storyChart(sec, "story-lifecycle", STORY_LIFECYCLE_PX);
+    sec.appendChild(storyEl("p", "story-text story-caption", esc(lc.sentence || "")));
+    storyLifecycle(lc);
+  }
   storyAfter(sec, s.link);
 }
 
-/* The tape around one real fill: the book around it on the left, the mid and its markouts after it on the right. */
-function storyTape(tp) {
-  const el = $("story-tape"), narrow = el && el.clientWidth > 0 && el.clientWidth < 640;
-  const fig = fillTapeFigure(tp.window, tp.fill, tp.t, { fixed: true, narrow });      // the shared two-panel tape (fill_tape.js)
-  if (el) el.style.height = fig.layout.height ? fig.layout.height + "px" : "";
-  Plotly.react("story-tape", fig.data, layout(Object.assign({ dragmode: false }, fig.layout)),
-               Object.assign({}, CONFIG, { displayModeBar: false, scrollZoom: false, doubleClick: false }));
+/* Every order attempt and where it ended, as one stacked bar: the counts reconcile or the bar shows it. */
+function storyLifecycle(lc) {
+  const parts = [["Filled", lc.filled, C.accent], ["Cancelled", lc.cancelled, C.muted], ["Still open", lc.open, C.bench], ["Rejected", lc.rejected, C.ask]]
+    .filter(p => p[1] > 0);
+  const cat = ["Order attempts"];
+  storyPlot("story-lifecycle", parts.map(([name, v, color]) => ({
+    type: "bar", orientation: "h", name: `${name} ${storyCount(v)}`, x: [v], y: cat, marker: { color },
+    hovertemplate: `${name}: %{x}<extra></extra>`,
+  })), {
+    barmode: "stack", showlegend: true, legend: { orientation: "h", traceorder: "normal", x: 0, y: -0.35, yanchor: "top", font: { size: 12, color: C.text } },
+    margin: { l: 16, r: 16, t: 8, b: 64 },
+    xaxis: axis("", { range: [0, lc.attempts] }), yaxis: Object.assign(axis(""), { showticklabels: false }),
+  });
 }
 
 function storyNext(host, S) {
