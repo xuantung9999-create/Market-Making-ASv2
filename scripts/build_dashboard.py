@@ -187,7 +187,25 @@ def tests_passed() -> int | None:
     return int(rec["passed"]) if rec and rec.get("passed") else None
 
 
-def main() -> None:
+def refresh_tests(path: Path = None) -> int | None:
+    """Set only ``tests_passed`` in the existing data.js (recruiter-ready spec R7). A full rebuild needs the raw trade files under
+    data/; without them it would drop the real-data days, so the test count is refreshed on its own."""
+    path = path or OUT
+    n = tests_passed()
+    text = path.read_text(encoding="utf-8")
+    head, _, body = text.partition("window.DASH = ")
+    payload = json.loads(body.rstrip().rstrip(";"))
+    payload["tests_passed"] = n
+    path.write_text(head + "window.DASH = " + json.dumps(payload, separators=(",", ":")) + ";\n", encoding="utf-8")
+    print(f"{path}: tests passed set to {n}; nothing else changed")
+    return n
+
+
+def main(argv: list[str] | None = None) -> None:
+    import sys
+    if "--refresh-tests" in (sys.argv[1:] if argv is None else argv):
+        refresh_tests()
+        return
     by_sym: dict[str, list[Path]] = {}
     for p in sorted(DATA_DIR.glob("*_trades.parquet")):
         by_sym.setdefault(p.stem.split("_")[0], []).append(p)
