@@ -497,6 +497,12 @@ def test_session_chart_hands_plotly_no_raw_x_on_a_date_axis():
         assert raw not in src, raw
 
 
+def test_pc_status_activity_chart_gives_its_date_axis_iso_strings():
+    src = (DASH / "js" / "views" / "live.js").read_text(encoding="utf-8")
+    assert "new Date(h).toISOString()" in src
+    assert "x: hs," not in src
+
+
 def test_simulator_page_has_one_session_chart_and_no_old_replay_ids():
     html = _html()
     assert 'id="ch-session"' in html

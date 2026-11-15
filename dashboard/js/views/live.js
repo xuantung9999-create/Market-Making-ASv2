@@ -70,9 +70,10 @@ function drawLiveTestnet(L) {
   const agg = {};
   tn.forEach(t => t.hours.forEach(h => { const a = agg[h.t] = agg[h.t] || { place: 0, cancel: 0, reject: 0, fill: 0 }; ["place", "cancel", "reject", "fill"].forEach(k => a[k] += h[k]); }));
   const hs = Object.keys(agg).map(Number).sort((a, b) => a - b);
+  const hx = hs.map(h => new Date(h).toISOString());           // ISO UTC: Plotly reads a number on a date axis as local time
   if (hs.length) {
     const col = { place: "#38bdf8", cancel: "#7f93ab", fill: "#22c55e", reject: "#ef4444" };
-    deskPlot("live-activity", ["place", "cancel", "fill", "reject"].map(k => ({ type: "bar", x: hs, y: hs.map(h => agg[h][k]), name: k, marker: { color: col[k] } })),
+    deskPlot("live-activity", ["place", "cancel", "fill", "reject"].map(k => ({ type: "bar", x: hx, y: hs.map(h => agg[h][k]), name: k, marker: { color: col[k] } })),
       { barmode: "group", xaxis: axis("UTC hour", { type: "date" }), yaxis: axis("Count") });
   } else emptyPanel("live-activity", "No orders in the last 24 h");
 
