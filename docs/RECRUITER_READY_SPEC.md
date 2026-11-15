@@ -184,6 +184,9 @@ a light theme, a custom domain, and any change under `mm/` other than the one me
 
 ## 7. Tasks
 
+**R0. Done 15 Nov 2026** by the owner (commit `3db8a22` "v3", 103 files, suite 526 passing). Start
+at R1. Kept for the record:
+
 **R0. Baseline and commit what is already done.** Run the suite and record the count. Then commit
 the 102 changed files **as they are**, in one commit: "Showcase S0-S8 and the shared session chart".
 Do not edit them, and do not review the trading diffs. List the changed files under `mm/` in the
