@@ -111,3 +111,49 @@ def test_committed_story_bundle_ends_without_simulator_caveats():
     nxt = s["sections"]["next"]
     assert "Sharpe" not in json.dumps(nxt) and nxt["limits_line"]["href"] == "#about"
     assert any("Sharpe" in x for x in s["about_limits"]["items"]) and len(s["about_limits"]["items"]) == 3
+
+
+# ---- R6: README and history (spec 5.5, 5.6)
+LINK = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)\)")
+
+
+def _local_links(md: Path):
+    for target in LINK.findall(md.read_text(encoding="utf-8")):
+        if re.match(r"[a-z]+:", target) or target.startswith("#"):
+            continue
+        yield target.split("#")[0]
+
+
+@pytest.mark.parametrize("doc", ["README.md", "notes/HISTORY.md", "docs/DASHBOARD_GUIDE.md"])
+def test_every_image_and_file_link_resolves(doc):
+    md = ROOT / doc
+    bad = [t for t in _local_links(md) if not (md.parent / t).resolve().exists()]
+    assert not bad, f"{doc}: {bad}"
+
+
+def test_readme_leads_with_the_live_url_and_keeps_the_draft_marker_for_the_owner():
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    from scripts.publish_dashboard import PUBLIC_URL
+    first = [ln for ln in text.splitlines() if ln.strip()][1]                 # the line under the title
+    assert PUBLIC_URL in first and first.startswith("**Live page")
+    assert "<!-- DRAFT" in text and "What I did myself" in text
+    assert text.index("<!-- DRAFT") < text.index("What I did myself")
+    assert "SITE block" not in text and "## Dashboard" not in text
+    assert "notes/HISTORY.md" in text
+
+
+def test_readme_sections_come_in_the_spec_order():
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    order = ["The result is negative", "showcase-story-1440.png", "## What was built", "What I did myself", "## How it was built",
+             "## What is next", "## Run it", "## Testnet trading", "## Layout", "## Model", "notes/HISTORY.md"]
+    pos = [text.index(s) for s in order]
+    assert pos == sorted(pos)
+    assert text.count("![") == 1                                                 # one screenshot embedded, the others linked
+
+
+def test_history_keeps_the_moved_sections_and_the_day_by_day_commands():
+    text = (ROOT / "notes" / "HISTORY.md").read_text(encoding="utf-8")
+    for s in ("First real-data result (Day 7)", "From BTC to micro caps (Day 8)", "Informed traders (Day 9", "Tuning and signals",
+              "Paper replication", "python -m scripts.run_sweep", "Superseded"):
+        assert s in text, s
+    assert "at the top of this page" not in text                                 # the superseded note reads on its own

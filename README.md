@@ -1,6 +1,6 @@
-# Crypto Market Making: from Avellaneda-Stoikov to a queue-aware, self-calibrating quoter
+# Crypto market making: from Avellaneda–Stoikov to a queue-aware agent
 
-A market-making research project on Binance spot, built from the Avellaneda & Stoikov (2008) paper up to an event-driven, queue-aware simulator with an online calibration agent, a paper trader, a testnet execution layer and an interactive dashboard. Over 500 tests.
+**Live page: [xuantung9999-create.github.io/Market-Making-ASv2](https://xuantung9999-create.github.io/Market-Making-ASv2/)** · [Code layout](#layout) · 2-minute read
 
 **The result is negative, and that is the finding.** A candidate edge on tick-constrained micro caps (+16 bp per dollar traded on one day) was put through a pre-registered test: 60 days, three coins, a queue model, 300 ms latency and base-tier fees. It did not survive.
 
@@ -11,32 +11,45 @@ A market-making research project on Binance spot, built from the Avellaneda & St
 | Queue = 2.0x (stress) | -9.0 bp | -19.0 bp | -8.1 |
 | Front of queue, 100 ms (the earlier assumption) | -1.3 bp | -11.3 bp | -8.5 |
 
-Basis points per dollar traded, 180 coin-days (`results/queue_baseline.csv`). The t column treats each coin-day as one observation; pooling the three coins by date (60 dates) gives t = -9.1 at the headline queue, the figure on the dashboard's Verdict tab. The self-calibrating agent, which learns the net edge of a fill per market state from shadow orders, concluded that every state it could see loses money and declined to trade on all 159 counted coin-days (**Gate A: fail**, `results/gate_a.json`).
-
-**What was built**
-
-- v1 (Days 1-10): A-S and GLFT quoting core, paper replication, Binance data pipeline, bar backtester, per-coin calibration for 12 coins, informed-flow defences, parameter sweep, lead-lag signals.
-- v2 (`docs/BUILD_GUIDE.md`, Tasks 0-11): queue-aware engine shared by backtest, walk-forward and paper trading; edge table; calibration agent; tick-constraint screener; multi-symbol recorder; paper trader with exact replay; daily supervisor.
-- Testnet trader: the same agent sending real post-only orders on the Binance spot testnet, to prove the execution code.
-
-**The dashboard** (`dashboard/`, no build step; the published copy is made by `python -m scripts.publish_dashboard --live-snapshot`). It is one case study, read top to bottom: the **Story** (what was built, the 60-day pre-registered result, where a fill's money goes, the edge that was not there, the agent that declined to trade, the testnet execution test, what is next), then **Evidence** (Verdict, Fill economics, Agent, Execution test) and an **Appendix** menu (backtest P&L, risk, market book, simulator, paper replication, v1 archive, method and limits). The public copy carries a frozen, sanitised snapshot of the live sessions; the owner's local copy (served by the supervisor on `http://localhost:8765`) also has the live Operations pages. Every sentence and number on the Story is written by Python (`scripts/build_story.py`) from the run bundles.
+Basis points per dollar traded, 180 coin-days (`results/queue_baseline.csv`). The t column treats each coin-day as one observation; pooling the three coins by date (60 dates) gives t = -9.1 at the headline queue, the figure on the page's Verdict tab. The self-calibrating agent, which learns the net edge of a fill per market state from shadow orders, concluded that every state it could see loses money and declined to trade on all 159 counted coin-days, 53 days per coin after its warm-up (**Gate A: fail**, `results/gate_a.json`).
 
 ![Story at 1,440 px: the finding, the stack, the forest plot, the waterfall, the realism ladder, the Gate A scoreboard, the testnet tape](docs/img/showcase-story-1440.png)
-![Verdict: forest plot by coin and queue assumption, Gate A scoreboard with every value](docs/img/showcase-verdict-1440.png)
-![Fill economics: markouts, the money in a fill, queue wait, fill quality per coin](docs/img/showcase-fills-1440.png)
-![Agent: edge table, calibration, live setting, and the paper trader on real data](docs/img/showcase-agent-1440.png)
-![Execution test: what the test caught, quote state, funnel, markouts, incidents, the tape around a glitch fill, P&L folded away](docs/img/showcase-exec-test-1440.png)
-![Story at 390 px](docs/img/showcase-story-390.png)
 
-Screenshots of every public page at 1,440 and 390 px are in `docs/img/showcase-<page>-<width>.png`.
+More screenshots: [Verdict](docs/img/showcase-verdict-1440.png) · [Fill economics](docs/img/showcase-fills-1440.png) · [Agent](docs/img/showcase-agent-1440.png) · [Execution test](docs/img/showcase-exec-test-1440.png) · [Story on a phone](docs/img/showcase-story-390.png). Every public page at 1,440 and 390 px is in `docs/img/showcase-<page>-<width>.png`.
 
-The recorded-order-book views (Market book > Order book, Live, Data > Recorder health and tape validation) fill in once the recorder has run for a few days; until then they say so instead of showing placeholder numbers.
+## What was built
 
-**What is next:** `docs/SPEC_V2_1.md`. v2 ran on a book inferred from trades, so it never saw real book imbalance or queue sizes. v2.1 tests that one remaining lever on recorded order-book data. The code is built and tested (`mm/markov.py` Markov microprice, `mm/queue_model.py` queue chain with cancels, `mm/regime.py` regime filter, the 18-cell book-state edge table with Gate A', and the hedge pre-check), each with a pass rule fixed in advance. None of the pass rules has been evaluated yet: they need several weeks of recorded book data per coin. The BTC-perpetual hedge simulation (Task 18) is only built if the pre-check says go.
+A market-making stack on Binance spot, from the Avellaneda & Stoikov (2008) paper to live testnet orders, in six stages:
 
-**How it was built:** the design, test rules and pass/fail gates are written as specs (`docs/`), and most of the code was implemented by AI models working to those specs, one task at a time, with tests first. Findings by day: `notes/`. Build log: `docs/progress/v2_ledger.md`.
+1. **Data** (`mm/data.py`, `mm/recorder.py`): Binance trades from the public archive, checksum-verified, and a live order-book recorder.
+2. **Calibration** (`mm/calibrate.py`): volatility, tick and the fill-rate curve per coin, for 12 coins from BTC to micro caps.
+3. **Queue-aware simulator** (`mm/queue_sim.py`): replays the tape with queue position, latency and fees, with an exact P&L identity.
+4. **Edge table and agent** (`mm/edge.py`, `mm/agent.py`): learns what a fill is worth per market state from shadow orders and picks one of 12 settings, or stays out.
+5. **Paper trader** (`mm/paper.py`): runs the agent on live mainnet data with simulated fills.
+6. **Testnet executor** (`mm/testnet.py`): the same agent sending real post-only orders to the Binance spot testnet, to prove the execution code (an execution test, not a result).
 
-## Run it with Docker (no Python needed)
+Over 500 tests. The page (`dashboard/`, no build step) is one case study read top to bottom; Python writes every number and sentence on it (`scripts/build_story.py`, `mm/report.py`).
+
+<!-- DRAFT: owner to edit, then delete this line -->
+> **What I did myself** (draft for the owner to edit)
+>
+> - Framed the question: does the one-day +16 bp micro-cap edge survive a queue model, latency and fees, or was it an artefact of a simulator with no queue?
+> - Fixed Gate A's five pass conditions, the 7-day warm-up and the "if it fails, say so and stop, do not tune" rule before the 60-day run (`docs/BUILD_GUIDE.md`, Task 8).
+> - Wrote the working rules every build follows: a spec per piece of work, tests first, one task per session, when to stop and ask (`docs/BUILD_GUIDE.md` section 3, the `docs/*_SPEC.md` files).
+> - Reviewed each task against its spec; the rulings and test counts are logged in `docs/progress/v2_ledger.md`.
+> - Decided to stop at the negative result and publish it, and fixed the v2.1 pass rules before any of its data exists (`docs/SPEC_V2_1.md`).
+
+## How it was built
+
+The design, test rules and pass/fail gates are written as specs (`docs/`), and most of the code was implemented by AI models working to those specs, one task at a time, with tests first. Findings by day: `notes/`. Build log: [`docs/progress/v2_ledger.md`](docs/progress/v2_ledger.md).
+
+## What is next
+
+v2 ran on a book inferred from trades, so it never saw real book imbalance or queue sizes; v2.1 ([`docs/SPEC_V2_1.md`](docs/SPEC_V2_1.md)) tests that one remaining lever on recorded order-book data, with every pass rule fixed in advance. The code is built and tested; none of the pass rules has been evaluated yet, because each needs several weeks of recorded book data per coin.
+
+## Run it
+
+With Docker (no Python needed):
 
 ```bash
 docker compose up dashboard        # http://localhost:8000/dashboard/index.html
@@ -45,7 +58,7 @@ docker compose run --rm tests      # run the test suite
 
 Full instructions, including the live order-book recorder: [DOCKER.md](DOCKER.md).
 
-## Setup
+With Python 3.11+:
 
 ```bash
 git clone https://github.com/xuantung9999-create/Market-Making-ASv2.git && cd Market-Making-ASv2
@@ -53,24 +66,10 @@ python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 pytest -q                          # all tests should pass
-python -m scripts.plot_quotes      # writes results/day2_quotes.png
-python -m scripts.replicate_paper  # day 3-4 figures + results/day4_paper_table.csv
-python -m scripts.day4_experiments # study-guide experiments
-
-# Real data (day 5): Binance public archive, no API key
-python -m mm.data download --symbol BTCUSDT --date 2026-11-10 --days 2
-python -m scripts.explore_day data/BTCUSDT_2026-11-10_trades.parquet
-python -m scripts.run_backtest     # day 7: A-S vs fixed spreads on real data (~1 min/day)
-python -m scripts.download_universe  # day 8: 9-10 Nov for a range of coins, BTC to micro caps
-python -m scripts.run_universe     # day 8: calibrate day 1, backtest day 2 for every coin (~4 min)
-python -m scripts.download_universe --date 2026-11-04 --days 5   # day 9: more history
-python -m scripts.run_walkforward  # day 9: calibrate on 3 days, test the next; flow model + kill switch (~10 min)
-python -m scripts.run_sweep        # day 9: A-S vs GLFT x skew x kill switch, tuned on past days (~20 min)
-python -m mm.data download --symbol BTCUSDT --date 2026-11-04 --days 7 --market futures --out data/futures
-python -m scripts.run_leadlag      # day 10: BTC spot / perp flow as leading signals (~2 min)
-python -m scripts.book_study       # day 10: live order book from the recorder
-python -m mm.recorder --symbol BTCUSDT          # live best bid/ask + trades, Ctrl+C to stop
+python -m scripts.publish_dashboard   # the public copy in dashboard_public/ (add --live-snapshot for the testnet sessions)
 ```
+
+On Windows the launchers are in `scripts/windows/`; `run_24x7.bat` (recorder, traders and live page, kept running) and `run_dashboard.bat` stay at the root.
 
 ## Testnet trading (real orders, fake money)
 
@@ -99,25 +98,6 @@ test bots, so fills and adverse selection look nothing like the real market. Jud
 the paper trader (`mm/paper.py`: real data, simulated fills); use testnet to prove the execution
 code. Only a few coins exist on testnet (BTC, ETH, BNB and some others), not the micro caps.
 
-## Dashboard
-
-`dashboard/index.html` is an interactive, static dashboard: a live A-S simulator with sliders, model intuition charts, the paper replication, and the real BTCUSDT data analysis. Open the file in a browser (double-click), or host it free on GitHub Pages: Settings → Pages → deploy from the `main` branch, root folder; it is then at `https://<user>.github.io/<repo>/dashboard/`.
-
-The page has one nav row: **Story**, then **Evidence** (Verdict, Fill economics, Agent, Execution test) and an **Appendix** menu. The live parts (the Execution test and the paper sessions under Agent) read *session bundles* from `dashboard/live/`, written every 5 minutes by `scripts/build_session.py` (the supervisor runs it; see `docs/DASHBOARD_GUIDE.md`, "Live tabs"); the backtest pages read *run bundles* from `dashboard/runs/` (written by `mm/report.py`). Old links such as `#l-exec`, `#overview` or `#simulator` still resolve. By default nothing live is published; `--live-snapshot` publishes a frozen copy of the sessions under `snapshot/` through an allow-list of keys, never the Operations pages, `status.js`, `.env` or `data/`, and fails if any written file holds a path, a private address, the host name, a process id field or a credential word.
-
-One chart draws a trading session in three places: Simulator > Playground (the A-S strategy on one synthetic path), the Execution test page (a testnet session on the real feed) and Agent > "Live on real data" (the paper sessions). It layers price with our quotes and fills, quotes in bp from the mid, inventory against its cap and, for paper sessions only, cumulative P&L, with tiles that follow a replay slider and a Play button (`dashboard/js/session_chart.js`; spec `docs/DASHBOARD_SESSION_CHART_SPEC.md`). For the live sessions Python writes every number and sentence into `dashboard/live/chart-<id>.js`; `--live-snapshot` publishes those files too, through an allow-list.
-
-![Session chart, simulator](docs/img/session-chart-simulator-wide.jpg)
-![Session chart, Execution test](docs/img/session-chart-exec-test-wide.jpg)
-
-Regenerate its data after new results or downloads:
-
-```bash
-python -m scripts.build_dashboard   # writes dashboard/data.js
-```
-
-Edit the `SITE` block at the top of the page's script for your name, GitHub and LinkedIn links.
-
 ## Layout
 
 ```
@@ -138,54 +118,14 @@ mm/agent.py           calibration agent: shadow orders, 12-setting menu, loss st
 mm/screen.py          which coins are tick-constrained
 mm/paper.py           paper trader: live mainnet data, simulated fills, no orders sent
 mm/testnet.py         testnet trader: the same agent, real post-only orders on the Binance spot testnet
+mm/report.py          run bundles behind the page; scripts/build_story.py writes the Story
+scripts/windows/      Windows launchers (.bat), each run from the repo root
 notes/derivation.md   Day 1 derivation of the model
-dashboard/index.html  interactive dashboard (data in dashboard/data.js, built by scripts/build_dashboard.py)
+dashboard/index.html  the page (guide: docs/DASHBOARD_GUIDE.md); public copy by scripts/publish_dashboard.py
 ```
 
 ## Model
 
-Reservation price `r = s − q·γ·σ²·(T − t)`; total spread `γσ²(T − t) + (2/γ)·ln(1 + γ/k)`; quotes `r ± spread/2`. Full derivation in `notes/derivation.md`.
+Reservation price `r = s − q·γ·σ²·(T − t)`; total spread `γσ²(T − t) + (2/γ)·ln(1 + γ/k)`; quotes `r ± spread/2`. Full derivation in [`notes/derivation.md`](notes/derivation.md).
 
-## First real-data result (Day 7)
-
-On 9–10 Nov 2026 BTCUSDT (1.85M trades), with strict fills, 50 ms latency and no fees, **every strategy lost money**: about −1.5 bp per dollar traded, for fixed spreads and A-S alike. Fills are worth ~0 at the moment of the fill and −1.2 to −1.7 bp ten seconds later: quotes behind the best price are only reached by sweeps that keep going (adverse selection). A-S with γ = 1e-4 still did its job, cutting inventory std from ~7 lots to under 3. Details: `notes/week1_review.md`.
-
-![day 7](results/day7_2026-11-09_backtest.png)
-
-## Tuning and signals (Days 9–10)
-
-A 32-setting sweep over 48 out-of-sample coin-days: the kill switch dominates (losses −3,659 → −660 USD from off to tight), A-S and the infinite-horizon GLFT model end up close, and choosing settings from past days only cuts losses 58% out of sample. Slow quotes get picked off: requoting every 2 s instead of 250 ms more than doubles the loss per dollar traded, and latency matters (measured ~285 ms from a home PC in Vietnam). The BTC perpetual future leads BTC spot (prediction correlation 0.10 → 0.18) and BTC leads altcoins, but better prediction barely moved P&L. Fifty minutes of live order book show the trade-based mid is unbiased but noisy, and that book imbalance predicts the next 5 s twice as well as trade flow. Details: `notes/day10_tuning_signals.md`.
-
-![sweep](results/day9_sweep.png)
-![book](results/day10_book.png)
-
-## Informed traders (Day 9, walk-forward)
-
-12 coins × 4 out-of-sample days, everything calibrated on the 3 previous days. Trade imbalance predicts the next 10 seconds on every coin (out-of-sample correlation 0.07–0.24, direction right 58–65% of the time). A kill switch (no quotes during volatility bursts or just after sweeps) plus leaning quotes on the prediction cut losses by 60% and beat the Day-8 calibration on 11 of 12 coins, but mostly by trading less in the worst moments: per-dollar losses improve only 15%, and everything is negative after a 2 bp fee. A better-fitting fill curve made results worse, because A-S counts fills but cannot tell good ones from toxic ones. Details: `notes/day9_informed_flow.md`.
-
-![walk-forward](results/day9_walkforward.png)
-
-## From BTC to micro caps (Day 8)
-
-> Superseded: the micro-cap result below came from one day and a simulator with no queue. The 60-day queue-aware test at the top of this page reverses it.
-
-Twelve coins, tiers from measured Binance spot volume ($1.2B/day BTC down to $0.1M/day IOTX), calibrated on 9 Nov and backtested out of sample on 10 Nov. The tick size relative to price is the biggest difference: 0.001 bp for BTC, 26–27 bp for ANKR and SKL, which are tick-constrained. Large and mid caps lose to adverse selection like BTC; the only statistically meaningful positive result is on tick-constrained micro caps (ANKR: +16 bp per dollar traded, 60-s markout t = 2.2), where queue position decides the outcome. One day and a few hundred fills: promising, not proven. Advice on what changes for small caps: `notes/day8_small_caps.md`.
-
-![universe](results/day8_universe.png)
-![fill fits](results/day8_fill_fits.png)
-
-## Paper replication (synthetic market, 1,000 paths, same random numbers for both strategies)
-
-| γ | Strategy | Avg spread | Mean PnL | Std PnL | Std final q |
-|---|---|---:|---:|---:|---:|
-| 0.01 | inventory | 1.35 | 68.4 | 9.1 | 5.3 |
-| 0.01 | symmetric | 1.35 | 68.6 | 13.6 | 8.5 |
-| 0.1 | inventory | 1.49 | 65.0 | 6.8 | 3.0 |
-| 0.1 | symmetric | 1.49 | 67.9 | 13.2 | 8.3 |
-| 0.5 | inventory | 2.16 | 48.6 | 5.9 | 2.0 |
-| 0.5 | symmetric | 2.16 | 58.2 | 11.4 | 6.9 |
-
-The inventory strategy gives up a little mean profit for roughly half the PnL volatility and far tighter inventory; higher γ pushes further along that trade-off. This is the pattern reported in section 4 of the paper.
-
-![one path](results/day3_single_path.png)
-![PnL distribution](results/day4_pnl_hist.png)
+How the project got here, day by day: [`notes/HISTORY.md`](notes/HISTORY.md).
