@@ -84,8 +84,9 @@ function drawBookSize(b) {
     { x: t.t, y: t.ask_qty.map(q => -q), name: "Ask size", mode: "lines", line: { shape: "hv", width: 0.5, color: ASK_C }, fill: "tozeroy", fillcolor: rgba(ASK_C, 0.35),
       customdata: t.ask_qty, hovertemplate: "%{customdata}<extra>ask size</extra>" },
     { x: t.t, y: imb, name: "Imbalance", mode: "lines", yaxis: "y2", line: { shape: "hv", width: 1, color: C.text } },
-  ], { xaxis: axis("UTC", { type: "date", range: windowRange(t) }), yaxis: axis("units", { zeroline: true, zerolinecolor: C.muted }),
-       yaxis2: axis("imbalance", { overlaying: "y", side: "right", range: [-1, 1], showgrid: false }) });
+  ], { // sizes on top, imbalance in its own panel underneath on the same time axis (never two y-scales on one plot)
+       xaxis: axis("UTC", { type: "date", range: windowRange(t), anchor: "y2" }), yaxis: axis("units", { zeroline: true, domain: [0.36, 1] }),
+       yaxis2: axis("imbalance", { domain: [0, 0.26], range: [-1, 1], anchor: "x", zeroline: true, tickvals: [-1, 0, 1] }) });
 }
 
 function drawBookImb(b) {
@@ -126,7 +127,7 @@ function drawBookDepth(b) {
   deskPlot("bk-ladder", [side(lad.bids.slice().reverse(), PROFIT, "Bids"), side(lad.asks, LOSS, "Asks")],
     { xaxis: axis("distance from the mid (bp)", { zeroline: true, zerolinecolor: C.muted }), yaxis: axis("cumulative size (USD)"), hovermode: "closest" });
   if (!d.heat) return emptyPanel("bk-depth", "Too few snapshots for a heatmap");
-  deskPlot("bk-depth", [{ type: "heatmap", x: d.heat.t, y: d.heat.y, z: d.heat.z, colorscale: [[0, "#0b1220"], [0.3, "#1e3a5f"], [0.7, "#38bdf8"], [1, "#e0f2fe"]],
+  deskPlot("bk-depth", [{ type: "heatmap", x: d.heat.t, y: d.heat.y, z: d.heat.z, colorscale: [[0, "#0b1220"], [0.3, "#1e3a5f"], [0.7, "#3987e5"], [1, "#e0f2fe"]],
     colorbar: { title: { text: "USD", side: "right" }, thickness: 10 }, hovertemplate: "%{x} UTC, %{y:.1f} bp: $%{z:,.0f}<extra></extra>", zsmooth: false }],
     { xaxis: axis("UTC", { type: "category", nticks: 6 }), yaxis: axis("distance from the mid (bp)"), hovermode: "closest" });
 }

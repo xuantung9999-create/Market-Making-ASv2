@@ -90,7 +90,7 @@ function drawLvExec() {
   const mk = b.markout.filter(r => ["all", "buy", "sell", "JOIN", "BACK"].includes(r.group));
   if (!mk.length) lvEmpty("lvx-markout", tk.markout);
   else {
-    const style = { all: ["#e2e8f0", "solid"], buy: [BID_C, "solid"], sell: [ASK_C, "solid"], JOIN: ["#2dd4bf", "dash"], BACK: ["#f472b6", "dash"] };
+    const style = { all: ["#e2e8f0", "solid"], buy: [BID_C, "solid"], sell: [ASK_C, "solid"], JOIN: ["#199e70", "dash"], BACK: ["#d55181", "dash"] };
     const tr = [];
     ["all", "buy", "sell", "JOIN", "BACK"].forEach(g => {
       const r = mk.filter(x => x.group === g).sort((p, q) => p.h_s - q.h_s);
@@ -101,9 +101,9 @@ function drawLvExec() {
         hovertemplate: "%{y:.2f} bp · %{text}<extra>" + g + "</extra>" });
     });
     const lines = [{ type: "line", xref: "paper", yref: "y", x0: 0, x1: 1, y0: 0, y1: 0, line: { color: "#94a3b8", width: 1.5 } },
-                   { type: "line", xref: "paper", yref: "y", x0: 0, x1: 1, y0: m.fee_bps, y1: m.fee_bps, line: { color: "#fbbf24", width: 1, dash: "dash" } }];
+                   { type: "line", xref: "paper", yref: "y", x0: 0, x1: 1, y0: m.fee_bps, y1: m.fee_bps, line: { color: "#fab219", width: 1, dash: "dash" } }];
     deskPlot("lvx-markout", tr, { shapes: lines, xaxis: axis("seconds after the fill", { type: "log", tickvals: HORIZONS }), yaxis: axis("bp before fees"),
-      annotations: [{ xref: "paper", x: 1, y: m.fee_bps, yref: "y", text: `fee ${m.fee_bps} bp`, showarrow: false, xanchor: "right", yanchor: "bottom", font: { size: 10, color: "#fbbf24" } }] });
+      annotations: [{ xref: "paper", x: 1, y: m.fee_bps, yref: "y", text: `fee ${m.fee_bps} bp`, showarrow: false, xanchor: "right", yanchor: "bottom", font: { size: 10, color: "#fab219" } }] });
   }
 
   // edge at fill
@@ -115,7 +115,7 @@ function drawLvExec() {
     const art = fills.filter(f => f.artifact).length, offN = edges.length - inr.length + art;
     deskPlot("lvx-edge", [{ type: "histogram", x: inr, marker: { color: "#cbd5e1" }, xbins: { start: rng[0], end: rng[1], size: (rng[1] - rng[0]) / 40 }, name: "fills", hovertemplate: "%{x} bp: %{y} fills<extra></extra>" }],
       { showlegend: false, bargap: 0.05, xaxis: axis("edge at fill, bp (vs the feed mid)", { range: rng }), yaxis: axis("fills"),
-        shapes: [{ type: "line", xref: "x", yref: "paper", x0: 0, x1: 0, y0: 0, y1: 1, line: { color: "#94a3b8", width: 1.5 } }, { type: "line", xref: "x", yref: "paper", x0: m.fee_bps, x1: m.fee_bps, y0: 0, y1: 1, line: { color: "#fbbf24", width: 1, dash: "dash" } }] });
+        shapes: [{ type: "line", xref: "x", yref: "paper", x0: 0, x1: 0, y0: 0, y1: 1, line: { color: "#94a3b8", width: 1.5 } }, { type: "line", xref: "x", yref: "paper", x0: m.fee_bps, x1: m.fee_bps, y0: 0, y1: 1, line: { color: "#fab219", width: 1, dash: "dash" } }] });
     if (offN) $("lvx-edge-sub").textContent += ` ${offN} fill${offN === 1 ? "" : "s"} off scale (${art} artifact${art === 1 ? "" : "s"}).`;
   }
 
@@ -143,7 +143,7 @@ function drawLvExec() {
     <tr><td class="l">→ rejected</td><td>${nTxt(fu.rejected)}</td><td class="l">${fu.rejected ? esc(fu.reject_reasons.map(r => `${r.n} × ${r.error}`).join("; ")) : "none"}</td></tr></tbody></table>`);
   const hrs = fu.by_hour.filter(r => !w || (r.t + 36e5 > w[0] && r.t <= w[1]));
   if (!hrs.length) lvEmpty("lvx-activity", "No order activity in this range.");
-  else deskPlot("lvx-activity", ["placed", "cancelled", "rejected"].map((k, i) => ({ type: "bar", name: k, x: hrs.map(r => isoT(r.t)), y: hrs.map(r => r[k] || null), marker: { color: ["#cbd5e1", "#64748b", "#facc15"][i] } })),
+  else deskPlot("lvx-activity", ["placed", "cancelled", "rejected"].map((k, i) => ({ type: "bar", name: k, x: hrs.map(r => isoT(r.t)), y: hrs.map(r => r[k] || null), marker: { color: ["#cbd5e1", "#64748b", "#fab219"][i] } })),
     { barmode: "group", yaxis: axis("orders per hour (log)", { type: "log" }), xaxis: axis("", { type: "date" }), margin: { l: 56, r: 16, t: 24, b: 36 } });
 
   drawFillsTable(b, fills);

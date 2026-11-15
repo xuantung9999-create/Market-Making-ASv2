@@ -99,7 +99,7 @@ if (typeof document !== "undefined") (function () {
     if (!rows.length) { host.innerHTML = '<p class="empty-line">No testnet trader running (nothing at data/testnet/&lt;coin&gt;/status.json).</p>'; return; }
     host.innerHTML = rows.map(sym => {
       const r = testnet[sym].data, dim = status(testnet[sym]) === "nofeed";
-      return `<div class="card live-card${dim ? " dim" : ""}"><div class="card-head"><h2>${esc(sym)}</h2><span class="badge" style="--c:#f5a524">TESTNET</span></div>
+      return `<div class="card live-card${dim ? " dim" : ""}"><div class="card-head"><h2>${esc(sym)}</h2><span class="badge" style="--c:#c98500">TESTNET</span></div>
         <p class="note cap">TESTNET: execution test, not a result</p>
         <dl class="kv"><dt>Inventory (lots)</dt><dd>${num(r.lots, 0)}</dd><dt>P&amp;L (USD)</dt><dd class="${pnlCls(r.pnl)}">${isNum(r.pnl) ? sign(r.pnl) : "–"}</dd>
         <dt>Fills / rejects</dt><dd>${num(r.fills, 0)} / ${num(r.rejects, 0)}</dd><dt>Live arm</dt><dd>${isNum(r.live_arm) ? r.live_arm : "–"}</dd>
@@ -114,7 +114,7 @@ if (typeof document !== "undefined") (function () {
     const dim = status(paper) === "nofeed";
     host.innerHTML = Object.keys(p.symbols || {}).sort().map(sym => {
       const r = p.symbols[sym], o = r.orders || {}, q = side => o[side] ? `${fmtP(o[side].price)} (queue ${fmtP(o[side].queue_ahead)})` : "–";
-      return `<div class="card live-card${dim ? " dim" : ""}"><div class="card-head"><h2>${esc(sym)}</h2><span class="badge" style="--c:#f5a524">${esc(String(p.kind || "paper").toUpperCase())}</span></div>
+      return `<div class="card live-card${dim ? " dim" : ""}"><div class="card-head"><h2>${esc(sym)}</h2><span class="badge" style="--c:#c98500">${esc(String(p.kind || "paper").toUpperCase())}</span></div>
         <dl class="kv"><dt>Bid / ask</dt><dd>${fmtP(r.bid)} / ${fmtP(r.ask)}</dd><dt>Inventory (lots)</dt><dd>${num(r.q, 0)}</dd>
         <dt>P&amp;L today (USD)</dt><dd class="${pnlCls(r.pnl_day)}">${isNum(r.pnl_day) ? sign(r.pnl_day) : "–"}</dd><dt>Fills today</dt><dd>${num(r.fills_day, 0)}</dd>
         <dt>Resting bid</dt><dd>${q("bid")}</dd><dt>Resting ask</dt><dd>${q("ask")}</dd>

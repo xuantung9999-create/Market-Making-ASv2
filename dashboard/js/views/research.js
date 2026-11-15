@@ -163,7 +163,7 @@ function simModel() {
     tiles: { mid: p.s, inventory: p.qInv, pnl, fills: fillsCum, buys: buysCum, sells: sellsCum, maxAbs, spread },
     titles, events, axes: { price: null, bp: null }, offScale: null, bands: [], lines: [],
     palette: { mid: C.text, res: C.accent, buy: C.bid, sell: C.ask, artifact: null, inventory: C.accent, bench: C.muted,
-               limit: "#818cf8", zero: "#64748b", pnl: C.text, bid: C.bid, ask: C.ask },
+               limit: "#9085e9", zero: "#64748b", pnl: C.text, bid: C.bid, ask: C.ask },
   };
 }
 function drawSession() { SessionChart.mount("ch-session", simModel()); }
@@ -325,7 +325,9 @@ function drawRealData() {
   plot("ch-flow", [
     { x: t, y: flow, name: "cumulative buy − sell volume", line: { color: C.bid, width: 1.6 }, hovertemplate: "%{y:,.1f}" },
     { x: t, y: m.mid, name: "mid", line: { color: C.muted, width: 1 }, yaxis: "y2", hovertemplate: "%{y:,.2f}" },
-  ], { xaxis: axis("UTC", { type: "date" }), yaxis: axis(d.symbol.replace("USDT", "")), yaxis2: axis("USDT", { overlaying: "y", side: "right", showgrid: false, tickformat: s.price_last >= 1000 ? ",.0f" : ".4~g" }) });
+  ], { // order flow on top, the price underneath on the same time axis: two panels, not two y-scales on one plot
+       xaxis: axis("UTC", { type: "date", anchor: "y2" }), yaxis: axis(d.symbol.replace("USDT", ""), { domain: [0.42, 1], zeroline: true }),
+       yaxis2: axis("mid, USDT", { domain: [0, 0.34], anchor: "x", tickformat: s.price_last >= 1000 ? ",.0f" : ".4~g" }) });
 
   if (D.live) {
     document.getElementById("live-card").hidden = false;
@@ -337,7 +339,7 @@ function drawRealData() {
 
 /* ======================= Backtest views ======================= */
 const BT = { day: null, rule: "through", fee: 0 };
-const BT_COLORS = ["#cfd8dc", "#90a4ae", "#f5a524", "#7dd3fc", "#38bdf8", "#a78bfa"];
+const BT_COLORS = ["#cfd8dc", "#90a4ae", "#c98500", "#86b6ef", "#3987e5", "#9085e9"];
 function drawBacktest() {
   const bar = document.getElementById("bt-bar");
   if (!D.backtest) { bar.innerHTML = '<p class="note">No backtest results yet. Run <span class="mono">python -m scripts.run_backtest</span>, then <span class="mono">python -m scripts.build_dashboard</span>.</p>'; return; }
@@ -384,7 +386,7 @@ function drawBacktest() {
 }
 
 /* ======================= Universe views ======================= */
-const TIER_C = { large: "#e2e8f0", mid: "#38bdf8", small: "#34d399", micro: "#f87171" };
+const TIER_C = { large: "#e2e8f0", mid: "#3987e5", small: "#199e70", micro: "#e66767" };
 const UNI = { rule: "through", fee: 0, strat: "Join touch", coin: null, sort: null, asc: false };
 function drawResearchUniverse() {
   const U = D.universe, bar = document.getElementById("uni-bar");
@@ -435,7 +437,7 @@ function drawResearchUniverse() {
   const cs = document.getElementById("uni-coin");
   cs.innerHTML = coins.map(c => `<option ${c.symbol === UNI.coin ? "selected" : ""}>${c.symbol}</option>`).join("");
   cs.onchange = e => { UNI.coin = e.target.value; drawResearchUniverse(); };
-  const coin = coins.find(c => c.symbol === UNI.coin), R = runsOf(coin), pal = ["#cfd8dc", "#f5a524", "#38bdf8", "#a78bfa"];
+  const coin = coins.find(c => c.symbol === UNI.coin), R = runsOf(coin), pal = ["#cfd8dc", "#c98500", "#3987e5", "#9085e9"];
   plot("ch-uni-pnl", R.map((r, i) => ({ x: r.pnl.t, y: r.pnl.v, name: r.name, mode: "lines", line: { color: pal[i % 4], width: 1.8 }, hovertemplate: "%{y:,.1f}" })),
        { xaxis: axis("UTC, day 2", { type: "date" }), yaxis: axis("P&L before fees (USD)"), legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", font: { size: 10 } } });
   const rm = coin.random_markouts;
@@ -485,7 +487,7 @@ function drawInformed() {
   // spec 4.6: never rotate x labels; long names break onto lines of about 12 characters
   const brk = n => String(n).split(" ").reduce((ls, w) => { const l = ls[ls.length - 1]; if (l && (l + " " + w).length <= 12) ls[ls.length - 1] = l + " " + w; else ls.push(w); return ls; }, []).join("<br>");
   plot("ch-inf-heat", [{ type: "heatmap", z, x: order.map(brk), y: syms.map(x => x.replace("USDT", "")), customdata: zu, zmin: -lim, zmax: lim, zmid: 0,
-    colorscale: [[0, "#7f1d1d"], [0.45, "#3b1d24"], [0.5, "#142030"], [0.55, "#123b2c"], [1, "#16a34a"]],
+    colorscale: DIVERGING,
     text: z.map(r => r.map(v => v === null ? "" : v.toFixed(1))), texttemplate: "%{text}", textfont: { family: MONO, size: 10, color: C.text },
     hovertemplate: "%{y} · %{x}<br>%{z:.2f} bp of volume<br>%{customdata:,.0f} USD<extra></extra>", colorbar: { title: { text: "bp", font: { size: 11 } }, tickfont: { family: MONO, size: 10, color: C.muted } } }],
     { showlegend: false, hovermode: "closest", margin: { l: 56, r: 16, t: 10, b: 110 }, xaxis: axis("", { tickangle: 0, showgrid: false }), yaxis: axis("", { autorange: "reversed", showgrid: false }) });
@@ -496,15 +498,17 @@ function drawInformed() {
   plot("ch-inf-alpha", [
     { type: "bar", x: al.map(a => a.sy.replace("USDT", "")), y: al.map(a => a.corr), name: "out-of-sample correlation", marker: { color: al.map(a => TIER_C[a.tier] || C.accent) }, hovertemplate: "corr %{y:.3f}", yaxis: "y" },
     { x: al.map(a => a.sy.replace("USDT", "")), y: al.map(a => 100 * a.hit), name: "direction right (%)", mode: "markers", marker: { color: C.bench, size: 10, symbol: "diamond" }, hovertemplate: "%{y:.1f}% right", yaxis: "y2" },
-  ], { hovermode: "x unified", yaxis: axis("correlation", { rangemode: "tozero" }), yaxis2: axis("direction right (%)", { overlaying: "y", side: "right", range: [45, 70], showgrid: false }),
-       xaxis: axis(""), shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, yref: "y2", y0: 50, y1: 50, line: { color: C.muted, dash: "dot", width: 1 } }] });
+  ], { hovermode: "x unified", yaxis: axis("correlation", { rangemode: "tozero", domain: [0.44, 1] }),
+       yaxis2: axis("direction right (%)", { domain: [0, 0.34], range: [45, 70], anchor: "x" }),     // its own panel, not a second scale
+       xaxis: axis("", { anchor: "y2" }), shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, yref: "y2", y0: 50, y1: 50, line: { color: C.muted, dash: "dot", width: 1 } }] });
 
   if (!INF.coin) INF.coin = "NEARUSDT";
   const cs = document.getElementById("inf-coin");
   cs.innerHTML = syms.map(x => `<option ${x === INF.coin ? "selected" : ""}>${x}</option>`).join("");
   cs.onchange = e => { INF.coin = e.target.value; drawInformed(); };
-  const coin = W.coins.find(c => c.symbol === INF.coin), pal = { "A-S (tail k)": "#94a3b8", "A-S (core k)": "#64748b", "+ lean": "#7dd3fc", "+ kill switch": "#f5a524",
-    "+ lean + kill": "#fbbf24", "Tail k + lean + kill": "#34d399", "Join touch": "#f87171", "Join + lean + kill": "#38bdf8" };
+  // the two baselines in grey, the six strategies in the validated series order
+  const coin = W.coins.find(c => c.symbol === INF.coin), pal = { "A-S (tail k)": "#94a3b8", "A-S (core k)": "#64748b", "+ lean": SERIES[0], "+ kill switch": SERIES[1],
+    "+ lean + kill": SERIES[2], "Tail k + lean + kill": SERIES[3], "Join touch": SERIES[4], "Join + lean + kill": SERIES[5] };
   const traces = [], dates = W.meta.test_dates;
   for (const n of order) { const cur = coin.curves[`${n}|${INF.rule}`]; if (!cur) continue;
     let off = 0; const x = [], y = [];
@@ -533,11 +537,11 @@ function drawTuning() {
   const paused = kills.map(k => { const r = H.find(x => x.kill === k); return r ? Math.round(100 * r.paused) : 0; });
   const all = H.map(r => r[TUN.metric]), lo = Math.min(...all), hi = Math.max(...all);
   plot("ch-tun-heat", [{ type: "heatmap", z, x: kills.map((k, i) => `${k} (${paused[i]}% paused)`), y: skews.map(m => m + "×"), zmin: lo, zmax: hi,
-    colorscale: [[0, "#7f1d1d"], [0.5, "#a16207"], [1, "#15803d"]], text: z.map(r => r.map(v => TUN.metric === "pnl" ? fmt(v, 0) : fmt(v, 2))), texttemplate: "%{text}",
+    colorscale: [[0, "#1d2b3f"], [1, "#3987e5"]], text:      /* one hue: every cell loses, brighter = loses less */ z.map(r => r.map(v => TUN.metric === "pnl" ? fmt(v, 0) : fmt(v, 2))), texttemplate: "%{text}",
     textfont: { family: MONO, size: 12, color: C.text }, hovertemplate: "skew %{y}, kill %{x}: %{z:.2f}<extra></extra>", showscale: false }],
     { showlegend: false, hovermode: "closest", xaxis: axis("kill switch"), yaxis: axis("inventory skew") });
   const tk = [["default", "Default"], ["tuned_per_coin", "Tuned<br>per coin"], ["tuned_pooled", "Tuned on<br>all coins"], ["hindsight_best", "Hindsight<br>(not achievable)"]];
-  plot("ch-tun-tune", [{ type: "bar", x: tk.map(t => t[1]), y: tk.map(t => T[t[0]]), marker: { color: ["#94a3b8", "#38bdf8", "#34d399", "#475569"] },
+  plot("ch-tun-tune", [{ type: "bar", x: tk.map(t => t[1]), y: tk.map(t => T[t[0]]), marker: { color: ["#94a3b8", "#3987e5", "#199e70", "#475569"] },
     text: tk.map(t => fmt(T[t[0]], 0)), textposition: "inside", insidetextanchor: "end", textfont: { family: MONO, color: "#0a0f16" }, hovertemplate: "%{y:,.0f} USD<extra></extra>" }],
     { showlegend: false, xaxis: axis("", { tickangle: 0 }), yaxis: axis("P&L, test days 2–4 (USD)") });
   const sens = S.sensitivity, rq = sens.filter(r => r.latency_ms === 50).sort((a, b) => a.requote_ms - b.requote_ms), lt = sens.filter(r => r.requote_ms === 500).sort((a, b) => a.latency_ms - b.latency_ms);
@@ -547,7 +551,7 @@ function drawTuning() {
   ], { hovermode: "closest", xaxis: axis("milliseconds (log)", { type: "log" }), yaxis: axis("P&L per $ traded (bp)"),
        shapes: [{ type: "line", x0: 285, x1: 285, yref: "paper", y0: 0, y1: 1, line: { color: C.muted, dash: "dot" } }],
        annotations: [{ x: Math.log10(285), y: 1, yref: "paper", text: "your latency", showarrow: false, font: { size: 10, color: C.muted }, yanchor: "bottom" }] });
-  if (L) { const P = L.prediction, syms = [...new Set(P.map(r => r.symbol))], fs = ["own", "+ BTC spot", "+ BTC perp", "+ both"], col = ["#94a3b8", "#38bdf8", "#f5a524", "#34d399"];
+  if (L) { const P = L.prediction, syms = [...new Set(P.map(r => r.symbol))], fs = ["own", "+ BTC spot", "+ BTC perp", "+ both"], col = ["#94a3b8", "#3987e5", "#c98500", "#199e70"];
     plot("ch-tun-lead", fs.map((f, i) => ({ type: "bar", name: f, x: syms.map(x => x.replace("USDT", "")), y: syms.map(sy => { const r = P.find(x => x.symbol === sy && x.features === f); return r ? r.corr : null; }),
       marker: { color: col[i] }, hovertemplate: "%{y:.3f}" })), { barmode: "group", xaxis: axis(""), yaxis: axis("out-of-sample correlation") }); }
   if (B) { const pe = B.mid_proxy_error;
@@ -558,7 +562,7 @@ function drawTuning() {
       tile("Trade-based mid error", fmt(pe.mean_abs_bp, 3) + " bp", `average; 95th pct ${fmt(pe.p95_abs_bp, 2)} bp`) +
       tile("Off by > half a spread", fmt(100 * pe.share_beyond_half_spread, 0) + "%", "of 100 ms bars");
     const hs = Object.keys(B.predictive_corr).map(Number), pc = B.predictive_corr;
-    plot("ch-tun-book-corr", [["book_imb", "book imbalance", "#34d399"], ["trade_imb_5s", "trade imbalance (5 s)", "#f5a524"], ["micro_dev_bp", "microprice − mid", "#a78bfa"]].map(([k, n, c]) =>
+    plot("ch-tun-book-corr", [["book_imb", "book imbalance", "#199e70"], ["trade_imb_5s", "trade imbalance (5 s)", "#c98500"], ["micro_dev_bp", "microprice − mid", "#9085e9"]].map(([k, n, c]) =>
       ({ x: hs, y: hs.map(h => pc[h][k]), name: n, mode: "lines+markers", line: { color: c }, hovertemplate: "%{x} s: %{y:.3f}" })),
       { hovermode: "closest", xaxis: axis("seconds ahead"), yaxis: axis("correlation with the next move", { rangemode: "tozero" }) });
     const dec = B.imbalance_deciles;

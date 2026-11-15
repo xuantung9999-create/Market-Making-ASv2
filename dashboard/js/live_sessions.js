@@ -89,7 +89,7 @@ const Sess = (() => {
     const b = one(), lab = $("sess-label");
     lab.textContent = b && S.sel !== "ALL" && S.view !== "lv-overview" ? b.meta.label : "";      // the Execution test page carries its label by the title
     lab.hidden = !lab.textContent;
-    lab.style.setProperty("--c", b && b.meta.source === "paper" ? "#2dd4bf" : "#f5a524");
+    lab.style.setProperty("--c", b && b.meta.source === "paper" ? "#199e70" : "#c98500");
     if (typeof drawFooter === "function") drawFooter();
   }
   /* Newest build time among the loaded bundles: the live part of the page footer. */
@@ -179,7 +179,7 @@ function stateBands(b, top = 1.0, h = 0.035) {
 }
 const band = (iv, y1, h, color, op) => ({ type: "rect", xref: "x", yref: "paper", x0: isoT(iv.t0), x1: isoT(iv.t1), y0: y1 - h, y1, fillcolor: color, opacity: op, line: { width: 0 }, layer: "below" });
 function markerLines(b, kinds = ["restart", "loss_stop", "day", "incident"]) {
-  const col = { restart: "#e2e8f0", loss_stop: "#fb923c", day: "#334155", incident: "#facc15" };
+  const col = { restart: "#e2e8f0", loss_stop: "#ec835a", day: "#334155", incident: "#fab219" };
   const dash = { restart: "dot", loss_stop: "solid", day: "dot", incident: "dash" };
   return (b.markers || []).filter(m => kinds.includes(m.kind) && Sess.inWin(b, m.t)).map(m => ({ type: "line", xref: "x", yref: "paper", x0: isoT(m.t), x1: isoT(m.t), y0: 0, y1: 1,
     line: { color: col[m.kind] || "#64748b", width: m.kind === "day" ? 1 : 1.5, dash: dash[m.kind] || "dot" }, layer: "below" }));

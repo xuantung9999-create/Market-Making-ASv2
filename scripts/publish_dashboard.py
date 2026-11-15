@@ -334,6 +334,8 @@ def main(argv=None) -> None:
     shutil.copy2(DASH / "data.js", out / "data.js")
     if (DASH / "cv").is_dir():                                    # the owner's CV, linked from the header
         shutil.copytree(DASH / "cv", out / "cv")
+    if (DASH / "codemap.html").is_file():                         # the code map page (scripts/build_codemap.py), linked from the header
+        shutil.copy2(DASH / "codemap.html", out / "codemap.html")
     for s in OPERATIONS_SCRIPTS:                                  # Operations is not in the public copy at all
         (out / s).unlink(missing_ok=True)
     snapshot_at = write_snapshot(out) if args.live_snapshot else ""

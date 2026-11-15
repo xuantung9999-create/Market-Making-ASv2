@@ -28,7 +28,7 @@ function storyPlot(id, data, lay) {
   const fixed = o => Object.assign({ fixedrange: true }, o);
   const l = Object.assign({ dragmode: false, hovermode: "closest" }, lay);
   l.xaxis = fixed(l.xaxis); l.yaxis = fixed(l.yaxis);
-  return Plotly.react(id, data, layout(l), Object.assign({}, CONFIG, { displayModeBar: false, scrollZoom: false, doubleClick: false }));
+  return Plotly.react(id, data.map(markSpec), layout(l), Object.assign({}, CONFIG, { displayModeBar: false, scrollZoom: false, doubleClick: false }));
 }
 
 /* One section frame: heading that states the finding, one or two sentences, one figure, one link. */
@@ -97,7 +97,7 @@ function storyForest(host, S) {
   const note = isNum(s.fee_bp) ? [{ x: (rows[0].gross_bp + rows[0].net_bp) / 2, y: cats[0], xref: "x", yref: "y", yshift: 16, showarrow: false,
                                      text: storyFeeNote(s.fee_bp), font: { size: 11, color: C.muted } }] : [];
   storyPlot("story-forest", [gap, net, gross], {
-    margin: { l: catMargin(cats), r: 16, t: 10, b: 44 }, annotations: note,
+    margin: { l: catMargin(cats) + 14, r: 16, t: 10, b: 44 }, annotations: note,      // + room so the longest label is never clipped while the web font loads
     xaxis: axis(STORY_FOREST_AXIS, { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
     yaxis: Object.assign(axis("", { automargin: true }), { autorange: "reversed", type: "category", categoryorder: "array", categoryarray: cats }),
   });
@@ -122,7 +122,7 @@ function storyWaterfall(host, S) {
     increasing: { marker: { color: PROFIT } }, decreasing: { marker: { color: LOSS } }, totals: { marker: { color: pnlColor(s.net_bp) } },
     hovertemplate: "%{x}<br>" + STORY_HOVER.y,
   }], {
-    showlegend: false, annotations: note, margin: { l: 56, r: 16, t: 30, b: 80 },
+    showlegend: false, annotations: note, margin: { l: 56, r: 16, t: 30, b: 80 }, waterfallgap: 0.42,     // slimmer columns read as steps, not blocks
     xaxis: axis("", { tickangle: 0, tickfont: storyTickFont() }), yaxis: axis("bp per dollar traded", { range: [lo - pad, hi + pad], zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
   });
   storyAfter(sec, s.link);
@@ -183,7 +183,7 @@ function storyExecution(host, S) {
 
 /* Every order attempt and where it ended, as one stacked bar: the counts reconcile or the bar shows it. */
 function storyLifecycle(lc) {
-  const parts = [["Filled", lc.filled, C.accent], ["Cancelled", lc.cancelled, C.muted], ["Still open", lc.open, C.bench], ["Rejected", lc.rejected, C.ask]]
+  const parts = [["Filled", lc.filled, C.accent], ["Cancelled", lc.cancelled, C.muted], ["Still open", lc.open, SERIES[2]], ["Rejected", lc.rejected, SERIES[1]]]     // blue, grey, aqua, orange: adjacent slots stay apart
     .filter(p => p[1] > 0);
   const cat = ["Order attempts"];
   storyPlot("story-lifecycle", parts.map(([name, v, color]) => ({

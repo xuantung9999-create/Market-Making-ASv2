@@ -42,10 +42,10 @@ function drawLvModel() {
     const tr = Array.from({ length: n }, (_, i) => i).sort((a, b) => key(a) - key(b)).map(i => ({ type: "scatter", mode: "lines",
       name: i === mo.live_arm ? `arm ${i} (live)` : i === best ? `arm ${i} (best now)` : "other arms", legendgroup: key(i) ? `a${i}` : "other",
       showlegend: key(i) || i === [...Array(n).keys()].find(j => !key(j)), x: h.map(r => isoT(r.t)), y: h.map(r => r.scores[i]),
-      line: { color: i === mo.live_arm ? BID_C : i === best ? "#2dd4bf" : "#475569", width: key(i) ? 2.5 : 1 }, opacity: key(i) ? 1 : 0.6,
+      line: { color: i === mo.live_arm ? BID_C : i === best ? "#199e70" : "#475569", width: key(i) ? 2.5 : 1 }, opacity: key(i) ? 1 : 0.6,
       hovertemplate: `arm ${i}: %{y:.2f} bp<extra></extra>` }));
     deskPlot("lvm-scores", tr, { yaxis: axis("score, bp", { zeroline: true, zerolinewidth: 1.5, zerolinecolor: "#94a3b8" }), xaxis: axis("", { type: "date", range: w ? [isoT(w[0]), isoT(w[1])] : undefined }),
-      shapes: h.filter(r => r.switched).map(r => ({ type: "line", xref: "x", yref: "paper", x0: isoT(r.t), x1: isoT(r.t), y0: 0, y1: 1, line: { color: "#facc15", width: 1, dash: "dot" } })) });
+      shapes: h.filter(r => r.switched).map(r => ({ type: "line", xref: "x", yref: "paper", x0: isoT(r.t), x1: isoT(r.t), y0: 0, y1: 1, line: { color: "#fab219", width: 1, dash: "dot" } })) });
   }
 
   // predicted against realised edge

@@ -1,6 +1,6 @@
 # Crypto market making: from Avellaneda–Stoikov to a queue-aware agent
 
-**Live page: [xuantung9999-create.github.io/Market-Making-ASv2](https://xuantung9999-create.github.io/Market-Making-ASv2/)** · [Code layout](#layout) · 2-minute read · Author: Nguyễn Xuân Tùng, [CV](dashboard/cv/NguyenXuanTung_CV.pdf) · [LinkedIn](https://www.linkedin.com/in/tungtea-nguyen)
+**Live page: [xuantung9999-create.github.io/Market-Making-ASv2](https://xuantung9999-create.github.io/Market-Making-ASv2/)** · [Code map](https://xuantung9999-create.github.io/Market-Making-ASv2/codemap.html) · [Code layout](#layout) · 2-minute read · Author: Nguyễn Xuân Tùng, [CV](dashboard/cv/NguyenXuanTung_CV.pdf) · [LinkedIn](https://www.linkedin.com/in/tungtea-nguyen)
 
 **The result is negative, and that is the finding.** A candidate edge on tick-constrained micro caps (+16 bp per dollar traded on one day) was put through a pre-registered test: 60 days, three coins, a queue model, 300 ms latency and base-tier fees. It did not survive.
 
@@ -121,7 +121,12 @@ mm/report.py          run bundles behind the page; scripts/build_story.py writes
 scripts/windows/      Windows launchers (.bat), each run from the repo root
 notes/derivation.md   Day 1 derivation of the model
 dashboard/index.html  the page (guide: docs/DASHBOARD_GUIDE.md); public copy by scripts/publish_dashboard.py
+dashboard/codemap.html interactive code map, rebuilt by scripts/build_codemap.py (graphify, AST only)
 ```
+
+Charts share one palette and one set of mark rules, defined once in `dashboard/js/core.js`: six series colours checked for
+colour-blind separation and contrast on the page's dark surfaces, red/green only for profit and loss, a red-grey-blue
+scale for signed heatmaps, and no chart with two y-scales (a second measure gets its own panel on the same time axis).
 
 ## Model
 

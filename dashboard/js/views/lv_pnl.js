@@ -1,7 +1,7 @@
 /* lv_pnl.js: P&L tab. Attribution waterfall, attribution over time, per-day table, worst and best fills. */
 
 const TERMS = [["edge", "Edge"], ["adverse", "Adverse selection"], ["carry", "Carry"], ["fees", "Fees (estimated)"], ["artifact", "Artifact"]];
-const TERM_COLOR = { edge: "#e2e8f0", adverse: "#f472b6", carry: "#2dd4bf", fees: "#94a3b8", artifact: ART_C };
+const TERM_COLOR = { edge: "#e2e8f0", adverse: "#d55181", carry: "#199e70", fees: "#94a3b8", artifact: ART_C };
 
 function fillScore(f) { return isNum(f.edge_bp) ? f.edge_bp + (isNum(f.mk_60) ? f.mk_60 : 0) : null; }
 function openFill(b, f) { if (typeof Tape !== "undefined") Tape.open(b.meta.id, f.t, f.i); }

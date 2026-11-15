@@ -153,7 +153,7 @@ function drawCum(bs) {
                     line: { color: "#cbd5e1", width: 1.5, shape: "hv" }, hovertemplate: "%{y} lots<extra></extra>" });
       markerLines(b, ["restart", "loss_stop", "day"]).forEach(s => shapes.push(s));   // incidents are on the timeline above
       stateBands(b, 1.0, 0.03).forEach(s => shapes.push(s));
-      [-b.meta.q_max, b.meta.q_max].forEach(q => shapes.push({ type: "line", xref: "paper", yref: "y2", x0: 0, x1: 1, y0: q, y1: q, line: { color: "#818cf8", width: 1, dash: "dot" } }));
+      [-b.meta.q_max, b.meta.q_max].forEach(q => shapes.push({ type: "line", xref: "paper", yref: "y2", x0: 0, x1: 1, y0: q, y1: q, line: { color: "#9085e9", width: 1, dash: "dot" } }));
     }
   });
   if (!traces.length) { lvEmpty("ov2-cum", "No fills in this range, so there is no P&L curve."); return; }

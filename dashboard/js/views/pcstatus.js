@@ -18,7 +18,7 @@ function loadLive() {
 }
 
 const ageText = s => !isNum(s) ? "–" : s < 90 ? `${Math.round(s)} s` : s < 5400 ? `${Math.round(s / 60)} min` : s < 172800 ? `${fmt(s / 3600, 1)} h` : `${fmt(s / 86400, 1)} d`;
-const dot = (ok, warn) => `<span class="live-dot" style="--c:${ok ? "#22c55e" : warn ? "#f5a524" : "#ef4444"}"></span>`;
+const dot = (ok, warn) => `<span class="live-dot" style="--c:${ok ? "#0ca30c" : warn ? "#c98500" : "#d03b3b"}"></span>`;
 const utc = ms => isNum(ms) ? new Date(ms).toISOString().replace("T", " ").slice(0, 19) : "–";
 const sideTxt = s => s > 0 ? '<span style="color:var(--bid)">BUY</span>' : s < 0 ? '<span style="color:var(--ask)">SELL</span>' : "–";
 

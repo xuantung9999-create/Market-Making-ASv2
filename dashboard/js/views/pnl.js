@@ -9,10 +9,17 @@ function drawPnlWaterfall(b, id = "pnl-wf") {
   const bp = (ds, k, sg) => { const n = ds.reduce((a, d) => a + (d.notional || 0), 0); return n > 0 ? sg * ds.reduce((a, d) => a + (isNum(d[k]) ? d[k] : 0), 0) / n * 1e4 : null; };
   const groups = syms.map(s => [s, all.filter(d => d.symbol === s)]);
   if (syms.length > 1) groups.push(["All coins", all]);
+  // values are printed on the headline group only (all coins, or the one coin); the per-coin bars carry them in the hover,
+  // so labels never pile up on top of each other
+  const head = groups.length - 1;
   const tr = groups.map(([name, ds], i) => ({ type: "bar", name: name.replace("USDT", ""), x: parts.map(p => p[1]), y: parts.map(p => bp(ds, p[0], p[2])),
-    marker: { color: name === "All coins" ? C.text : SERIES[i % SERIES.length] }, text: parts.map(p => { const v = bp(ds, p[0], p[2]); return isNum(v) ? fmt(v, 1) : ""; }),
-    textposition: "outside", hovertemplate: `${name} %{x}: %{y:.1f} bp per $ traded<extra></extra>` }));
-  deskPlot(id, tr, { barmode: "group", yaxis: axis("bp per dollar traded", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }), xaxis: axis("") });
+    marker: { color: name === "All coins" ? "#cbd5e1" : seriesColor(i) },
+    text: i === head ? parts.map(p => { const v = bp(ds, p[0], p[2]); return isNum(v) ? sign(v, 1) : ""; }) : undefined,
+    textposition: "outside", cliponaxis: false, textfont: { family: MONO, size: 11, color: C.text },
+    hovertemplate: `${name} %{x}: %{y:.1f} bp per $ traded<extra></extra>` }));
+  const ys = tr.flatMap(t => t.y).filter(isNum), lo = Math.min(0, ...ys), hi = Math.max(0, ...ys), pad = (hi - lo) * 0.12;
+  deskPlot(id, tr, { barmode: "group", hovermode: "closest", margin: { l: 56, r: 16, t: 24, b: 44 },
+    yaxis: axis("bp per dollar traded", { zeroline: true, range: [lo - pad, hi + pad] }), xaxis: axis("", { showspikes: false }) });
 }
 
 /* Daily net P&L as small multiples: one row per coin, bars with the 7-day mean. Stacked signed bars cannot be read. */
@@ -44,7 +51,7 @@ function drawPnlHeat(b) {
   const ze = syms.map(s => h[`${s}|${f.variant}`].net_edge_bp || null);
   if (!syms.length || ze.some(r => !r)) return emptyPanel("pnl-heat-edge");
   const hrs = [...Array(24).keys()], le = Math.max(1e-9, ...ze.flat().filter(isNum).map(Math.abs));
-  deskPlot("pnl-heat-edge", [{ type: "heatmap", x: hrs, y: syms, z: ze, zmin: -le, zmax: le, colorscale: [[0, LOSS], [0.5, C.panel], [1, PROFIT]],
+  deskPlot("pnl-heat-edge", [{ type: "heatmap", x: hrs, y: syms, z: ze, zmin: -le, zmax: le, zmid: 0, colorscale: DIVERGING,
     colorbar: { title: { text: "bp" } }, hovertemplate: "%{y} %{x}:00 UTC: %{z:,.2f} bp<extra></extra>" }],
     { xaxis: axis("UTC hour", { dtick: 2 }), yaxis: axis("") });
 }

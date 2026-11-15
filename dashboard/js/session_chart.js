@@ -284,7 +284,7 @@ const SessionChart = (function () {
     // inventory cap lines
     if (geo.inventory && m.qMax) {
       for (const s of [m.qMax, -m.qMax]) shapes.push({ type: "line", xref: ids.inventory.x + " domain", x0: 0, x1: 1, yref: ids.inventory.y, y0: s, y1: s,
-                                                      line: { color: pal(m, "limit", "#818cf8"), width: 1, dash: "dot" } });
+                                                      line: { color: pal(m, "limit", "#9085e9"), width: 1, dash: "dot" } });
     }
     // shapes written for the price panel (quote-state background, markers); the adapter leaves refs off
     for (const s of [].concat(m.bands || [], m.lines || [])) {
@@ -339,7 +339,7 @@ const SessionChart = (function () {
     const m = st.m, idx = st.frames[k];
     st.pos = k;
     const lay = decorate(m, st.L, idx, st.showNotes);
-    Plotly.react(st.figEl, tracesFor(m, st.L.plan, st.L.axisId, idx), layout(lay), CONFIG);
+    Plotly.react(st.figEl, tracesFor(m, st.L.plan, st.L.axisId, idx).map(markSpec), layout(lay), CONFIG);
     st.slider.value = k;
     st.slider.setAttribute("aria-valuetext", xLabel(m, m.x[idx]));
     st.readout.textContent = xLabel(m, m.x[idx]);

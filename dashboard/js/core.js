@@ -33,8 +33,10 @@ const ROADMAP = [
 
 const D = window.DASH || null;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+/* Chart colours. The page keeps its own link/UI accent in CSS; chart marks use the validated series set below
+   (accent = series 1 blue, benchmark = series 4 amber, buy/sell = the bid/ask pair), so every chart speaks one palette. */
 const C = { text: css("--text"), muted: css("--muted"), line: css("--line"), grid: css("--grid"), panel: css("--panel"),
-            accent: css("--accent"), bench: css("--bench"), bid: css("--bid"), ask: css("--ask") };
+            accent: "#3987e5", bench: "#c98500", bid: "#3987e5", ask: "#c98500" };
 const MONO = "IBM Plex Mono, Consolas, monospace";
 const fmtP = x => (x === null || x === undefined || !isFinite(x)) ? "–" : Math.abs(x) >= 1000 ? Number(x).toLocaleString("en-US", { maximumFractionDigits: 0 }) : Number(Number(x).toPrecision(5)).toString();
 const fmt = (x, d = 2) => (x === null || x === undefined || !isFinite(x)) ? "–" : Number(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -42,11 +44,37 @@ const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function axis(title, extra = {}) {
-  return Object.assign({ title: { text: title, font: { size: 12, color: C.muted } }, gridcolor: C.grid, zerolinecolor: C.line,
-                         linecolor: C.line, tickfont: { family: MONO, size: 11, color: C.muted }, automargin: true }, extra);
+  // recessive chrome: hairline solid grid, a slightly stronger zero baseline, no axis box, small mono ticks
+  return Object.assign({ title: { text: title, font: { size: 12, color: C.muted }, standoff: 8 }, gridcolor: C.grid, gridwidth: 1,
+                         zerolinecolor: "#3a4d66", zerolinewidth: 1, showline: false, linecolor: C.line, ticks: "",
+                         tickfont: { family: MONO, size: 11, color: C.muted }, automargin: true,
+                         showspikes: true, spikemode: "across", spikesnap: "cursor", spikethickness: 1, spikedash: "solid", spikecolor: "#4f6580" }, extra);
+}
+/* Mark specs applied to every trace that did not set its own: 2 px lines, markers of at least 7 px with a surface ring,
+   bars separated by a surface gap, hover labels in the theme. Explicit trace settings always win. */
+const SURFACE = "#101823";
+function markSpec(t) {
+  if (!t || typeof t !== "object") return t;
+  const type = t.type || "scatter";
+  if ((type === "scatter" || type === "scattergl") && t.mode !== "markers" && t.mode !== "text") {
+    t.line = Object.assign({ width: 2 }, t.line);
+  }
+  if ((type === "scatter" || type === "scattergl") && /markers/.test(t.mode || "")) {
+    const m = t.marker = Object.assign({}, t.marker);
+    if (typeof m.size === "number" && m.size < 7) m.size = 7;
+    if (m.size === undefined) m.size = 8;
+    if (!m.line) m.line = { color: SURFACE, width: 1.5 };
+  }
+  if (type === "bar") {
+    const m = t.marker = Object.assign({}, t.marker);
+    if (!m.line) m.line = { color: SURFACE, width: 1 };
+  }
+  return t;
 }
 function layout(extra = {}) {
   const lay = baseLayout(extra);
+  // rounded data-ends on plain bars; stacked and relative bars stay square so segments meet cleanly
+  if (lay.barcornerradius === undefined && !/stack|relative/.test(lay.barmode || "")) lay.barcornerradius = 3;
   // log axes: label powers of ten only (Plotly's default labels every 2 and 5 in between, which reads as noise)
   Object.keys(lay).forEach(k => {
     const a = lay[k];
@@ -58,10 +86,10 @@ function baseLayout(extra = {}) {
   return Object.assign({
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "IBM Plex Sans, system-ui, sans-serif", color: C.muted, size: 12 },
-    margin: { l: 56, r: 16, t: 10, b: 44 }, showlegend: true,
-    legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", font: { size: 11 } },
-    hoverlabel: { bgcolor: C.panel, bordercolor: C.line, font: { family: MONO, color: C.text, size: 12 } },
-    hovermode: "x unified",
+    margin: { l: 56, r: 16, t: 10, b: 44 }, showlegend: true, colorway: SERIES,
+    legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", font: { size: 11, color: C.text }, itemwidth: 30, traceorder: "normal" },
+    hoverlabel: { bgcolor: "#0c131d", bordercolor: "#2c3f58", font: { family: MONO, color: C.text, size: 12 }, align: "left" },
+    hovermode: "x unified", hoverdistance: 24, spikedistance: -1, bargap: 0.18, bargroupgap: 0.08,
   }, extra);
 }
 /* ---- Narrow screens (recruiter-ready spec section 4) ---- */
@@ -100,7 +128,7 @@ function navToActive() {
   markScrollers();
 }
 const CONFIG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d", "autoScale2d"] };
-const plot = (id, data, lay) => Plotly.react(id, data, layout(lay), CONFIG);
+const plot = (id, data, lay) => Plotly.react(id, (data || []).map(markSpec), layout(lay), CONFIG);
 
 /* ======================= Router =======================
    Views register themselves: register(name, drawFn). A view is drawn the first time it is shown
@@ -141,11 +169,11 @@ const APPENDIX_TABS = ["book", "data", "simulator", "archive", "l-health"];     
 const LIVE_VIEWS = ["lv-overview", "lv-pnl", "lv-exec", "lv-model"];     // the views that use the session selector and range buttons
 const DEFAULT_VIEW = { tab: "story", view: "story" };/* Quote-state palette, defined once. Green and red are reserved for profit and loss, bid blue and ask amber for
    the two sides, purple for artifacts only. */
-const BID_C = "#38bdf8", ASK_C = "#f5a524", ART_C = "#a78bfa";
-const STATE_COLOR = { QUOTING: "#475569", WARMUP: "#94a3b8", POLICY_OUT: "#2dd4bf", LOSS_STOP: "#fb923c", INV_CAP: "#818cf8",
-                      NO_BALANCE: "#f472b6", BELOW_MIN: "#cbd5e1", REJECTED: "#e879f9", STALE_FEED: "#64748b",
-                      EXCHANGE_ERROR: "#facc15", UNKNOWN: "#334155" };
-const SEVERITY_COLOR = { high: "#fb923c", medium: "#facc15", low: "#94a3b8", info: "#64748b" };
+const BID_C = "#3987e5", ASK_C = "#c98500", ART_C = "#9085e9";      // series slots 1, 4 and 6: a bid/ask page shows no other series
+const STATE_COLOR = { QUOTING: "#475569", WARMUP: "#94a3b8", POLICY_OUT: "#199e70", LOSS_STOP: "#ec835a", INV_CAP: "#9085e9",
+                      NO_BALANCE: "#d55181", BELOW_MIN: "#cbd5e1", REJECTED: "#d03b3b", STALE_FEED: "#64748b",
+                      EXCHANGE_ERROR: "#fab219", UNKNOWN: "#334155" };
+const SEVERITY_COLOR = { high: "#ec835a", medium: "#fab219", low: "#94a3b8", info: "#64748b" };
 function register(name, fn, initiallyDirty = true) {
   if (!VIEWS.includes(name)) VIEWS.push(name);
   draw[name] = fn; dirty[name] = initiallyDirty;
@@ -268,17 +296,24 @@ function boot() {
 /* ======================= Desk helpers =======================
    Shared by every Desk view. Profit green and loss red are used for nothing else on Desk views. */
 const DESK_VIEWS = ["pnl", "execution", "risk", "model-health", "signals", "simlive", "market"];   // views that read the selected run
-const PROFIT = "#22c55e", LOSS = "#ef4444";
+/* Status colours (validated for the dark surfaces): profit and loss only, never a series. */
+const PROFIT = "#0ca30c", LOSS = "#d03b3b";
 const KIND = {
   backtest:    { label: "SIM",          c: "#94a3b8" },
-  walkforward: { label: "WALK-FORWARD", c: "#a78bfa" },
-  paper:       { label: "PAPER",        c: "#f5a524" },
-  live:        { label: "LIVE",         c: "#22d3ee" },
-  demo:        { label: "DEMO",         c: "#e879f9" },
+  walkforward: { label: "WALK-FORWARD", c: "#9085e9" },
+  paper:       { label: "PAPER",        c: "#c98500" },
+  live:        { label: "LIVE",         c: "#3987e5" },
+  demo:        { label: "DEMO",         c: "#d55181" },
 };
-/* Categorical colours for coins, sessions and variants. None of them is bid blue, ask amber, artifact purple or
-   profit/loss green/red, so a coloured line never reads as one of those meanings. */
-const SERIES = ["#2dd4bf", "#f472b6", "#facc15", "#818cf8", "#e2e8f0", "#fb923c", "#94a3b8", "#c084fc"];
+/* Categorical colours for coins, sessions and variants: one validated set (dataviz validator, dark surfaces #0a0f16 and
+   #101823: lightness band, chroma floor, adjacent CVD dE >= 8.4, normal-vision dE >= 19.3, contrast >= 3:1), always in
+   this order, never cycled past six (fold the rest into grey). No green or red: those mean profit and loss. */
+const SERIES = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#9085e9"];
+/* Diverging scale for signed values on heatmaps (loss <- 0 -> gain): red and blue poles that stay apart for colour-blind
+   readers, a neutral grey at zero. Red/green is kept only where the sign is also shown by position (bars above or below 0). */
+const DIVERGING = [[0, "#d03b3b"], [0.25, "#8c3a3f"], [0.5, "#2a3646"], [0.75, "#2a5f9e"], [1, "#3987e5"]];
+const GREY_SERIES = "#64748b";      // the seventh and later series, and context lines that should recede
+const seriesColor = k => k < SERIES.length ? SERIES[k] : GREY_SERIES;
 const esc = x => String(x).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 const isNum = x => typeof x === "number" && isFinite(x);
 const sign = (x, d = 2) => isNum(x) ? (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d) : "–";

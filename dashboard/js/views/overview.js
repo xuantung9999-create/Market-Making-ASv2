@@ -114,20 +114,32 @@ function drawVerdictCurve(b) {
   const curves = section(b, "curves"), gross = b.gross_curves || {};
   if (!curves) return emptyPanel("ov-cum");
   const keys = Object.keys(curves).filter(k => k.startsWith("ALL|")).sort();
-  const tr = [];
-  keys.forEach((k, i) => {
-    const v = k.slice(4), c = curves[k], col = SERIES[i % SERIES.length];
-    tr.push({ x: c.t, y: c.pnl, name: v, mode: "lines", line: { width: v === "q1.0" ? 3 : 1.6, color: col }, legendgroup: v,
-              hovertemplate: `${v} %{y:,.0f} USD<extra></extra>` });
-    if ((v === "q1.0" || v === "agent") && gross[k])
-      tr.push({ x: gross[k].t, y: gross[k].pnl, name: v + " before fees", mode: "lines", line: { width: 1.4, color: col, dash: "dash" }, legendgroup: v,
-                hovertemplate: `${v} before fees %{y:,.0f} USD<extra></extra>` });
+  // Emphasis: the headline queue and the agent in colour, every other assumption a grey context line. Each line is
+  // named at its right end, so the reader does not have to match colours against a legend.
+  const NAME = { "q1.0": "queue 1x (headline)", "q0.5": "queue 0.5x", "q2.0": "queue 2x", "bridge q0 lat100": "front of queue, 100 ms", agent: "agent" };
+  const LOOK = { "q1.0": { color: SERIES[0], width: 2.6 }, agent: { color: SERIES[2], width: 2 } };
+  const tr = [], ends = [];
+  keys.forEach(k => {
+    const v = k.slice(4), c = curves[k], look = LOOK[v] || { color: "#5b6b80", width: 1.5 }, name = NAME[v] || v;
+    tr.push({ x: c.t, y: c.pnl, name, mode: "lines", line: look, legendgroup: v, hovertemplate: `${name} %{y:,.0f} USD<extra></extra>` });
+    if (c.t && c.t.length) ends.push({ x: c.t[c.t.length - 1], y: c.pnl[c.pnl.length - 1], text: name, color: LOOK[v] ? C.text : C.muted, strong: !!LOOK[v] });
+    if (LOOK[v] && gross[k])
+      tr.push({ x: gross[k].t, y: gross[k].pnl, name: name + ", before fees", mode: "lines", line: { width: 1.4, color: look.color, dash: "dash" }, legendgroup: v,
+                hovertemplate: `${name} before fees %{y:,.0f} USD<extra></extra>` });
   });
   if (!tr.length) return emptyPanel("ov-cum");
-  const shown = tr.filter(t => t.showlegend !== false).length;
-  const below = shown > 3 ? legendBelow(shown, 320) : null;     // spec 4.7: a long legend sits under the chart
-  if (below) $("ov-cum").style.height = below.height + "px";
-  deskPlot("ov-cum", tr, { ...(below ? { legend: below.legend, margin: { l: 56, r: 16, t: 10, b: below.margin_b } } : {}), xaxis: axis("UTC date", { type: "date" }), yaxis: axis("USD, 100 USD lots, all coins", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }) });
+  // end labels: spread apart vertically so close lines do not print on top of each other
+  ends.sort((a, b) => b.y - a.y);
+  const span = Math.max(1, ...tr.flatMap(t => t.y).filter(isNum).map(Math.abs)), minGap = span * 0.055;
+  ends.forEach((e, i) => { if (i && ends[i - 1].ly - e.y < minGap) e.ly = ends[i - 1].ly - minGap; else e.ly = e.y; });
+  const annotations = ends.map(e => ({ x: e.x, y: e.ly, xref: "x", yref: "y", xanchor: "left", xshift: 6, showarrow: false, align: "left",
+    text: e.strong ? `<b>${esc(e.text)}</b>` : esc(e.text), font: { size: 11, color: e.color } }));
+  const narrow = isNarrow(), below = narrow ? legendBelow(tr.length, 360) : null;   // a phone has no room for end labels
+  if (below) { below.margin_b = Math.max(below.margin_b, 56 + tr.length * 22); below.height = Math.max(below.height, 240 + below.margin_b); }  // long names stack one per row
+  $("ov-cum").style.height = (below ? below.height : 360) + "px";
+  deskPlot("ov-cum", tr, { showlegend: narrow, legend: below ? below.legend : undefined,
+    annotations: narrow ? [] : annotations, margin: { l: 64, r: narrow ? 16 : 168, t: 10, b: below ? below.margin_b : 44 },
+    xaxis: axis("UTC date", { type: "date" }), yaxis: axis("USD, 100 USD lots, all coins", { zeroline: true, tickformat: ",.0f" }) });
 }
 
 /* Blotter: one row per coin x variant (pooled first), numbers in bp per dollar traded. */

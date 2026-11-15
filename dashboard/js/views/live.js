@@ -18,7 +18,7 @@ function loadLive() {
 }
 
 const ageText = s => !isNum(s) ? "–" : s < 90 ? `${Math.round(s)} s` : s < 5400 ? `${Math.round(s / 60)} min` : s < 172800 ? `${fmt(s / 3600, 1)} h` : `${fmt(s / 86400, 1)} d`;
-const dot = (ok, warn) => `<span class="live-dot" style="--c:${ok ? "#22c55e" : warn ? "#f5a524" : "#ef4444"}"></span>`;
+const dot = (ok, warn) => `<span class="live-dot" style="--c:${ok ? "#0ca30c" : warn ? "#c98500" : "#d03b3b"}"></span>`;
 const utc = ms => isNum(ms) ? new Date(ms).toISOString().replace("T", " ").slice(0, 19) : "–";
 const sideTxt = s => s > 0 ? '<span style="color:var(--bid)">BUY</span>' : s < 0 ? '<span style="color:var(--ask)">SELL</span>' : "–";
 
@@ -72,7 +72,7 @@ function drawLiveTestnet(L) {
   const hs = Object.keys(agg).map(Number).sort((a, b) => a - b);
   const hx = hs.map(h => new Date(h).toISOString());           // ISO UTC: Plotly reads a number on a date axis as local time
   if (hs.length) {
-    const col = { place: "#38bdf8", cancel: "#7f93ab", fill: "#22c55e", reject: "#ef4444" };
+    const col = { place: "#3987e5", cancel: "#7f93ab", fill: "#0ca30c", reject: "#d03b3b" };
     deskPlot("live-activity", ["place", "cancel", "fill", "reject"].map(k => ({ type: "bar", x: hx, y: hs.map(h => agg[h][k]), name: k, marker: { color: col[k] } })),
       { barmode: "group", xaxis: axis("UTC hour", { type: "date" }), yaxis: axis("Count") });
   } else emptyPanel("live-activity", "No orders in the last 24 h");

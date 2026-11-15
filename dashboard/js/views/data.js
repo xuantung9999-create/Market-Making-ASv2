@@ -21,7 +21,7 @@ function drawDataCoverage() {
   const z = syms.map(s => dates.map(d => { const r = cov.find(x => x.symbol === s && x.date === d); return r ? r.hours : null; }));
   const text = syms.map(s => dates.map(d => { const r = cov.find(x => x.symbol === s && x.date === d); return r ? `${r.hours} clean hours, ${fmt(r.gap_minutes, 1)} min of gaps` : "no data"; }));
   deskPlot("dh-cov", [{ type: "heatmap", x: dates, y: syms, z, text, hoverinfo: "text", zmin: 0, zmax: 24, xgap: 2, ygap: 2,
-    colorscale: [[0, "#1a2433"], [0.5, "#2b6cb0"], [0.83, "#38bdf8"], [1, "#e0f2fe"]], colorbar: { title: { text: "clean hours", side: "right" }, thickness: 10, tickvals: [0, 12, 20, 24] } }],
+    colorscale: [[0, "#1a2433"], [0.5, "#2b6cb0"], [0.83, "#3987e5"], [1, "#e0f2fe"]], colorbar: { title: { text: "clean hours", side: "right" }, thickness: 10, tickvals: [0, 12, 20, 24] } }],
     { height: Math.max(180, 44 * syms.length + 100), margin: { l: 90, r: 16, t: 10, b: 60 }, hovermode: "closest",
       xaxis: axis("UTC date", { type: "category" }), yaxis: Object.assign(axis(""), { autorange: "reversed" }) });
 }
