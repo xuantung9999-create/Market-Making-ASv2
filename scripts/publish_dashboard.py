@@ -3,6 +3,11 @@
     python -m scripts.publish_dashboard                       # every non-demo run in dashboard/runs
     python -m scripts.publish_dashboard --runs qb-2026-11-12,wf-2026-11-12-q1
     python -m scripts.publish_dashboard --live-snapshot       # also a frozen, sanitised copy of the live sessions
+    python -m scripts.publish_dashboard --live-snapshot --deploy   # then push dashboard_public/ to the gh-pages branch
+
+Deploy (recruiter-ready spec 5.3) refuses while README.md has the draft marker, while results/tests_passed.json is missing
+or older than the newest .py under mm/ or scripts/, or when the leak scanner finds anything. It commits only the files of
+dashboard_public/ (plus .nojekyll) in a throwaway repo and force-pushes it to origin gh-pages; main is never touched.
 
 Showcase spec section 8: without --live-snapshot nothing live is published. With it, dashboard_public/snapshot/ holds the
 session bundles and session chart files (through allow-lists of keys), the sessions list and only the tape files the page opens (the curated
@@ -179,13 +184,138 @@ def load_run(path: Path) -> dict:
     return json.loads(s[s.index("= {") + 2: s.rstrip().rstrip(";").rindex("}") + 1])
 
 
+# --- Deploy to GitHub Pages (recruiter-ready spec 5.3) ------------------------------------------------------------------
+PUBLIC_URL = "https://xuantung9999-create.github.io/Market-Making-ASv2/"
+PAGES_BRANCH = "gh-pages"
+DRAFT_MARK = "<!-- DRAFT"
+AUTH_HINT = "Push from GitHub Desktop or run `git push` once to store credentials, then re-run."
+_AUTH_RX = re.compile(r"authenticat|credential|could not read username|terminal prompts disabled|permission denied|\b403\b|\b401\b", re.I)
+
+
+def find_git() -> str | None:
+    """git on PATH first, then the newest copy bundled with GitHub Desktop (audit H3)."""
+    on_path = shutil.which("git")
+    if on_path:
+        return on_path
+    local = os.environ.get("LOCALAPPDATA")
+    if not local:
+        return None
+    found = sorted(Path(local).glob("GitHubDesktop/app-*/resources/app/git/cmd/git.exe"),
+                   key=lambda p: [int(x) if x.isdigit() else x for x in re.split(r"[.-]", p.parts[-6])])
+    return str(found[-1]) if found else None
+
+
+def origin_url(root: Path) -> str | None:
+    """The url of [remote "origin"] in the repo's own .git/config."""
+    cfg = root / ".git" / "config"
+    if not cfg.exists():
+        return None
+    section = None
+    for line in cfg.read_text(encoding="utf-8", errors="ignore").splitlines():
+        s = line.strip()
+        if s.startswith("["):
+            section = s
+        elif section == '[remote "origin"]' and s.split("=", 1)[0].strip() == "url":
+            return s.split("=", 1)[1].strip()
+    return None
+
+
+def deploy_refusals(root: Path) -> list[str]:
+    """Reasons the copy must not go online yet: the README draft box, or a test record missing or older than the code."""
+    out = []
+    readme = root / "README.md"
+    if readme.exists() and DRAFT_MARK in readme.read_text(encoding="utf-8", errors="ignore"):
+        out.append("README.md still has the draft marker (<!-- DRAFT ...). Edit the 'What I did myself' box and delete that line.")
+    rec = root / "results" / "tests_passed.json"
+    if not rec.exists():
+        out.append("results/tests_passed.json is missing. Run the full suite (python -m pytest) first.")
+    else:
+        code = [p for d in ("mm", "scripts") for p in (root / d).rglob("*.py") if "__pycache__" not in p.parts]
+        newest = max(code, key=lambda p: p.stat().st_mtime, default=None)
+        if newest is not None and newest.stat().st_mtime > rec.stat().st_mtime:
+            out.append(f"results/tests_passed.json is older than {newest.relative_to(root).as_posix()}. Run the full suite again.")
+    return out
+
+
+def _run(args: list[str], cwd: Path):
+    import subprocess
+    return subprocess.run(args, cwd=cwd, capture_output=True, text=True, env={**os.environ, "GIT_TERMINAL_PROMPT": "0"})
+
+
+def _rmtree(path: Path) -> None:
+    def onexc(func, p, _exc):                                     # git marks its object files read-only on Windows
+        os.chmod(p, 0o700)
+        func(p)
+    shutil.rmtree(path, onexc=onexc)
+
+
+def manual_commands(out: Path, url: str, message: str) -> str:
+    return "\n".join([
+        f"  cd {out.as_posix()}", "  git init", "  git add -A", f'  git commit -m "{message}"',
+        f"  git push --force {url} HEAD:refs/heads/{PAGES_BRANCH}"])
+
+
+def deploy(out: Path, root: Path, snapshot_at: str, runner=_run, git: str | None = "auto", hosts: list[str] | None = None) -> int:
+    """Push the contents of ``out`` (and only those) to the gh-pages branch of origin, from a throwaway repo in a
+    temporary directory. ``main`` and the working tree are never touched. Returns a process exit code."""
+    import tempfile
+    url = origin_url(root)
+    if not url:
+        print(f"deploy refused: no [remote \"origin\"] url in {(root / '.git' / 'config').name}")
+        return 2
+    (out / ".nojekyll").write_text("", encoding="utf-8")
+    leaks = scan_for_leaks(out, hosts)
+    if leaks:
+        print("deploy refused, the copy would leak:\n  " + "\n  ".join(leaks[:10]))
+        return 2
+    message = f"Publish {snapshot_at or datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')}"
+    git = find_git() if git == "auto" else git
+    if not git:
+        print("git was not found on PATH or in GitHub Desktop. Run these commands yourself:\n" + manual_commands(out, url, message))
+        return 3
+    tmp = Path(tempfile.mkdtemp(prefix="mm-pages-"))
+    try:
+        site = tmp / "site"
+        shutil.copytree(out, site)
+        ident = []
+        for key in ("user.name", "user.email"):
+            r = runner([git, "-C", str(root), "config", key], cwd=root)
+            val = (r.stdout or "").strip() if r.returncode == 0 else ""
+            ident += ["-c", f"{key}={val or ('publish_dashboard' if key == 'user.name' else 'publish_dashboard@localhost')}"]
+        for step in (["init", "-q"], ["add", "-A"], [*ident, "commit", "-q", "-m", message], ["remote", "add", "origin", url]):
+            r = runner([git, *step], cwd=site)
+            if r.returncode != 0:
+                print(f"deploy failed at 'git {' '.join(step)}':\n{r.stderr or r.stdout}")
+                return 4
+        r = runner([git, "push", "--force", "origin", f"HEAD:refs/heads/{PAGES_BRANCH}"], cwd=site)
+        if r.returncode != 0:
+            err = (r.stderr or "") + (r.stdout or "")
+            if _AUTH_RX.search(err):
+                print(f"deploy stopped: the push was not authenticated.\n{AUTH_HINT}")
+            else:
+                print(f"deploy failed at 'git push':\n{err}")
+            return 5
+    finally:
+        _rmtree(tmp)
+    print(f"deployed '{message}' to {PAGES_BRANCH}. Public URL: {PUBLIC_URL}")
+    return 0
+
+
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(prog="python -m scripts.publish_dashboard")
     ap.add_argument("--runs", default=None, help="comma-separated run ids (default: every non-demo run)")
     ap.add_argument("--out", default="dashboard_public")
     ap.add_argument("--every-min", type=int, default=30)
     ap.add_argument("--live-snapshot", action="store_true", help="also publish a frozen, sanitised copy of the live sessions under snapshot/")
+    ap.add_argument("--deploy", action="store_true", help="after publishing, push dashboard_public/ to the gh-pages branch (needs --live-snapshot)")
     args = ap.parse_args(argv)
+    root = DASH.resolve().parent
+    if args.deploy:
+        if not args.live_snapshot:
+            raise SystemExit("deploy refused: --deploy needs --live-snapshot (the public page shows the testnet snapshot).")
+        refusals = deploy_refusals(root)
+        if refusals:
+            raise SystemExit("deploy refused:\n  " + "\n  ".join(refusals))
     idx_txt = (DASH / "runs" / "index.js").read_text(encoding="utf-8")
     index = json.loads(idx_txt[idx_txt.index("["): idx_txt.rindex("]") + 1])
     if args.runs:
@@ -232,6 +362,10 @@ def main(argv=None) -> None:
     if big:
         print("warning: files above 3 MB:", ", ".join(str(p) for p in big))
     print(f"publishable copy -> {out}/")
+    if args.deploy:
+        code = deploy(out, root, snapshot_at)
+        if code:
+            raise SystemExit(code)
 
 
 if __name__ == "__main__":
