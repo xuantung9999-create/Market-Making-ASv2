@@ -1,8 +1,8 @@
 {
   "recorder": {"enabled": true, "symbols_file": "config/candidates.txt", "depth": true},
   "testnet": [
-    {"name": "testnet-btc", "symbols": ["BTCUSDT"], "policy": "agent", "lot_usd": 100, "q_max": 10, "max_loss": "inf"},
-    {"name": "testnet-eth", "symbols": ["ETHUSDT"], "policy": "agent", "lot_usd": 100, "q_max": 10, "max_loss": "inf"}
+    {"name": "testnet-btc", "symbols": ["BTCUSDT"], "policy": "join", "lot_usd": 100, "q_max": 10, "max_loss": "inf"},
+    {"name": "testnet-eth", "symbols": ["ETHUSDT"], "policy": "join", "lot_usd": 100, "q_max": 10, "max_loss": "inf"}
   ],
   "paper": {"name": "paper", "symbols": ["ANKRUSDT", "COTIUSDT", "SKLUSDT"]},
   "dashboard_every_s": 60,

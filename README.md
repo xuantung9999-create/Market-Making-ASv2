@@ -1,6 +1,6 @@
 # Crypto market making: from Avellaneda–Stoikov to a queue-aware agent
 
-**Live page: [xuantung9999-create.github.io/Market-Making-ASv2](https://xuantung9999-create.github.io/Market-Making-ASv2/)** · [Code layout](#layout) · 2-minute read
+**Live page: [xuantung9999-create.github.io/Market-Making-ASv2](https://xuantung9999-create.github.io/Market-Making-ASv2/)** · [Code layout](#layout) · 2-minute read · Author: Nguyễn Xuân Tùng, [CV](dashboard/cv/NguyenXuanTung_CV.pdf) · [LinkedIn](https://www.linkedin.com/in/tungtea-nguyen)
 
 **The result is negative, and that is the finding.** A candidate edge on tick-constrained micro caps (+16 bp per dollar traded on one day) was put through a pre-registered test: 60 days, three coins, a queue model, 300 ms latency and base-tier fees. It did not survive.
 

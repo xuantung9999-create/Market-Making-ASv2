@@ -107,6 +107,9 @@ def scan_for_leaks(root: Path, hosts: list[str] | None = None) -> list[str]:
     host_re = re.compile("|".join(re.escape(h) for h in hosts), re.I) if hosts else None
     out = []
     for f in sorted(p for p in root.rglob("*") if p.is_file()):
+        rel = f.relative_to(root).as_posix()
+        if rel.startswith("cv/") and f.suffix.lower() == ".pdf":
+            continue                         # the owner's CV: compressed binary (random bytes look like paths); reviewed by hand
         try:
             text = f.read_text(encoding="utf-8", errors="ignore")
         except OSError:
@@ -329,6 +332,8 @@ def main(argv=None) -> None:
     (out / "runs").mkdir(parents=True)
     shutil.copytree(DASH / "js", out / "js")
     shutil.copy2(DASH / "data.js", out / "data.js")
+    if (DASH / "cv").is_dir():                                    # the owner's CV, linked from the header
+        shutil.copytree(DASH / "cv", out / "cv")
     for s in OPERATIONS_SCRIPTS:                                  # Operations is not in the public copy at all
         (out / s).unlink(missing_ok=True)
     snapshot_at = write_snapshot(out) if args.live_snapshot else ""

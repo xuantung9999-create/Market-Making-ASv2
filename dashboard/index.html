@@ -273,6 +273,9 @@ table.lv tr.click { cursor: pointer; } table.lv tr.click:hover td { background: 
 /* ---------- Showcase shell (spec section 5): header = name + one nav row; controls live in the page ---------- */
 .bar { min-height: 40px; }
 a.brand { color: var(--text); text-decoration: none; }
+.bar-links { margin-left: auto; display: flex; gap: 16px; font-size: 13px; font-weight: 500; }
+.bar-links a { color: var(--muted); text-decoration: none; }
+.bar-links a:hover { color: var(--accent); }
 .pagebar { margin: 0 0 8px; }
 .runtop { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
 body.live-view .livebar { display: flex; }
@@ -441,7 +444,8 @@ ul.limit-cards li { display: grid; grid-template-columns: 34px minmax(0, 1fr); g
 </head>
 <body>
 <header>
-  <div class="bar"><a class="brand" href="#story" title="Crypto market making: from Avellaneda–Stoikov to a queue-aware agent">MM-AS</a></div>
+  <div class="bar"><a class="brand" href="#story" title="Crypto market making: from Avellaneda–Stoikov to a queue-aware agent">MM-AS</a>
+    <span class="bar-links"><a href="cv/NguyenXuanTung_CV.pdf" target="_blank" rel="noopener">CV</a><a href="https://www.linkedin.com/in/tungtea-nguyen" target="_blank" rel="noopener">LinkedIn</a><a href="https://github.com/xuantung9999-create/Market-Making-ASv2" target="_blank" rel="noopener">GitHub</a></span></div>
   <nav class="tabs" aria-label="Sections">
     <a href="#story" data-tab="story">Story</a>
     <span class="nav-sep" aria-hidden="true"></span><span class="nav-group">Evidence</span>
