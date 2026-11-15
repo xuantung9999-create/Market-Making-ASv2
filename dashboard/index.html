@@ -340,6 +340,53 @@ nav.tabs details.appendix .menu a[aria-current="page"] { color: var(--accent); }
   .stack-box:nth-child(3n)::after { content: "→"; }
   .stack-box:nth-child(2n)::after { content: none; }
 }
+/* ---------- Narrow screens (recruiter-ready spec section 4) ---------- */
+header { position: relative; }
+nav.tabs { position: relative; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+nav.tabs::-webkit-scrollbar { display: none; }
+header::after { content: ""; position: absolute; right: 0; bottom: 0; height: 44px; width: 40px; pointer-events: none;
+  background: linear-gradient(to right, rgba(12, 19, 29, 0), #0c131d 85%); opacity: 0; transition: opacity .15s; }
+header.nav-more::after { opacity: 1; }
+.table-wrap.more-right { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+.live-headline, .bar-verdict { font-family: var(--font-body); font-weight: 400; line-height: 1.45; }
+.xt-caught td:nth-child(2) { font-family: var(--font-body); }
+table.gates td:nth-child(3) { white-space: normal; text-align: left; }
+@media (max-width: 640px) {
+  /* wide numeric tables scroll in their wrapper with the first column pinned */
+  .table-wrap table:not(.stack) th:first-child, .table-wrap table:not(.stack) td:first-child { position: sticky; left: 0; z-index: 1; background: var(--panel); }
+  .table-wrap table:not(.stack) thead th:first-child { z-index: 2; }
+  .story-sec .table-wrap table:not(.stack) td:first-child { background: var(--bg); }
+  /* tables of long text become stacked rows: id and badge, then the rule or finding, then the value or evidence */
+  table.stack, table.stack tbody, table.stack tr, table.stack td, table.stack th { display: block; }
+  table.stack thead { display: none; }
+  table.stack tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  table.stack td, table.stack th { border: 0; padding: 0; white-space: normal; text-align: left; min-width: 0; }
+  table.stack td:empty, table.stack th:empty { display: none; }
+  table.stack td[data-label]::before { content: none; }
+  table.gates.stack td:nth-child(1), table.gates.stack th:nth-child(1) { grid-column: 1; grid-row: 1; }
+  table.gates.stack td:nth-child(4), table.gates.stack th:nth-child(4) { grid-column: 2; grid-row: 1; justify-self: end; }
+  table.gates.stack td:nth-child(2), table.gates.stack th:nth-child(2) { grid-column: 1 / -1; grid-row: 2; font-family: var(--font-body); }
+  table.gates.stack td:nth-child(3) { grid-column: 1 / -1; grid-row: 3; color: var(--muted); }
+  table.gates.stack td:nth-child(3)::before { content: attr(data-label) ": "; font-family: var(--font-body); }
+  table.xt-caught.stack td:nth-child(3) { grid-column: 1 / -1; grid-row: 1; }
+  table.xt-caught.stack td:nth-child(1) { grid-column: 1 / -1; grid-row: 2; min-width: 0; font-family: var(--font-body); }
+  table.xt-caught.stack td:nth-child(2) { grid-column: 1 / -1; grid-row: 3; color: var(--muted); }
+  table.lv.stack { font-size: 13px; }
+  table.lv.stack tr { grid-template-columns: auto minmax(0, 1fr) auto; }
+  table.lv.stack td:nth-child(1) { grid-column: 1 / 3; grid-row: 1; }
+  table.lv.stack td:nth-child(3) { grid-column: 3; grid-row: 1; justify-self: end; }
+  table.lv.stack td:nth-child(4) { grid-column: 1 / -1; grid-row: 2; font-family: var(--font-body); }
+  table.lv.stack td:nth-child(2) { grid-column: 1; grid-row: 3; color: var(--muted); font-family: var(--font-body); }
+  table.lv.stack td:nth-child(5) { grid-column: 2; grid-row: 3; color: var(--muted); }
+  table.lv.stack td:nth-child(5)::before { content: "cost "; }
+  table.lv.stack td:nth-child(6) { grid-column: 3; grid-row: 3; justify-self: end; color: var(--accent); }
+  /* the live state card: the reason sentence takes the full width under its pill */
+  .state-card .side { grid-template-columns: 44px minmax(0, 1fr); }
+  .state-card .side > span { grid-column: 1 / -1; }
+  .state-strip { grid-template-columns: minmax(0, 1fr); }
+  .verdict-line { font-size: 16px; }
+}
 </style>
 </head>
 <body>

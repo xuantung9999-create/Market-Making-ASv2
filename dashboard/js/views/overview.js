@@ -60,7 +60,8 @@ function drawVerdictForest(b) {
   if (!rows.length) return emptyPanel("ov-forest");
   const order = r => [r.symbol === "ALL" ? 0 : 1, r.symbol, r.variant === "agent" ? 1 : 0, -(r.queue_mult === 0 ? 9 : -r.queue_mult)];
   rows.sort((a, c) => { const x = order(a), y = order(c); for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i] ? -1 : 1; return 0; });
-  const label = r => `${r.symbol === "ALL" ? "All coins" : r.symbol.replace("USDT", "")} · ${r.scenario || r.variant}`;
+  const longLabel = r => `${r.symbol === "ALL" ? "All coins" : r.symbol.replace("USDT", "")} · ${r.scenario || r.variant}`;
+  const label = r => (isNarrow() && r.label_short) ? r.label_short : longLabel(r);
   const withNum = rows.filter(r => isNum(r.net_bp));
   const small = r => (r.n_days || 0) < 30;
   const net = { type: "scatter", mode: "markers", name: "Net of fees",
@@ -68,19 +69,19 @@ function drawVerdictForest(b) {
     error_x: { type: "data", array: withNum.map(r => isNum(r.net_se) ? 1.96 * r.net_se : 0), color: C.muted, thickness: 1.2, width: 4 },
     marker: { size: 9, symbol: "circle", color: withNum.map(r => small(r) ? "rgba(0,0,0,0)" : pnlColor(r.net_bp)),
               line: { width: 2, color: withNum.map(r => pnlColor(r.net_bp)) } },
-    customdata: withNum.map(r => [r.n_days, isNum(r.t) ? r.t.toFixed(1) : "–", r.fills]),
-    hovertemplate: "%{y}<br>net %{x:.1f} bp<br>%{customdata[0]} days, t = %{customdata[1]}, %{customdata[2]:,} fills<extra></extra>" };
+    customdata: withNum.map(r => [r.n_days, isNum(r.t) ? r.t.toFixed(1) : "–", r.fills, longLabel(r)]),
+    hovertemplate: "%{customdata[3]}<br>net %{x:.1f} bp<br>%{customdata[0]} days, t = %{customdata[1]}, %{customdata[2]:,} fills<extra></extra>" };
   const gross = { type: "scatter", mode: "markers", name: "Before fees",
-    x: withNum.map(r => r.gross_bp), y: withNum.map(label),
+    x: withNum.map(r => r.gross_bp), y: withNum.map(label), customdata: withNum.map(longLabel),
     marker: { size: 8, symbol: "diamond-open", color: C.text, line: { width: 1.5, color: C.text } },
-    hovertemplate: "%{y}<br>before fees %{x:.1f} bp<extra></extra>" };
+    hovertemplate: "%{customdata}<br>before fees %{x:.1f} bp<extra></extra>" };
   const none = rows.filter(r => !isNum(r.net_bp));
   const notes = none.map(r => ({ x: 0, y: label(r), xref: "x", yref: "y", text: "no fills: the agent stayed out", showarrow: false,
                                  xanchor: "left", xshift: 8, font: { size: 11, color: C.muted } }));
   const cats = rows.map(label);
   deskPlot("ov-forest", [net, gross], {
-    height: Math.max(300, 26 * cats.length + 90), margin: { l: 210, r: 16, t: 10, b: 44 }, hovermode: "closest",
-    xaxis: axis("bp per dollar traded (UTC days, 95% interval)", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
+    height: Math.max(300, 26 * cats.length + 90), margin: { l: catMargin(cats), r: 16, t: 10, b: 44 }, hovermode: "closest",
+    xaxis: axis(isNarrow() ? "bp per $ traded, 95% interval" : "bp per dollar traded (UTC days, 95% interval)", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
     yaxis: Object.assign(axis("", { automargin: true }), { autorange: "reversed", categoryorder: "array", categoryarray: cats, type: "category" }),
     annotations: notes,
   });
@@ -100,12 +101,12 @@ function drawVerdictGates(b) {
   let html = "";
   for (const name of ["A", "B"]) {
     const gate = g[name];
-    html += `<tr><th>Gate ${name}</th><th>${gate ? "" : "not evaluated yet"}</th><th></th><th>${gate ? mark(gate.pass) : ""}</th></tr>`;
+    html += `<tr class="gate-head"><th>Gate ${name}</th><th>${gate ? "" : "not evaluated yet"}</th><th></th><th>${gate ? mark(gate.pass) : ""}</th></tr>`;
     if (!gate) continue;
     for (const c of gate.conditions || [])
-      html += `<tr><td>${esc(c.id)}</td><td>${esc(c.text)}</td><td>${esc(gateValueText(name, c))}</td><td>${mark(c.pass)}</td></tr>`;
+      html += `<tr><td data-label="Condition">${esc(c.id)}</td><td data-label="Rule">${esc(c.text)}</td><td data-label="What happened">${esc(gateValueText(name, c))}</td><td data-label="Result">${mark(c.pass)}</td></tr>`;
   }
-  fillHtml("ov-gates", `<table class="gates"><tbody>${html}</tbody></table>`);
+  fillHtml("ov-gates", `<table class="gates stack"><tbody>${html}</tbody></table>`);
 }
 
 /* Pooled cumulative net P&L, one line per variant; the before-fees line (dashed) for the headline queue and the agent. */
@@ -123,7 +124,10 @@ function drawVerdictCurve(b) {
                 hovertemplate: `${v} before fees %{y:,.0f} USD<extra></extra>` });
   });
   if (!tr.length) return emptyPanel("ov-cum");
-  deskPlot("ov-cum", tr, { xaxis: axis("UTC date", { type: "date" }), yaxis: axis("USD, 100 USD lots, all coins", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }) });
+  const shown = tr.filter(t => t.showlegend !== false).length;
+  const below = shown > 3 ? legendBelow(shown, 320) : null;     // spec 4.7: a long legend sits under the chart
+  if (below) $("ov-cum").style.height = below.height + "px";
+  deskPlot("ov-cum", tr, { ...(below ? { legend: below.legend, margin: { l: 56, r: 16, t: 10, b: below.margin_b } } : {}), xaxis: axis("UTC date", { type: "date" }), yaxis: axis("USD, 100 USD lots, all coins", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }) });
 }
 
 /* Blotter: one row per coin x variant (pooled first), numbers in bp per dollar traded. */

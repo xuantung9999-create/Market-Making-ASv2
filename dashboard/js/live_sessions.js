@@ -225,8 +225,8 @@ function lvTable(hostId, cols, rows, opt = {}) {
   else if (st.k) { const c = cols.find(c => c.k === st.k); r.sort((a, b) => { const x = c.v ? c.v(a) : a[st.k], y = c.v ? c.v(b) : b[st.k]; return (x === y ? 0 : x === null || x === undefined ? 1 : y === null || y === undefined ? -1 : x < y ? -1 : 1) * st.dir; }); }
   const head = cols.map(c => `<th class="${c.left ? "l" : ""}" data-k="${esc(c.k)}">${esc(c.label)}${st.k === c.k ? (st.dir < 0 ? " ↓" : " ↑") : ""}</th>`).join("");
   const body = r.map((row, i) => `<tr class="${opt.rowClass ? opt.rowClass(row) : ""}${opt.onClick ? " click" : ""}" data-i="${i}">` +
-    cols.map(c => `<td class="${c.left ? "l" : ""}">${c.f ? c.f(c.v ? c.v(row) : row[c.k], row) : esc(row[c.k] ?? dashes)}</td>`).join("") + "</tr>").join("");
-  host.innerHTML = `<div class="table-wrap${opt.scroll ? " scroll" : ""}"><table class="lv"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+    cols.map(c => `<td class="${c.left ? "l" : ""}" data-label="${esc(c.label)}">${c.f ? c.f(c.v ? c.v(row) : row[c.k], row) : esc(row[c.k] ?? dashes)}</td>`).join("") + "</tr>").join("");
+  host.innerHTML = `<div class="table-wrap${opt.scroll ? " scroll" : ""}"><table class="lv${opt.stack ? " stack" : ""}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
   host.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
     if (opt.onSort) { opt.onSort(th.dataset.k); return; }
     st.dir = st.k === th.dataset.k ? -st.dir : -1; st.k = th.dataset.k; lvTable(hostId, cols, rows, opt);

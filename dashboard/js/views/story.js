@@ -14,10 +14,13 @@ const storyCount = v => fmt(v, 0);
 const STORY_HOVER = { y: " %{y:.1f} bp<extra></extra>", x: " %{x:.1f} bp<extra></extra>" };
 const STORY_FOREST_AXIS = "bp per dollar traded (95% interval on net)";
 const STORY_POOLED_ROWS = 8;
+const STORY_TICK_PX = { narrow: 10, wide: 11 };
 const STORY_HORIZONS = [1, 5, 30, 60, 300];                     // seconds after the fill that carry a markout tick                                  // the forest shows at most this many rows (spec section 6)
 /* ---- end format helpers ---- */
 
 const storyEl = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+/* Category tick labels: a size smaller on a phone so the bundle's two- and three-line labels do not touch. */
+const storyTickFont = () => ({ family: MONO, size: isNarrow() ? STORY_TICK_PX.narrow : STORY_TICK_PX.wide, color: C.muted });
 const storyLink = l => l && l.href ? `<p class="story-link"><a href="${esc(l.href)}">${esc(l.label || l.href)}</a></p>` : "";
 
 /* Charts on this page look static: no mode bar, no zoom, hover only. */
@@ -80,20 +83,20 @@ function storyForest(host, S) {
   const rows = (s.rows || []).filter(r => isNum(r.net_bp)).slice(0, STORY_POOLED_ROWS);
   if (!rows.length) { sec.appendChild(storyEl("p", "story-text story-missing", esc(s.sentence || ""))); return; }
   storyChart(sec, "story-forest", Math.max(260, 34 * rows.length + 80));
-  const cats = rows.map(r => r.label);
+  const cats = rows.map(catLabel), long = rows.map(r => r.label);
   const gap = { type: "scatter", mode: "lines", hoverinfo: "skip", showlegend: false, line: { width: 3, color: C.line },
-                x: rows.flatMap(r => [r.gross_bp, r.net_bp, null]), y: rows.flatMap(r => [r.label, r.label, null]) };
-  const net = { type: "scatter", mode: "markers", name: "Net of fees", x: rows.map(r => r.net_bp), y: cats,
+                x: rows.flatMap(r => [r.gross_bp, r.net_bp, null]), y: rows.flatMap(r => [catLabel(r), catLabel(r), null]) };
+  const net = { type: "scatter", mode: "markers", name: "Net of fees", x: rows.map(r => r.net_bp), y: cats, customdata: long,
     error_x: { type: "data", array: rows.map(r => isNum(r.net_se) ? 1.96 * r.net_se : 0), color: C.muted, thickness: 1.2, width: 4 },
     marker: { size: 10, color: rows.map(r => pnlColor(r.net_bp)) },
-    hovertemplate: "%{y}<br>net" + STORY_HOVER.x };
-  const gross = { type: "scatter", mode: "markers", name: "Before fees", x: rows.map(r => r.gross_bp), y: cats,
+    hovertemplate: "%{customdata}<br>net" + STORY_HOVER.x };
+  const gross = { type: "scatter", mode: "markers", name: "Before fees", x: rows.map(r => r.gross_bp), y: cats, customdata: long,
     marker: { size: 9, symbol: "diamond-open", color: C.text, line: { width: 1.5, color: C.text } },
-    hovertemplate: "%{y}<br>before fees" + STORY_HOVER.x };
+    hovertemplate: "%{customdata}<br>before fees" + STORY_HOVER.x };
   const note = isNum(s.fee_bp) ? [{ x: (rows[0].gross_bp + rows[0].net_bp) / 2, y: cats[0], xref: "x", yref: "y", yshift: 16, showarrow: false,
                                      text: storyFeeNote(s.fee_bp), font: { size: 11, color: C.muted } }] : [];
   storyPlot("story-forest", [gap, net, gross], {
-    margin: { l: 250, r: 16, t: 10, b: 44 }, annotations: note,
+    margin: { l: catMargin(cats), r: 16, t: 10, b: 44 }, annotations: note,
     xaxis: axis(STORY_FOREST_AXIS, { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
     yaxis: Object.assign(axis("", { automargin: true }), { autorange: "reversed", type: "category", categoryorder: "array", categoryarray: cats }),
   });
@@ -105,18 +108,21 @@ function storyWaterfall(host, S) {
   if (!sec) return;
   storyChart(sec, "story-waterfall", 300);
   const terms = s.terms || [];
+  // headroom so the value printed outside the lowest bar never touches the category labels under the axis
+  const levels = terms.reduce((acc, t) => acc.concat([acc[acc.length - 1] + t.bp]), [0]).concat([s.net_bp]).filter(isNum);
+  const lo = Math.min(...levels), hi = Math.max(...levels), pad = (hi - lo) * 0.18;
   const note = isNum(s.markout_60_bp) ? [{ xref: "paper", yref: "paper", x: 1, y: 1, xanchor: "right", yanchor: "top", showarrow: false,
                                            text: storyMarkoutNote(s.markout_60_bp), font: { size: 12, color: C.muted } }] : [];
   storyPlot("story-waterfall", [{
-    type: "waterfall", orientation: "v", x: terms.map(t => t.label).concat(["Net"]),
+    type: "waterfall", orientation: "v", x: terms.map(t => t.label_short || t.label).concat([s.net_label_short || "Net"]),
     measure: terms.map(() => "relative").concat(["total"]), y: terms.map(t => t.bp).concat([s.net_bp]),
     text: terms.map(t => sign(t.bp, 1)).concat([sign(s.net_bp, 1)]), textposition: "outside", cliponaxis: false,
     connector: { line: { color: C.line } },
     increasing: { marker: { color: PROFIT } }, decreasing: { marker: { color: LOSS } }, totals: { marker: { color: pnlColor(s.net_bp) } },
     hovertemplate: "%{x}<br>" + STORY_HOVER.y,
   }], {
-    showlegend: false, annotations: note, margin: { l: 56, r: 16, t: 30, b: 70 },
-    xaxis: axis(""), yaxis: axis("bp per dollar traded", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
+    showlegend: false, annotations: note, margin: { l: 56, r: 16, t: 30, b: 80 },
+    xaxis: axis("", { tickangle: 0, tickfont: storyTickFont() }), yaxis: axis("bp per dollar traded", { range: [lo - pad, hi + pad], zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
   });
   storyAfter(sec, s.link);
 }
@@ -127,14 +133,14 @@ function storyLadder(host, S) {
   storyChart(sec, "story-ladder", 340);
   const pts = s.points || [];
   const wrap = l => String(l).replace(" (", "<br>(").replace(", ", "<br>");
-  const x = pts.map(p => wrap(p.label));
+  const x = pts.map(p => p.label_short || wrap(p.label));
   const mk = (name, key, symbol) => ({ type: "scatter", mode: "lines+markers", name, x, y: pts.map(p => p[key]),
     line: { width: 1.5, color: C.muted, dash: "dot" },
     marker: { size: 11, symbol, color: pts.map(p => pnlColor(p[key])), line: { width: 2, color: pts.map(p => pnlColor(p[key])) } },
     hovertemplate: "%{x}<br>" + name + STORY_HOVER.y });
   storyPlot("story-ladder", [mk("Before fees", "gross_bp", "diamond-open"), mk("After fees", "net_bp", "circle")], {
     margin: { l: 56, r: 16, t: 30, b: 90 },
-    xaxis: axis("", { type: "category" }), yaxis: axis("bp per dollar traded", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
+    xaxis: axis("", { type: "category", tickangle: 0, tickfont: storyTickFont() }), yaxis: axis("bp per dollar traded", { zeroline: true, zerolinecolor: C.muted, zerolinewidth: 1.5 }),
   });
   storyAfter(sec, s.link);
 }
@@ -146,8 +152,8 @@ function storyAgent(host, S) {
   else if (s.paper_line_missing) sec.appendChild(storyEl("p", "story-text story-missing", esc(s.paper_line_missing)));
   const mark = p => p === true ? '<span class="mark pass">PASS</span>' : p === false ? '<span class="mark fail">FAIL</span>' : '<span class="mark na"></span>';
   const rows = ((s.gate || {}).conditions || []).map(c =>
-    `<tr><td class="mono">${esc(c.id)}</td><td>${esc(c.text)}</td><td>${esc(c.value_text || "")}</td><td>${mark(c.pass)}</td></tr>`).join("");
-  sec.appendChild(storyEl("div", "table-wrap", `<table class="gates story-gates"><thead><tr><th>Condition</th><th>Rule</th><th>What happened</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>`));
+    `<tr><td class="mono" data-label="Condition">${esc(c.id)}</td><td data-label="Rule">${esc(c.text)}</td><td data-label="What happened">${esc(c.value_text || "")}</td><td data-label="Result">${mark(c.pass)}</td></tr>`).join("");
+  sec.appendChild(storyEl("div", "table-wrap", `<table class="gates story-gates stack"><thead><tr><th>Condition</th><th>Rule</th><th>What happened</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>`));
   storyAfter(sec, s.link);
 }
 

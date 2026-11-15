@@ -64,6 +64,41 @@ function baseLayout(extra = {}) {
     hovermode: "x unified",
   }, extra);
 }
+/* ---- Narrow screens (recruiter-ready spec section 4) ---- */
+const NARROW_PX = 640;
+const isNarrow = () => window.innerWidth <= NARROW_PX;
+/* A category label for a chart: the bundle's short label on a phone, the long one otherwise. */
+const catLabel = r => (isNarrow() && r.label_short) ? r.label_short : r.label;
+/* Left margin for a category axis, measured from its longest label (each <br> line measured on its own), never a fixed number. */
+function catMargin(labels, px = 11) {
+  const ctx = (catMargin._c || (catMargin._c = document.createElement("canvas"))).getContext("2d");
+  ctx.font = `${px}px ${MONO}`;
+  const w = Math.max(0, ...labels.flatMap(l => String(l).split("<br>")).map(s => ctx.measureText(s).width));
+  return Math.round(Math.min(w + 18, window.innerWidth * 0.45));
+}
+/* A legend with more than three entries: one wrapping row under the plot, at most a quarter of its height. */
+function legendBelow(n, height) {
+  const rows = Math.ceil(n * 150 / Math.max(window.innerWidth - 80, 150));
+  return { legend: { orientation: "h", x: 0, xanchor: "left", y: 0, yref: "container", yanchor: "bottom", font: { size: 10 } },
+           height: Math.max(height, rows * 18 * 4 + 60), margin_b: 60 + rows * 18 };
+}
+/* Right-edge fade on anything that scrolls sideways (the nav row, wide tables) while more is hidden. */
+function markScrollers() {
+  document.querySelectorAll(".table-wrap, nav.tabs").forEach(el => {
+    const more = el.scrollWidth - el.clientWidth - el.scrollLeft > 4;
+    (el.matches("nav.tabs") ? el.parentElement : el).classList.toggle(el.matches("nav.tabs") ? "nav-more" : "more-right", more);
+  });
+}
+document.addEventListener("scroll", e => { if (e.target && e.target.matches && e.target.matches(".table-wrap, nav.tabs")) markScrollers(); }, true);
+window.addEventListener("resize", () => markScrollers());
+new MutationObserver(() => { clearTimeout(markScrollers._t); markScrollers._t = setTimeout(markScrollers, 150); })
+  .observe(document.documentElement, { childList: true, subtree: true });
+/* The active nav item scrolls into view inside the nav row (not the page). */
+function navToActive() {
+  const nav = document.querySelector("nav.tabs"), a = nav && nav.querySelector('[aria-current="page"]');
+  if (nav && a && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, a.offsetLeft - 24);
+  markScrollers();
+}
 const CONFIG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d", "autoScale2d"] };
 const plot = (id, data, lay) => Plotly.react(id, data, layout(lay), CONFIG);
 
@@ -209,6 +244,7 @@ function show(hash) {
     if (t2 === tab && (v2 ? v2 === view : view === viewIds(tab)[0])) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
   closeAppendix();
+  navToActive();
   if (typeof Sess !== "undefined") Sess.onShow(view);
   document.querySelectorAll(`#sub-${tab} a`).forEach(a => { if (a.dataset.sub === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   if (dirty[view]) renderVisible();

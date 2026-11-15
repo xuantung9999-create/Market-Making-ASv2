@@ -47,9 +47,9 @@ function drawExecHead() {
   const rows = b.caught || [];
   setSub("xt-caught-sub", tkOf(b).caught || "");
   if (!rows.length) lvEmpty("xt-caught", tkOf(b).caught || "Nothing is recorded as caught for this session yet.");
-  else fillLv("xt-caught", `<table class="xt-caught"><thead><tr><th>Finding</th><th>Evidence</th><th>Status</th></tr></thead><tbody>${rows.map(r => {
+  else fillLv("xt-caught", `<table class="xt-caught stack"><thead><tr><th>Finding</th><th>Evidence</th><th>Status</th></tr></thead><tbody>${rows.map(r => {
     const st = r.status === "fixed" && r.task ? `fixed, ${r.task}` : r.status;
-    return `<tr><td>${esc(r.finding)}</td><td>${esc(r.evidence)}</td><td><span class="xt-status" data-s="${esc(r.status)}">${esc(st)}</span></td></tr>`; }).join("")}</tbody></table>`);
+    return `<tr><td data-label="Finding">${esc(r.finding)}</td><td data-label="Evidence">${esc(r.evidence)}</td><td data-label="Status"><span class="xt-status" data-s="${esc(r.status)}">${esc(st)}</span></td></tr>`; }).join("")}</tbody></table>`);
   const sum = tkOf(b).pnl_summary;
   $("xt-pnl-summary").textContent = sum ? `P&L, for reconciliation only. ${sum}` : "P&L, for reconciliation only";
 }
@@ -131,7 +131,7 @@ function drawIncidentList(bs) {
     { k: "sentence", label: "What happened", left: true, f: v => esc(v) },
     { k: "cost_usd", label: "Cost (USDT, + = lost)", f: v => isNum(v) ? fmt(v, 2) : dashes },
     { k: "open", label: "", left: true, v: () => 0, f: () => "open tape" },
-  ], inc.slice(0, 300), { sort: "t0", scroll: true, onClick: openIncident });
+  ], inc.slice(0, 300), { sort: "t0", scroll: true, stack: true, onClick: openIncident });
 }
 
 function drawCum(bs) {

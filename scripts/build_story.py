@@ -652,7 +652,7 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
         sections["waterfall"] = {
             "status": "ok", "title": "Where a fill's money goes.", "net_bp": wf["net"], "days": wf["days"],
             "terms": [{"key": "spread", "label": "Spread captured", "label_short": "Spread<br>captured", "bp": wf["spread"]},
-                      {"key": "inventory", "label": "Inventory and adverse selection", "label_short": "Inventory and<br>adverse selection",
+                      {"key": "inventory", "label": "Inventory and adverse selection", "label_short": "Inventory,<br>adverse<br>selection",
                        "bp": wf["inventory"]},
                       {"key": "fee", "label": "Fee", "label_short": "Fee", "bp": wf["fee"]}],
             "net_label_short": "Net",
@@ -670,7 +670,7 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
         lat = facts["cfg"].get("latency_ms")
         suffix = f", {lat:g} ms" if finite(lat) else ""
         pts = [{"key": "v1", "label": f"v1 backtest, no queue model ({v1['symbol'][:-4]}, one day, {v1['date']})",
-                "label_short": f"v1, no queue<br>{coin_name(v1['symbol'])}, one day",
+                "label_short": f"v1, no queue<br>{coin_name(v1['symbol'])}, 1 day",
                 "gross_bp": v1["gross_bp"], "net_bp": v1["net_bp"], "one_day": True}]
         for key, qm in (("front", 0.0), ("q1", 1.0), ("q2", 2.0)):
             r = pooled(facts["forest"], HEADLINE_STRATEGY, qm)
@@ -678,7 +678,7 @@ def build_story(base: Path = Path("."), now: Optional[float] = None, live: bool 
                 break
             fl = latency_of(r)
             label = (f"front of queue{f', {fl} ms' if fl else ''}" if key == "front" else f"queue {qm:g}x{suffix}")
-            short = (f"Front of queue{f'<br>{fl} ms' if fl else ''}" if key == "front"
+            short = (f"Front{f'<br>{fl} ms' if fl else ' of queue'}" if key == "front"
                      else f"Queue {qm:g}x" + (f"<br>{lat:g} ms" if finite(lat) else ""))
             pts.append({"key": key, "label": label, "label_short": short, "gross_bp": r["gross_bp"], "net_bp": r["net_bp"], "one_day": False})
         if len(pts) == 4:

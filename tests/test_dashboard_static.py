@@ -569,3 +569,53 @@ def test_fills_page_says_when_the_selected_variant_made_no_fills():
     assert 'id="ex-nofill"' in v and v.index('id="fe-headline"') < v.index('id="ex-nofill"') < v.index('id="ex-side"')
     js = (DASH / "js" / "views" / "execution.js").read_text(encoding="utf-8")
     assert "drawNoFillNote(b)" in js and "made no fills" in js and "fetch(" not in js
+
+
+# ---- Recruiter-ready spec R3: narrow screens (section 4)
+def _view(name):
+    return (DASH / "js" / "views" / name).read_text(encoding="utf-8")
+
+
+def test_nav_row_scrolls_inside_itself_with_no_visible_scrollbar():
+    css = _html()
+    rules = re.findall(r"nav\.tabs\s*\{([^}]*)\}", css)
+    assert any("overflow-x: auto" in r for r in rules)
+    assert "scrollbar-width: none" in css and "nav.tabs::-webkit-scrollbar" in css and "header.nav-more::after" in css
+    assert "navToActive()" in (DASH / "js" / "core.js").read_text(encoding="utf-8")
+
+
+def test_forest_plots_measure_their_left_margin():
+    for name, fn in (("story.js", "storyForest"), ("overview.js", "drawVerdictForest")):
+        src = _view(name)
+        body = src[src.index(f"function {fn}"):]
+        body = body[:body.index("\n}\n")]
+        assert "label_short" in body or "catLabel" in body, name
+        for m in re.findall(r"\bl:\s*(\d+)", body):
+            assert int(m) <= 120, f"{name} {fn}: fixed left margin {m}"
+        assert "catMargin(" in body, name
+
+
+def test_no_view_rotates_tick_labels():
+    for p in (DASH / "js").rglob("*.js"):
+        for m in re.findall(r"tickangle:\s*(-?\d+)", p.read_text(encoding="utf-8")):
+            assert int(m) == 0, f"{p.name}: tickangle {m}"
+
+
+def test_long_text_tables_carry_data_labels_and_stack():
+    story = _view("story.js")
+    assert 'class="gates story-gates stack"' in story and story.count('data-label="') >= 4
+    ov = _view("overview.js")
+    assert 'class="gates stack"' in ov and ov.count('data-label="') >= 4
+    lv = _view("lv_overview.js")
+    assert 'class="xt-caught stack"' in lv and lv.count('data-label="') >= 3
+    assert "stack: true" in lv[lv.index("function drawIncidentList"):]
+    sess = (DASH / "js" / "live_sessions.js").read_text(encoding="utf-8")
+    assert 'data-label="${esc(c.label)}"' in sess and 'opt.stack ? " stack"' in sess
+    css = _html()
+    assert re.search(r"@media \(max-width: 640px\)[^@]*table\.stack thead \{ display: none; \}", css)
+
+
+def test_wide_tables_pin_their_first_column_and_fade():
+    css = _html()
+    assert re.search(r"table:not\(\.stack\) td:first-child \{ position: sticky; left: 0", css)
+    assert ".table-wrap.more-right" in css and "mask-image" in css

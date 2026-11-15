@@ -482,11 +482,13 @@ function drawInformed() {
   const z = syms.map(sy => order.map(n => { const r = A.find(x => x.symbol === sy && x.strategy === n); return r ? net(r) / r.notional * 1e4 : null; }));
   const zu = syms.map(sy => order.map(n => { const r = A.find(x => x.symbol === sy && x.strategy === n); return r ? net(r) : null; }));
   const lim = 20;
-  plot("ch-inf-heat", [{ type: "heatmap", z, x: order, y: syms.map(x => x.replace("USDT", "")), customdata: zu, zmin: -lim, zmax: lim, zmid: 0,
+  // spec 4.6: never rotate x labels; long names break onto lines of about 12 characters
+  const brk = n => String(n).split(" ").reduce((ls, w) => { const l = ls[ls.length - 1]; if (l && (l + " " + w).length <= 12) ls[ls.length - 1] = l + " " + w; else ls.push(w); return ls; }, []).join("<br>");
+  plot("ch-inf-heat", [{ type: "heatmap", z, x: order.map(brk), y: syms.map(x => x.replace("USDT", "")), customdata: zu, zmin: -lim, zmax: lim, zmid: 0,
     colorscale: [[0, "#7f1d1d"], [0.45, "#3b1d24"], [0.5, "#142030"], [0.55, "#123b2c"], [1, "#16a34a"]],
     text: z.map(r => r.map(v => v === null ? "" : v.toFixed(1))), texttemplate: "%{text}", textfont: { family: MONO, size: 10, color: C.text },
     hovertemplate: "%{y} · %{x}<br>%{z:.2f} bp of volume<br>%{customdata:,.0f} USD<extra></extra>", colorbar: { title: { text: "bp", font: { size: 11 } }, tickfont: { family: MONO, size: 10, color: C.muted } } }],
-    { showlegend: false, hovermode: "closest", margin: { l: 56, r: 16, t: 10, b: 110 }, xaxis: axis("", { tickangle: -35, showgrid: false }), yaxis: axis("", { autorange: "reversed", showgrid: false }) });
+    { showlegend: false, hovermode: "closest", margin: { l: 56, r: 16, t: 10, b: 110 }, xaxis: axis("", { tickangle: 0, showgrid: false }), yaxis: axis("", { autorange: "reversed", showgrid: false }) });
 
   const al = syms.map(sy => { const c = W.coins.find(x => x.symbol === sy), rs = c ? c.alpha : [];
     const avg = k => rs.reduce((x, r) => x + (r[k] ?? 0), 0) / Math.max(rs.length, 1);
