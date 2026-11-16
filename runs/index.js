@@ -1,0 +1,73 @@
+window.RUN_INDEX = [
+ {
+  "run_id": "pub-replay-testnet-2026-11-12",
+  "kind": "backtest",
+  "label": "Testnet replay: agent on the recorded testnet market, BTC, ETH, no loss stop, inventory cap 10 lots (simulated fills)",
+  "built_utc": "2026-11-15 14:03",
+  "symbols": [
+   "BTCUSDT",
+   "ETHUSDT"
+  ],
+  "n_days": 4
+ },
+ {
+  "run_id": "pub-wf-2026-11-12-q0.5",
+  "kind": "walkforward",
+  "label": "Agent walk-forward, queue 0.5x (optimistic)",
+  "built_utc": "2026-11-12 12:31",
+  "symbols": [
+   "COTIUSDT",
+   "ANKRUSDT",
+   "SKLUSDT"
+  ],
+  "n_days": 53
+ },
+ {
+  "run_id": "pub-wf-2026-11-12-q1",
+  "kind": "walkforward",
+  "label": "Agent walk-forward, queue 1x (headline)",
+  "built_utc": "2026-11-12 12:31",
+  "symbols": [
+   "COTIUSDT",
+   "ANKRUSDT",
+   "SKLUSDT"
+  ],
+  "n_days": 53
+ },
+ {
+  "run_id": "pub-wf-2026-11-12-q2",
+  "kind": "walkforward",
+  "label": "Agent walk-forward, queue 2x (stress)",
+  "built_utc": "2026-11-12 12:31",
+  "symbols": [
+   "COTIUSDT",
+   "ANKRUSDT",
+   "SKLUSDT"
+  ],
+  "n_days": 53
+ },
+ {
+  "run_id": "pub-verdict",
+  "kind": "walkforward",
+  "label": "Verdict: 60-day queue-aware test, 3 coins",
+  "built_utc": "2026-11-12 12:31",
+  "symbols": [
+   "ANKRUSDT",
+   "COTIUSDT",
+   "SKLUSDT"
+  ],
+  "n_days": 60
+ },
+ {
+  "run_id": "pub-qb-2026-11-12",
+  "kind": "backtest",
+  "label": "Queue baseline: Join touch (3 coins)",
+  "built_utc": "2026-11-12 11:50",
+  "symbols": [
+   "COTIUSDT",
+   "ANKRUSDT",
+   "SKLUSDT"
+  ],
+  "n_days": 60
+ }
+];
